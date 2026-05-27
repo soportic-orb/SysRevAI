@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 1 — application core (MVC):**
+  - `bootstrap.php` with a resilient autoload path (Composer when present, plus a
+    native PSR-4 fallback) and `.env` loading (phpdotenv or a native `Core\Env`).
+  - `Core\Router` (regex routes, params, `guest`/`auth`/`admin` middleware,
+    automatic CSRF enforcement on state-changing requests).
+  - `Core\Database` (shared PDO, prefix-aware table helpers, prepared-statement
+    query helpers), `Core\Session` (secure cookies, idle timeout, flash),
+    `Core\Csrf`, `Core\Auth` (argon2id verification, rehash-on-login,
+    session-based current user), `Core\I18n`, `Core\View`, `Core\App` kernel
+    (locale resolution, security headers, optional HTTPS redirect).
+  - `Models\User`, `AuthController` (login/logout) and `DashboardController`.
+  - Views and layouts (app shell + minimal auth layout), login page, dashboard
+    with metric cards, and 403/404 error pages; core i18n in ca/es/en.
+  - The footer donation link is always present; the login screen never shows it.
+
+### Added (foundations)
 - Project foundations: directory structure, `composer.json`, documented
   `.env.example`, and `config/` bootstrap (`config.php`, `donate.php`).
 - Global helpers (`env`, `e`, `config`, `setting` placeholder).

@@ -78,3 +78,64 @@ if (!function_exists('setting')) {
         return $default;
     }
 }
+
+if (!function_exists('__')) {
+    /** Translate a core i18n key (dot notation), with optional sprintf args. */
+    function __(string $key, mixed ...$args): string
+    {
+        return \SysRevAI\Core\I18n::get($key, $args);
+    }
+}
+
+if (!function_exists('csrf_field')) {
+    function csrf_field(): string
+    {
+        return \SysRevAI\Core\Csrf::field();
+    }
+}
+
+if (!function_exists('csrf_token')) {
+    function csrf_token(): string
+    {
+        return \SysRevAI\Core\Csrf::token();
+    }
+}
+
+if (!function_exists('redirect')) {
+    /** Send a Location redirect and stop execution. */
+    function redirect(string $to, int $status = 302): never
+    {
+        header('Location: ' . $to, true, $status);
+        exit;
+    }
+}
+
+if (!function_exists('base_url')) {
+    /** Absolute base URL of the application, without a trailing slash. */
+    function base_url(string $path = ''): string
+    {
+        $base = rtrim((string) config('app.url', ''), '/');
+        return $path === '' ? $base : $base . '/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('asset')) {
+    function asset(string $path): string
+    {
+        return base_url('assets/' . ltrim($path, '/'));
+    }
+}
+
+if (!function_exists('auth_user')) {
+    function auth_user(): ?array
+    {
+        return \SysRevAI\Core\Auth::user();
+    }
+}
+
+if (!function_exists('current_locale')) {
+    function current_locale(): string
+    {
+        return \SysRevAI\Core\I18n::locale();
+    }
+}
