@@ -1,0 +1,33 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment & secrets
+.env
+config/installed.lock
+
+# Uploaded user content
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Storage (runtime-generated)
+storage/logs/*
+!storage/logs/.gitkeep
+storage/cache/*
+!storage/cache/.gitkeep
+storage/credentials/*
+!storage/credentials/.gitkeep
+storage/backups/*
+!storage/backups/.gitkeep
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.log
+
+# PHP tooling
+.phpunit.result.cache
+.php-cs-fixer.cache

@@ -1,0 +1,303 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   SysRevAI installer — self-contained styles.
+   No CDN / no Tailwind: the server may have no outbound internet during setup.
+   Accessible palette inspired by Okabe-Ito.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+    --c-bg:        #f4f6f8;
+    --c-surface:   #ffffff;
+    --c-text:      #1b2733;
+    --c-muted:     #5b6b7b;
+    --c-border:    #dde3e9;
+    --c-primary:   #0072b2; /* Okabe-Ito blue */
+    --c-primary-d: #005a8c;
+    --c-ok:        #009e73; /* Okabe-Ito green */
+    --c-warn:      #e69f00; /* Okabe-Ito orange */
+    --c-fail:      #d55e00; /* Okabe-Ito vermillion */
+    --radius:      10px;
+    --shadow:      0 1px 3px rgba(16, 35, 53, .08), 0 6px 24px rgba(16, 35, 53, .06);
+    --font:        "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+.installer {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 48px;
+}
+
+/* Header / progress */
+.installer__header { margin-bottom: 24px; }
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.brand__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--c-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: .5px;
+}
+.brand__name { font-weight: 700; font-size: 18px; }
+
+.installer__progress-label {
+    margin: 0 0 8px;
+    color: var(--c-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.progress {
+    height: 8px;
+    background: var(--c-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.progress__bar {
+    height: 100%;
+    background: var(--c-primary);
+    border-radius: 999px;
+    transition: width .35s ease;
+}
+
+.steps-mini {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin: 16px 0 0;
+    padding: 0;
+}
+.steps-mini__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--c-muted);
+}
+.steps-mini__dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--c-border);
+    background: var(--c-surface);
+    font-size: 11px;
+    font-weight: 600;
+}
+.steps-mini__item.is-active .steps-mini__dot {
+    border-color: var(--c-primary);
+    color: var(--c-primary);
+}
+.steps-mini__item.is-active .steps-mini__label { color: var(--c-text); font-weight: 600; }
+.steps-mini__item.is-done .steps-mini__dot {
+    background: var(--c-ok);
+    border-color: var(--c-ok);
+    color: #fff;
+}
+
+/* Card */
+.card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px;
+}
+.card__title { margin: 0 0 8px; font-size: 22px; }
+.lead { color: var(--c-muted); margin: 0 0 24px; }
+
+/* Welcome */
+.welcome__hero {
+    text-align: center;
+    padding: 12px 0 20px;
+    border-bottom: 1px solid var(--c-border);
+    margin-bottom: 24px;
+}
+.welcome__title { margin: 0 0 8px; font-size: 28px; }
+.welcome__subtitle { margin: 0; color: var(--c-muted); }
+
+/* Forms */
+.field-label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+.lang-form { margin-bottom: 24px; }
+.select {
+    width: 100%;
+    max-width: 280px;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background: var(--c-surface);
+    color: var(--c-text);
+}
+.select:focus { outline: 2px solid var(--c-primary); outline-offset: 1px; }
+
+/* Note */
+.note {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #eaf4fb;
+    border: 1px solid #cfe6f5;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+}
+.note__icon {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--c-primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 13px;
+}
+.note p { margin: 0; font-size: 14px; color: #1b3a4d; }
+
+/* Alerts */
+.alert {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.alert--success { background: #e6f6f1; border: 1px solid #b7e6d6; color: #06624a; }
+.alert--error   { background: #fdeee6; border: 1px solid #f6cdb5; color: #9c3b00; }
+
+/* Requirements list */
+.group-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--c-muted);
+    margin: 24px 0 8px;
+}
+.req-list { list-style: none; margin: 0; padding: 0; }
+.req-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--c-border);
+}
+.req-item:last-child { border-bottom: 0; }
+.req-item__body { display: flex; flex-direction: column; }
+.req-item__label { font-weight: 600; font-size: 15px; }
+.req-item__detail { font-size: 13px; color: var(--c-muted); }
+.req-item__fix {
+    font-size: 13px;
+    color: var(--c-fail);
+    margin-top: 4px;
+}
+
+.badge {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 1px;
+}
+.badge--ok   { background: var(--c-ok); }
+.badge--warn { background: var(--c-warn); }
+.badge--fail { background: var(--c-fail); }
+
+/* Placeholder */
+.placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--c-muted);
+}
+.placeholder__icon { font-size: 40px; display: block; margin-bottom: 12px; opacity: .6; }
+
+/* Buttons / actions */
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+}
+.actions__right { display: flex; gap: 10px; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+}
+.btn--sm { padding: 7px 12px; font-size: 13px; }
+.btn--primary { background: var(--c-primary); color: #fff; }
+.btn--primary:hover { background: var(--c-primary-d); }
+.btn--primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn--ghost {
+    background: var(--c-surface);
+    border-color: var(--c-border);
+    color: var(--c-text);
+}
+.btn--ghost:hover { border-color: var(--c-muted); }
+
+/* Footer */
+.installer__footer {
+    text-align: center;
+    margin-top: 28px;
+    color: var(--c-muted);
+    font-size: 13px;
+}
+
+@media (max-width: 560px) {
+    .card { padding: 22px; }
+    .steps-mini__label { display: none; }
+    .actions { flex-direction: column-reverse; align-items: stretch; }
+    .actions__right { justify-content: stretch; }
+    .actions .btn { width: 100%; justify-content: center; }
+}
