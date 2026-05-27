@@ -1,0 +1,25 @@
+# SysRevAI — Apache configuration for the public document root.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Let the installer serve itself directly.
+    RewriteRule ^install/ - [L]
+
+    # Send everything that is not a real file/dir to the front controller.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Basic security headers (the admin panel can manage these per-instance later).
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Never serve dotfiles (.env lives outside docroot anyway, but be safe).
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

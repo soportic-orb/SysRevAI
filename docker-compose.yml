@@ -1,0 +1,59 @@
+# SysRevAI — local development / trial stack.
+#
+#   docker compose up -d
+#   open http://localhost:8080  → you'll be redirected to the web installer.
+#
+# Use these DB values in the installer (Step 3):
+#   Host: db   Port: 3306   Database: sysrevai
+#   User: sysrevai   Password: sysrevai
+#
+# These credentials are for LOCAL development only. Change them for any
+# internet-facing deployment.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: sysrevai_app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: sysrevai_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: sysrevai_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: sysrevai
+      MYSQL_USER: sysrevai
+      MYSQL_PASSWORD: sysrevai
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db_data:
