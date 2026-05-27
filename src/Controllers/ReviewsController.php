@@ -58,11 +58,12 @@ final class ReviewsController
     {
         $review = $this->loadOrDeny((int) $id);
         echo View::render('reviews/show', [
-            'review'  => $review,
-            'pico'    => Review::pico($review),
-            'metrics' => Review::metrics((int) $id),
-            'members' => ReviewUser::forReview((int) $id),
-            'reasons' => ExclusionReason::forReview((int) $id),
+            'review'   => $review,
+            'pico'     => Review::pico($review),
+            'metrics'  => Review::metrics((int) $id),
+            'members'  => ReviewUser::forReview((int) $id),
+            'reasons'  => ExclusionReason::forReview((int) $id),
+            'comments' => \SysRevAI\Models\Comment::forReview((int) $id),
         ]);
     }
 

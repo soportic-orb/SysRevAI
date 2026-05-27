@@ -38,6 +38,31 @@ final class ReviewUser
         return $row !== null;
     }
 
+    public static function updateMembership(
+        int $reviewId,
+        int $userId,
+        string $role,
+        bool $isBlinded,
+        bool $canResolve
+    ): void {
+        $table = Database::table('review_users');
+        Database::affecting(
+            "UPDATE `{$table}` SET role = ?, is_blinded = ?, can_resolve_conflicts = ?
+             WHERE review_id = ? AND user_id = ?",
+            [$role, $isBlinded ? 1 : 0, $canResolve ? 1 : 0, $reviewId, $userId]
+        );
+    }
+
+    /** Soft-remove a member (history is preserved). */
+    public static function remove(int $reviewId, int $userId): void
+    {
+        $table = Database::table('review_users');
+        Database::affecting(
+            "UPDATE `{$table}` SET removed_at = NOW() WHERE review_id = ? AND user_id = ?",
+            [$reviewId, $userId]
+        );
+    }
+
     /** Members with their user details. */
     public static function forReview(int $reviewId): array
     {

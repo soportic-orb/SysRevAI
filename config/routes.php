@@ -15,7 +15,12 @@ use SysRevAI\Controllers\Admin\MaintenanceController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AuthController;
+use SysRevAI\Controllers\CommentsController;
 use SysRevAI\Controllers\DashboardController;
+use SysRevAI\Controllers\InvitationsController;
+use SysRevAI\Controllers\MembersController;
+use SysRevAI\Controllers\NotificationsController;
+use SysRevAI\Controllers\ProfileController;
 use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
@@ -37,7 +42,33 @@ $router->post('/reviews', [ReviewsController::class, 'store'], ['auth']);
 $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
+
+// Team / collaboration on a review.
+$router->get('/reviews/{id}/team', [MembersController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/team/invite', [MembersController::class, 'invite'], ['auth']);
+$router->post('/reviews/{id}/team/update', [MembersController::class, 'updateMember'], ['auth']);
+$router->post('/reviews/{id}/team/remove', [MembersController::class, 'removeMember'], ['auth']);
+$router->post('/reviews/{id}/team/revoke', [MembersController::class, 'revokeInvitation'], ['auth']);
+
+// Review comments.
+$router->post('/reviews/{id}/comments/delete', [CommentsController::class, 'delete'], ['auth']);
+$router->post('/reviews/{id}/comments', [CommentsController::class, 'store'], ['auth']);
+
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
+
+// Invitations (token links).
+$router->get('/invite/{token}', [InvitationsController::class, 'show'], ['auth']);
+$router->post('/invite/{token}/accept', [InvitationsController::class, 'accept'], ['auth']);
+
+// Notifications.
+$router->get('/notifications/poll', [NotificationsController::class, 'poll'], ['auth']);
+$router->get('/notifications', [NotificationsController::class, 'index'], ['auth']);
+$router->post('/notifications/read-all', [NotificationsController::class, 'markAllRead'], ['auth']);
+$router->post('/notifications/read', [NotificationsController::class, 'markRead'], ['auth']);
+
+// Profile.
+$router->get('/profile/notifications', [ProfileController::class, 'notifications'], ['auth']);
+$router->post('/profile/notifications', [ProfileController::class, 'saveNotifications'], ['auth']);
 
 // Admin → Settings (owner/admin only). Specific action routes are registered
 // before the generic save route so they take precedence.

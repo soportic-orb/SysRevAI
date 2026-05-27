@@ -47,7 +47,12 @@ $nav = [
     </nav>
     <div class="topbar__user">
         <?php if ($user !== null): ?>
-            <span class="topbar__name"><?= e((string) $user['name']) ?></span>
+            <?php
+                try { $unread = \SysRevAI\Models\Notification::unreadCount((int) $user['id']); }
+                catch (\Throwable) { $unread = 0; }
+                require config('paths.base') . '/views/partials/notification_bell.php';
+            ?>
+            <a class="topbar__name" href="/profile/notifications"><?= e((string) $user['name']) ?></a>
             <form method="post" action="/logout" class="inline-form">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn--ghost btn--sm"><?= e(__('nav.logout')) ?></button>
@@ -88,5 +93,6 @@ $nav = [
         require config('paths.base') . '/views/partials/donate_link.php';
     ?>
 </footer>
+<script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
 </html>

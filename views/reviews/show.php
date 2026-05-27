@@ -28,6 +28,7 @@ $metricKeys = ['imported', 'duplicate', 'ta_screening', 'ta_included', 'ft_scree
         </div>
         <?php if ($isOwner): ?>
             <div class="btn-row">
+                <a class="btn btn--ghost" href="/reviews/<?= $id ?>/team"><?= e(__('team.title')) ?></a>
                 <a class="btn btn--ghost" href="/reviews/<?= $id ?>/protocol"><?= e(__('reviews.edit_protocol')) ?></a>
                 <form method="post" action="/reviews/<?= $id ?>/archive">
                     <?= csrf_field() ?>
@@ -90,5 +91,38 @@ $metricKeys = ['imported', 'duplicate', 'ta_screening', 'ta_included', 'ft_scree
                 </ul>
             <?php endif; ?>
         </div>
+    </div>
+
+    <div class="section-card" id="comments">
+        <h2 class="section__subtitle"><?= e(__('comments.title')) ?></h2>
+
+        <?php if (($comments ?? []) === []): ?>
+            <p class="muted"><?= e(__('comments.none')) ?></p>
+        <?php else: ?>
+            <ul class="comment-list">
+                <?php foreach ($comments as $c): ?>
+                    <li class="comment">
+                        <div class="comment__head">
+                            <strong><?= e((string) $c['author_name']) ?></strong>
+                            <span class="muted"><?= e((string) $c['created_at']) ?></span>
+                            <?php if ((int) $c['user_id'] === (int) Auth::id() || $isOwner): ?>
+                                <form method="post" action="/reviews/<?= $id ?>/comments/delete" class="comment__del">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="comment_id" value="<?= (int) $c['id'] ?>">
+                                    <button class="link-del" title="<?= e(__('comments.delete')) ?>">×</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                        <div class="comment__body"><?= nl2br(e((string) $c['content'])) ?></div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <form method="post" action="/reviews/<?= $id ?>/comments" class="comment-form">
+            <?= csrf_field() ?>
+            <textarea class="input" name="content" rows="3" placeholder="<?= e(__('comments.placeholder')) ?>" required></textarea>
+            <div style="margin-top:8px"><button class="btn btn--primary"><?= e(__('comments.post')) ?></button></div>
+        </form>
     </div>
 </div>

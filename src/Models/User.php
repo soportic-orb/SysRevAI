@@ -105,6 +105,15 @@ final class User
         Database::affecting("DELETE FROM `{$table}` WHERE id = ?", [$id]);
     }
 
+    public static function updateNotificationPreferences(int $id, array $prefs): void
+    {
+        $table = Database::table('users');
+        Database::affecting(
+            "UPDATE `{$table}` SET notification_preferences = ? WHERE id = ?",
+            [json_encode($prefs, JSON_UNESCAPED_UNICODE), $id]
+        );
+    }
+
     public static function countOwners(): int
     {
         $table = Database::table('users');

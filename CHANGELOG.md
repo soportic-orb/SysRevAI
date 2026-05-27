@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 4 — multi-user collaboration:**
+  - `007_collaboration.sql` migration: invitations, notifications, comments and
+    screening_assignments (the assignments table is ready for Phase 6).
+  - **Invitations**: invite collaborators by email (existing users are added and
+    notified immediately; new emails get a single-use 7-day token link), with an
+    accept flow at `/invite/{token}`.
+  - **Team management** (`MembersController`): add/update (role, blinding,
+    conflict-resolution flag)/remove members and revoke invitations, owner-only.
+  - **In-app notifications** (`Models\Notification` + `NotificationsController`):
+    bell with unread badge and a JS-polled dropdown (45s), full list page with
+    all/unread filter and mark-read/mark-all, plus a JSON poll endpoint.
+  - **Comments** (`Models\Comment` + `CommentsController`): per-review discussion
+    board with `@mention` resolution against members, soft delete, and
+    notifications to members (mention vs. comment).
+  - **Profile → notification preferences** per type and channel (in-app/email).
 - **Phase 3 — reviews & protocol:**
   - `Models\Review` (CRUD, access checks, PICO decode, status, reference
     metrics that degrade to zeros until the references table exists),
