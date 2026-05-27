@@ -11,7 +11,9 @@ declare(strict_types=1);
 | state-changing requests automatically.
 */
 
+use SysRevAI\Controllers\Admin\MaintenanceController;
 use SysRevAI\Controllers\Admin\SettingsController;
+use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\DashboardController;
 use SysRevAI\Core\Auth;
@@ -27,11 +29,30 @@ $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 
-// Admin → Settings (owner/admin only). The verify route is registered before
-// the generic save route for clarity (distinct paths either way).
-$router->get('/admin/settings', [SettingsController::class, 'index'], ['auth', 'admin']);
-$router->get('/admin/settings/{section}', [SettingsController::class, 'show'], ['auth', 'admin']);
-$router->post('/admin/settings/claude/verify', [SettingsController::class, 'verifyClaude'], ['auth', 'admin']);
-$router->post('/admin/settings/{section}', [SettingsController::class, 'save'], ['auth', 'admin']);
+// Admin → Settings (owner/admin only). Specific action routes are registered
+// before the generic save route so they take precedence.
+$admin = ['auth', 'admin'];
+$router->get('/admin/settings', [SettingsController::class, 'index'], $admin);
+$router->get('/admin/settings/{section}', [SettingsController::class, 'show'], $admin);
+$router->post('/admin/settings/claude/verify', [SettingsController::class, 'verifyClaude'], $admin);
+$router->post('/admin/settings/email/test', [SettingsController::class, 'sendTestEmail'], $admin);
+$router->post('/admin/settings/translate/verify', [SettingsController::class, 'verifyTranslate'], $admin);
+$router->post('/admin/settings/{section}', [SettingsController::class, 'save'], $admin);
+
+// Admin → Users (order matters: literal paths before the {id} pattern).
+$router->get('/admin/users', [UsersController::class, 'index'], $admin);
+$router->post('/admin/users/registration', [UsersController::class, 'saveRegistration'], $admin);
+$router->post('/admin/users', [UsersController::class, 'create'], $admin);
+$router->post('/admin/users/{id}/delete', [UsersController::class, 'delete'], $admin);
+$router->post('/admin/users/{id}', [UsersController::class, 'update'], $admin);
+
+// Admin → Maintenance.
+$router->get('/admin/maintenance', [MaintenanceController::class, 'index'], $admin);
+$router->post('/admin/maintenance/mode', [MaintenanceController::class, 'toggleMaintenance'], $admin);
+$router->post('/admin/maintenance/clear-cache', [MaintenanceController::class, 'clearCache'], $admin);
+$router->post('/admin/maintenance/clear-logs', [MaintenanceController::class, 'clearLogs'], $admin);
+$router->post('/admin/maintenance/backup', [MaintenanceController::class, 'createBackup'], $admin);
+$router->post('/admin/maintenance/backup-delete', [MaintenanceController::class, 'deleteBackup'], $admin);
+$router->get('/admin/maintenance/backup/{name}', [MaintenanceController::class, 'downloadBackup'], $admin);
 
 return $router;

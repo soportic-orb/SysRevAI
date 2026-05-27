@@ -53,4 +53,62 @@ final class User
         $row = Database::selectOne("SELECT COUNT(*) AS c FROM `{$table}`");
         return (int) ($row['c'] ?? 0);
     }
+
+    /** @return array<int,array> */
+    public static function all(string $search = ''): array
+    {
+        $table = Database::table('users');
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            return Database::select(
+                "SELECT id,name,email,role,status,is_active,last_login_at,created_at
+                 FROM `{$table}` WHERE name LIKE ? OR email LIKE ? ORDER BY id DESC",
+                [$like, $like]
+            );
+        }
+        return Database::select(
+            "SELECT id,name,email,role,status,is_active,last_login_at,created_at
+             FROM `{$table}` ORDER BY id DESC"
+        );
+    }
+
+    public static function create(array $data): int
+    {
+        $table = Database::table('users');
+        return Database::insert(
+            "INSERT INTO `{$table}` (name,email,password_hash,role,status,locale,is_active,email_verified_at)
+             VALUES (?,?,?,?,?,?,?,NOW())",
+            [
+                $data['name'],
+                $data['email'],
+                $data['password_hash'],
+                $data['role'] ?? 'reviewer',
+                $data['status'] ?? 'active',
+                $data['locale'] ?? 'ca',
+                (int) ($data['is_active'] ?? 1),
+            ]
+        );
+    }
+
+    public static function updateAccount(int $id, string $role, string $status, bool $isActive): void
+    {
+        $table = Database::table('users');
+        Database::affecting(
+            "UPDATE `{$table}` SET role = ?, status = ?, is_active = ? WHERE id = ?",
+            [$role, $status, $isActive ? 1 : 0, $id]
+        );
+    }
+
+    public static function delete(int $id): void
+    {
+        $table = Database::table('users');
+        Database::affecting("DELETE FROM `{$table}` WHERE id = ?", [$id]);
+    }
+
+    public static function countOwners(): int
+    {
+        $table = Database::table('users');
+        $row = Database::selectOne("SELECT COUNT(*) AS c FROM `{$table}` WHERE role = 'owner'");
+        return (int) ($row['c'] ?? 0);
+    }
 }

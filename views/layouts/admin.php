@@ -9,8 +9,22 @@ $appName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
 $user    = auth_user();
 $version = (string) config('app.version', '0.1.0-dev');
 
-// Sections implemented so far. More land in subsequent phases.
-$sections = ['general', 'claude', 'security', 'about'];
+// Admin navigation: section key => URL. Settings-form sections live under
+// /admin/settings/{key}; Users and Maintenance have their own controllers.
+$nav = [
+    'general'     => '/admin/settings/general',
+    'claude'      => '/admin/settings/claude',
+    'translate'   => '/admin/settings/translate',
+    'email'       => '/admin/settings/email',
+    'apis'        => '/admin/settings/apis',
+    'security'    => '/admin/settings/security',
+    'users'       => '/admin/users',
+    'reviews'     => '/admin/settings/reviews',
+    'files'       => '/admin/settings/files',
+    'languages'   => '/admin/settings/languages',
+    'maintenance' => '/admin/maintenance',
+    'about'       => '/admin/settings/about',
+];
 ?>
 <!DOCTYPE html>
 <html lang="<?= e(current_locale()) ?>">
@@ -46,10 +60,10 @@ $sections = ['general', 'claude', 'security', 'about'];
     <aside class="admin__sidebar">
         <h2 class="admin__title"><?= e(__('admin.title')) ?></h2>
         <nav class="admin__nav">
-            <?php foreach ($sections as $s): ?>
-                <a href="/admin/settings/<?= e($s) ?>"
-                   class="admin__link <?= $s === $activeSection ? 'is-active' : '' ?>">
-                    <?= e(__('admin.sections.' . $s)) ?>
+            <?php foreach ($nav as $key => $url): ?>
+                <a href="<?= e($url) ?>"
+                   class="admin__link <?= $key === $activeSection ? 'is-active' : '' ?>">
+                    <?= e(__('admin.sections.' . $key)) ?>
                 </a>
             <?php endforeach; ?>
         </nav>

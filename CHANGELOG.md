@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Routes guarded by `auth`+`admin` middleware; CSRF enforced on saves.
   - Built-in-server routing shim in the front controller so `php -S ... -t
     public public/index.php` serves assets, the installer and routes in dev.
+  - **All 12 admin sections complete:** General, Claude, **Google Translate**
+    (service-account JSON stored 0600 outside docroot, config verify),
+    **Email/SMTP** (encrypted password, notification toggles, send-test via
+    `Services\MailService`), **Other APIs** (PubMed/CrossRef/Unpaywall/OpenAlex/
+    Semantic Scholar, keys encrypted), Security, **Users & permissions** (real
+    CRUD with last-owner/self-delete guards + registration policy),
+    **Reviews defaults**, **Files & storage**, **Languages** (active UI locales),
+    **Maintenance** (maintenance mode, cache/log cleanup, PDO-based gzipped DB
+    backups with download/delete, system info, recent activity log), and About.
+  - `Services\TranslateService` (config check) and `Services\BackupService`.
 - **Phase 1 — application core (MVC):**
   - `bootstrap.php` with a resilient autoload path (Composer when present, plus a
     native PSR-4 fallback) and `.env` loading (phpdotenv or a native `Core\Env`).

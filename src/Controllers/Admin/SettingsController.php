@@ -17,7 +17,10 @@ use SysRevAI\Services\ClaudeService;
  */
 final class SettingsController
 {
-    private const SECTIONS = ['general', 'claude', 'security', 'about'];
+    private const SECTIONS = [
+        'general', 'claude', 'translate', 'email', 'apis',
+        'security', 'reviews', 'files', 'languages', 'about',
+    ];
 
     public function index(): void
     {
@@ -40,11 +43,17 @@ final class SettingsController
     public function save(string $section): void
     {
         match ($section) {
-            'general'  => $this->saveGeneral(),
-            'claude'   => $this->saveClaude(),
-            'security' => $this->saveSecurity(),
-            'about'    => $this->saveAbout(),
-            default    => null,
+            'general'   => $this->saveGeneral(),
+            'claude'    => $this->saveClaude(),
+            'translate' => $this->saveTranslate(),
+            'email'     => $this->saveEmail(),
+            'apis'      => $this->saveApis(),
+            'security'  => $this->saveSecurity(),
+            'reviews'   => $this->saveReviews(),
+            'files'     => $this->saveFiles(),
+            'languages' => $this->saveLanguages(),
+            'about'     => $this->saveAbout(),
+            default     => null,
         };
 
         Session::flash('admin_success', __('admin.saved'));
@@ -117,6 +126,162 @@ final class SettingsController
     {
         Config::set('about.show_dashboard_mention', !empty($_POST['show_dashboard_mention']), 'bool', 'about', true);
         ActivityLog::record('settings.about.updated');
+    }
+
+    private function saveTranslate(): void
+    {
+        Config::set('google.project_id', trim((string) ($_POST['project_id'] ?? '')), 'string', 'integrations');
+        Config::set('google.active_languages', $this->multiSelect('active_languages', ['ca', 'es', 'en', 'fr', 'de', 'pt', 'it']), 'json', 'integrations');
+        Config::set('google.cache_enabled', !empty($_POST['cache_enabled']), 'bool', 'integrations');
+        Config::set('google.cache_ttl_days', max(1, (int) ($_POST['cache_ttl_days'] ?? 90)), 'int', 'integrations');
+
+        $stored = $this->storeServiceAccount();
+        if ($stored !== null) {
+            Config::set('google.credentials_path', $stored, 'string', 'integrations');
+        }
+
+        ActivityLog::record('settings.translate.updated', ['credentials_uploaded' => $stored !== null]);
+    }
+
+    private function saveEmail(): void
+    {
+        Config::set('smtp.host', trim((string) ($_POST['host'] ?? '')), 'string', 'integrations');
+        Config::set('smtp.port', max(1, (int) ($_POST['port'] ?? 587)), 'int', 'integrations');
+        Config::set('smtp.username', trim((string) ($_POST['username'] ?? '')), 'string', 'integrations');
+        $pw = (string) ($_POST['password'] ?? '');
+        if ($pw !== '') {
+            Config::set('smtp.password', $pw, 'encrypted', 'integrations');
+        }
+        $enc = in_array(($_POST['encryption'] ?? 'tls'), ['tls', 'ssl', 'none'], true) ? $_POST['encryption'] : 'tls';
+        Config::set('smtp.encryption', $enc, 'string', 'integrations');
+        Config::set('smtp.from_email', trim((string) ($_POST['from_email'] ?? '')), 'string', 'integrations');
+        Config::set('smtp.from_name', trim((string) ($_POST['from_name'] ?? 'SysRevAI')), 'string', 'integrations');
+
+        foreach (['conflict', 'invitation', 'error', 'weekly'] as $event) {
+            Config::set('notify.' . $event, !empty($_POST['notify'][$event]), 'bool', 'integrations');
+        }
+        ActivityLog::record('settings.email.updated', ['password_changed' => $pw !== '']);
+    }
+
+    private function saveApis(): void
+    {
+        $pubmed = trim((string) ($_POST['pubmed_api_key'] ?? ''));
+        if ($pubmed !== '') {
+            Config::set('pubmed.api_key', $pubmed, 'encrypted', 'integrations');
+        }
+        Config::set('pubmed.enabled', !empty($_POST['pubmed_enabled']), 'bool', 'integrations');
+
+        Config::set('crossref.email', trim((string) ($_POST['crossref_email'] ?? '')), 'string', 'integrations');
+        Config::set('crossref.enabled', !empty($_POST['crossref_enabled']), 'bool', 'integrations');
+
+        Config::set('unpaywall.email', trim((string) ($_POST['unpaywall_email'] ?? '')), 'string', 'integrations');
+        Config::set('unpaywall.enabled', !empty($_POST['unpaywall_enabled']), 'bool', 'integrations');
+
+        Config::set('openalex.enabled', !empty($_POST['openalex_enabled']), 'bool', 'integrations');
+
+        $ss = trim((string) ($_POST['semantic_scholar_api_key'] ?? ''));
+        if ($ss !== '') {
+            Config::set('semantic_scholar.api_key', $ss, 'encrypted', 'integrations');
+        }
+        Config::set('semantic_scholar.enabled', !empty($_POST['semantic_scholar_enabled']), 'bool', 'integrations');
+
+        ActivityLog::record('settings.apis.updated');
+    }
+
+    private function saveReviews(): void
+    {
+        $reasons = array_values(array_filter(array_map(
+            'trim',
+            preg_split('/\r\n|\r|\n/', (string) ($_POST['default_exclusion_reasons'] ?? '')) ?: []
+        )));
+        Config::set('reviews.default_exclusion_reasons', $reasons, 'json', 'reviews');
+        Config::set('reviews.rob_tools', $this->multiSelect('rob_tools', ['rob2', 'robins_i', 'newcastle_ottawa', 'jbi']), 'json', 'reviews');
+        Config::set('reviews.double_reviewer_default', !empty($_POST['double_reviewer_default']), 'bool', 'reviews');
+        $cr = in_array(($_POST['conflict_resolution'] ?? 'manual'), ['manual', 'third'], true) ? $_POST['conflict_resolution'] : 'manual';
+        Config::set('reviews.conflict_resolution', $cr, 'string', 'reviews');
+
+        ActivityLog::record('settings.reviews.updated');
+    }
+
+    private function saveFiles(): void
+    {
+        Config::set('files.max_pdf_mb', max(1, (int) ($_POST['max_pdf_mb'] ?? 50)), 'int', 'files');
+        Config::set('files.allowed_types', $this->multiSelect('allowed_types', ['pdf', 'doc', 'docx', 'txt']), 'json', 'files');
+        $loc = in_array(($_POST['upload_location'] ?? 'docroot'), ['docroot', 'outside'], true) ? $_POST['upload_location'] : 'docroot';
+        Config::set('files.upload_location', $loc, 'string', 'files');
+        Config::set('files.compress', !empty($_POST['compress']), 'bool', 'files');
+        Config::set('files.ocr', !empty($_POST['ocr']), 'bool', 'files');
+
+        ActivityLog::record('settings.files.updated');
+    }
+
+    private function saveLanguages(): void
+    {
+        $supported = (array) config('supported_locales', ['ca', 'es', 'en']);
+        $active = array_values(array_intersect($this->multiSelect('active_locales', $supported), $supported));
+        if ($active === []) {
+            $active = ['ca'];
+        }
+        Config::set('ui.active_locales', $active, 'json', 'general', true);
+        ActivityLog::record('settings.languages.updated');
+    }
+
+    /* ── Integration actions ───────────────────────────────────────────── */
+
+    public function sendTestEmail(): void
+    {
+        $to = trim((string) ($_POST['test_email'] ?? ''));
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('admin_error', __('admin.email.test_invalid'));
+            redirect('/admin/settings/email');
+        }
+        $result = \SysRevAI\Services\MailService::sendTest($to);
+        ActivityLog::record('settings.email.test', ['ok' => $result['ok']]);
+        Session::flash($result['ok'] ? 'admin_success' : 'admin_error', $result['message']);
+        redirect('/admin/settings/email');
+    }
+
+    public function verifyTranslate(): void
+    {
+        $result = \SysRevAI\Services\TranslateService::verifyConfig();
+        Session::flash($result['ok'] ? 'admin_success' : 'admin_error', $result['message']);
+        redirect('/admin/settings/translate');
+    }
+
+    /* ── Helpers ───────────────────────────────────────────────────────── */
+
+    /** Read a checkbox/multi-select POST array, keeping only allowed values. */
+    private function multiSelect(string $field, array $allowed): array
+    {
+        $raw = $_POST[$field] ?? [];
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_intersect(array_map('strval', $raw), $allowed));
+    }
+
+    /**
+     * Securely store an uploaded Google service-account JSON outside the
+     * docroot (0600). Returns the stored path or null if no valid file.
+     */
+    private function storeServiceAccount(): ?string
+    {
+        if (empty($_FILES['service_account']['tmp_name']) || !is_uploaded_file($_FILES['service_account']['tmp_name'])) {
+            return null;
+        }
+        $contents = (string) file_get_contents($_FILES['service_account']['tmp_name']);
+        $decoded = json_decode($contents, true);
+        if (!is_array($decoded) || ($decoded['type'] ?? '') !== 'service_account') {
+            Session::flash('admin_error', __('admin.translate.invalid_json'));
+            return null;
+        }
+        $dir = (string) config('paths.credentials');
+        $path = $dir . '/google_sa.json';
+        if (@file_put_contents($path, $contents) === false) {
+            return null;
+        }
+        @chmod($path, 0600);
+        return $path;
     }
 
     private function sanitizeHex(string $value): string
