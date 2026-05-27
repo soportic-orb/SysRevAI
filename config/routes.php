@@ -63,9 +63,11 @@ $router->get('/reviews/{id}/references', [ReferencesController::class, 'index'],
 $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
 $router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/duplicates/check-ai', [DuplicatesController::class, 'checkAi'], ['auth']);
 $router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 'resolve'], ['auth']);
 
 // Title/abstract screening.
+$router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'suggest'], ['auth']);
 $router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);

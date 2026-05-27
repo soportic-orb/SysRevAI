@@ -53,6 +53,35 @@ final class DuplicatesController
         redirect('/reviews/' . $rid . '/duplicates');
     }
 
+    /** Level-3 semantic duplicate check with Claude (advisory). */
+    public function checkAi(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        $dupId = (int) ($_POST['duplicate_id'] ?? 0);
+        $dup = Duplicate::find($dupId);
+        if ($dup === null || (int) $dup['review_id'] !== $rid) {
+            redirect('/reviews/' . $rid . '/duplicates');
+        }
+
+        $refA = Reference::find((int) $dup['ref_a_id']);
+        $refB = Reference::find((int) $dup['ref_b_id']);
+        $result = \SysRevAI\Services\ClaudeService::fromSettings()
+            ->checkSemanticDuplicate($refA ?? [], $refB ?? [], $rid);
+
+        if (($result['ok'] ?? false) && is_array($result['data'] ?? null)) {
+            $d = $result['data'];
+            $conf = (float) ($d['confidence'] ?? 0);
+            $reason = (string) ($d['reason'] ?? '');
+            Duplicate::updateAi($dupId, $conf, $reason);
+            $verdict = !empty($d['duplicate']) ? __('duplicates.ai_yes') : __('duplicates.ai_no');
+            Session::flash('success', __('duplicates.ai_result', $verdict, (string) round($conf * 100), $reason));
+        } else {
+            Session::flash('error', __('duplicates.ai_failed'));
+        }
+        redirect('/reviews/' . $rid . '/duplicates');
+    }
+
     private function memberOrDeny(int $reviewId): array
     {
         $review = Review::find($reviewId);

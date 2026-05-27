@@ -63,6 +63,16 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
                     <?= $reference['abstract'] ? nl2br(e((string) $reference['abstract'])) : '<span class="muted">' . e(__('screening.no_abstract')) . '</span>' ?>
                 </div>
 
+                <div class="ai-suggest">
+                    <button type="button" class="btn btn--ghost btn--sm" id="suggestBtn"
+                            data-url="/reviews/<?= $id ?>/screen/suggest?reference_id=<?= (int) $reference['id'] ?>"
+                            data-loading="<?= e(__('screening.suggest_loading')) ?>"
+                            data-error="<?= e(__('screening.ai_error')) ?>">
+                        &#10024; <?= e(__('screening.suggest_ai')) ?>
+                    </button>
+                    <div class="ai-suggest__panel" id="suggestPanel" hidden></div>
+                </div>
+
                 <form method="post" action="/reviews/<?= $id ?>/screen/decide" class="screen-actions" id="screenForm">
                     <?= csrf_field() ?>
                     <input type="hidden" name="reference_id" value="<?= (int) $reference['id'] ?>">
@@ -129,6 +139,30 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
             if (btn) { document.getElementById('timeSpent').value = Math.round((Date.now() - start) / 1000); btn.click(); }
         }
     });
+
+    var sBtn = document.getElementById('suggestBtn');
+    var sPanel = document.getElementById('suggestPanel');
+    if (sBtn) {
+        sBtn.addEventListener('click', function () {
+            sPanel.hidden = false;
+            sPanel.className = 'ai-suggest__panel';
+            sPanel.textContent = sBtn.getAttribute('data-loading');
+            fetch(sBtn.getAttribute('data-url'), { headers: { 'X-Requested-With': 'fetch' } })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.ok && d.data) {
+                        var rec = String(d.data.recommendation || '').toLowerCase();
+                        var conf = d.data.confidence != null ? Math.round(d.data.confidence * 100) + '%' : '';
+                        sPanel.className = 'ai-suggest__panel is-' + rec;
+                        sPanel.innerHTML = '<strong>' + rec.toUpperCase() + '</strong> ' + conf +
+                            '<br>' + (d.data.reason ? String(d.data.reason).replace(/[<>&]/g, '') : '');
+                    } else {
+                        sPanel.textContent = sBtn.getAttribute('data-error');
+                    }
+                })
+                .catch(function () { sPanel.textContent = sBtn.getAttribute('data-error'); });
+        });
+    }
 })();
 </script>
 <?php endif; ?>

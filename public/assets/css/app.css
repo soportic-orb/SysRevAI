@@ -167,6 +167,13 @@ a:hover { text-decoration: underline; }
 
 .topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
 
+/* AI suggestion panel */
+.ai-suggest { margin-top: 16px; }
+.ai-suggest__panel { margin-top: 10px; padding: 12px 14px; border-radius: 8px; font-size: 14px; background: var(--c-bg); border: 1px solid var(--c-border); }
+.ai-suggest__panel.is-include { background: #e6f6f1; border-color: #b7e6d6; }
+.ai-suggest__panel.is-exclude { background: #fbe9e1; border-color: #f3c4a9; }
+.ai-suggest__panel.is-maybe { background: #fdf2dc; border-color: #f4dca0; }
+
 /* Screening */
 .screen-progress { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .screen-progress .progress { flex: 1; }

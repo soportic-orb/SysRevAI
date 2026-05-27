@@ -89,3 +89,17 @@ $features = ['summaries', 'screening', 'extraction', 'bias', 'chat', 'dedup'];
     <button type="submit" class="btn btn--ghost"><?= e(__('admin.claude.verify')) ?></button>
     <a class="link-ext" href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>
 </form>
+
+<?php
+    try { $monthCost = \SysRevAI\Models\AiUsage::monthlyCost(); }
+    catch (\Throwable) { $monthCost = 0.0; }
+?>
+<div class="section-card">
+    <h2 class="section__subtitle"><?= e(__('admin.claude.usage_title')) ?></h2>
+    <p class="section__intro">
+        <?= e(__('admin.claude.usage_month')) ?>: <strong>$<?= e(number_format($monthCost, 2)) ?></strong>
+        <?php $lim = (int) (setting('claude.monthly_limit_usd') ?? 0); if ($lim > 0): ?>
+            / $<?= $lim ?>
+        <?php endif; ?>
+    </p>
+</div>

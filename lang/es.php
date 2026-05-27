@@ -74,6 +74,9 @@ return [
         'exclude'          => 'Excluir',
         'maybe'            => 'Quizás',
         'shortcuts'        => 'Atajos: I incluir · E excluir · M quizás',
+        'suggest_ai'       => 'Sugerir con IA',
+        'suggest_loading'  => 'Consultando a la IA…',
+        'ai_error'         => 'La IA no está disponible (revisa la clave de API y la configuración).',
         'conflicts'        => '%d conflictos',
         'conflicts_title'  => 'Resolución de conflictos',
         'conflicts_intro'  => 'Artículos donde los revisores no coinciden. Toma la decisión final.',
@@ -143,6 +146,11 @@ return [
         'confirm'   => 'Confirmar duplicado',
         'reject'    => 'No es duplicado',
         'resolved'  => 'Duplicado resuelto.',
+        'ai_check'  => 'Comprobar con IA',
+        'ai_yes'    => 'SÍ es duplicado',
+        'ai_no'     => 'NO es duplicado',
+        'ai_result' => 'IA: %s (confianza %s%%). %s',
+        'ai_failed' => 'La IA no pudo evaluar el par (revisa la configuración).',
     ],
 
     'team' => [
@@ -317,6 +325,8 @@ return [
             'feature_chat'      => 'Chat con el artículo',
             'feature_dedup'     => 'Deduplicación semántica',
             'verify'            => 'Verificar conexión',
+            'usage_title'       => 'Uso este mes',
+            'usage_month'       => 'Coste estimado este mes',
         ],
         'security' => [
             'min_password_length' => 'Longitud mínima de contraseña',

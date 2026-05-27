@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 7 — Claude API integration:**
+  - Full `Services\ClaudeService`: `summarize`, `suggestScreeningDecision`,
+    `extractStructuredData`, `assessBiasDomain`, `chatWithArticle` and
+    `checkSemanticDuplicate`, all reading the encrypted admin settings (model,
+    temperature, max tokens), forcing JSON for structured tasks, retrying with
+    exponential backoff (3×), and gated by per-feature toggles and the monthly
+    cost limit.
+  - `010_ai_usage.sql` + `Models\AiUsage`: per-review token/cost accounting; the
+    admin Claude section shows this month's estimated cost vs. the limit.
+  - Wired into existing phases: an advisory **"Suggest with AI"** button on the
+    screening card (returns recommendation/confidence/reason as JSON, shown in a
+    panel) and a **level-3 semantic duplicate check** on fuzzy candidate pairs.
 - **Phase 6 — title/abstract screening with blinding:**
   - `009_screening_decisions.sql` migration (per-reviewer decisions, resolutions,
     time spent).

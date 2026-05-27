@@ -75,6 +75,9 @@ return [
         'exclude'          => 'Excloure',
         'maybe'            => 'Potser',
         'shortcuts'        => 'Dreceres: I incloure · E excloure · M potser',
+        'suggest_ai'       => 'Suggerir amb IA',
+        'suggest_loading'  => 'Consultant la IA…',
+        'ai_error'         => 'La IA no està disponible (revisa la clau d\'API i la configuració).',
         'conflicts'        => '%d conflictes',
         'conflicts_title'  => 'Resolució de conflictes',
         'conflicts_intro'  => 'Articles on els revisors no coincideixen. Pren la decisió final.',
@@ -144,6 +147,11 @@ return [
         'confirm'   => 'Confirmar duplicat',
         'reject'    => 'No és duplicat',
         'resolved'  => 'Duplicat resolt.',
+        'ai_check'  => 'Comprovar amb IA',
+        'ai_yes'    => 'SÍ és duplicat',
+        'ai_no'     => 'NO és duplicat',
+        'ai_result' => 'IA: %s (confiança %s%%). %s',
+        'ai_failed' => 'La IA no ha pogut avaluar el parell (revisa la configuració).',
     ],
 
     'team' => [
@@ -318,6 +326,8 @@ return [
             'feature_chat'      => 'Xat amb l\'article',
             'feature_dedup'     => 'Deduplicació semàntica',
             'verify'            => 'Verificar connexió',
+            'usage_title'       => 'Ús aquest mes',
+            'usage_month'       => 'Cost estimat aquest mes',
         ],
         'security' => [
             'min_password_length' => 'Longitud mínima de contrasenya',

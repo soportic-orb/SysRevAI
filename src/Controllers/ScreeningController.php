@@ -102,6 +102,31 @@ final class ScreeningController
         redirect('/reviews/' . $rid . '/screen');
     }
 
+    /** AI screening suggestion (advisory). Returns JSON. */
+    public function suggest(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        header('Content-Type: application/json; charset=utf-8');
+
+        $reference = Reference::find((int) ($_GET['reference_id'] ?? 0));
+        if ($reference === null || (int) $reference['review_id'] !== $rid) {
+            echo json_encode(['ok' => false, 'error' => 'not_found']);
+            return;
+        }
+
+        $protocol = [
+            'question'  => $review['question'],
+            'pico'      => Review::pico($review),
+            'inclusion' => $review['inclusion_criteria'],
+            'exclusion' => $review['exclusion_criteria'],
+        ];
+        $result = \SysRevAI\Services\ClaudeService::fromSettings()
+            ->suggestScreeningDecision($reference, $protocol, $rid);
+
+        echo json_encode($result, JSON_UNESCAPED_UNICODE);
+    }
+
     public function conflicts(string $id): void
     {
         $review = $this->resolverOrDeny((int) $id);

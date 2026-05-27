@@ -58,6 +58,15 @@ final class Duplicate
         Database::affecting("UPDATE `{$table}` SET status = ? WHERE id = ?", [$status, $id]);
     }
 
+    public static function updateAi(int $id, float $confidence, string $reason): void
+    {
+        $table = Database::table('duplicates');
+        Database::affecting(
+            "UPDATE `{$table}` SET method = 'semantic', confidence = ?, reason = ? WHERE id = ?",
+            [round($confidence, 3), mb_substr($reason, 0, 500), $id]
+        );
+    }
+
     public static function pendingCount(int $reviewId): int
     {
         $table = Database::table('duplicates');
