@@ -70,6 +70,41 @@ a:hover { text-decoration: underline; }
 .metric__value { font-size: 30px; font-weight: 700; line-height: 1; }
 .metric__label { font-size: 13px; color: var(--c-muted); }
 
+.page--narrow { max-width: 760px; }
+.page__head--row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.breadcrumb { font-size: 13px; margin-bottom: 4px; }
+.breadcrumb a { color: var(--c-muted); }
+
+/* Review cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.review-card {
+    display: block; background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; color: inherit;
+}
+.review-card:hover { text-decoration: none; border-color: var(--c-primary); }
+.review-card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.review-card__title { margin: 0; font-size: 17px; }
+.review-card__q { color: var(--c-muted); font-size: 14px; margin: 8px 0 12px; }
+.review-card__meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Tags */
+.tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.tag--active { background: #e6f6f1; color: #06624a; }
+.tag--archived { background: #eef1f4; color: var(--c-muted); }
+.tag--completed { background: #eaf4fb; color: #1b3a4d; }
+.tag--soft { background: #eef1f4; color: var(--c-muted); }
+
+/* Review detail */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-2 .section-card p { font-size: 14px; }
+.member-list, .reason-list { list-style: none; margin: 0; padding: 0; }
+.member-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--c-border); font-size: 14px; }
+.member-list li:last-child { border-bottom: 0; }
+.reason-list li { padding: 5px 0; font-size: 14px; border-bottom: 1px solid var(--c-border); }
+.reason-list li:last-child { border-bottom: 0; }
+
+@media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
 /* Empty state */
 .empty-state {
     background: var(--c-surface); border: 1px dashed var(--c-border);

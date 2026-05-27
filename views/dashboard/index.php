@@ -2,27 +2,31 @@
 
 declare(strict_types=1);
 
+use SysRevAI\Core\View;
+
 /** @var array $user */
-/** @var array<string,int> $metrics */
+/** @var array $reviews */
 $name = (string) ($user['name'] ?? '');
 ?>
 <div class="page">
-    <div class="page__head">
-        <h1 class="page__title"><?= e(__('dashboard.greeting', $name)) ?></h1>
-        <p class="page__subtitle"><?= e(__('dashboard.subtitle')) ?></p>
+    <div class="page__head page__head--row">
+        <div>
+            <h1 class="page__title"><?= e(__('dashboard.greeting', $name)) ?></h1>
+            <p class="page__subtitle"><?= e(__('dashboard.subtitle')) ?></p>
+        </div>
+        <a href="/reviews/new" class="btn btn--primary"><?= e(__('reviews.new')) ?></a>
     </div>
 
-    <div class="metrics">
-        <?php foreach ($metrics as $key => $value): ?>
-            <div class="metric">
-                <span class="metric__value"><?= (int) $value ?></span>
-                <span class="metric__label"><?= e(__('dashboard.metrics.' . $key)) ?></span>
-            </div>
-        <?php endforeach; ?>
-    </div>
-
-    <div class="empty-state">
-        <p><?= e(__('dashboard.no_reviews')) ?></p>
-        <a href="/reviews/new" class="btn btn--primary"><?= e(__('dashboard.create_first')) ?></a>
-    </div>
+    <?php if ($reviews === []): ?>
+        <div class="empty-state">
+            <p><?= e(__('dashboard.no_reviews')) ?></p>
+            <a href="/reviews/new" class="btn btn--primary"><?= e(__('dashboard.create_first')) ?></a>
+        </div>
+    <?php else: ?>
+        <div class="cards">
+            <?php foreach ($reviews as $review): ?>
+                <?php View::partial('partials/review_card', ['review' => $review]); ?>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </div>

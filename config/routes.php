@@ -16,6 +16,7 @@ use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\DashboardController;
+use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
 
@@ -28,6 +29,15 @@ $router->post('/login', [AuthController::class, 'login'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
+
+// Reviews (literal paths before the {id} pattern).
+$router->get('/reviews', [ReviewsController::class, 'index'], ['auth']);
+$router->get('/reviews/new', [ReviewsController::class, 'newForm'], ['auth']);
+$router->post('/reviews', [ReviewsController::class, 'store'], ['auth']);
+$router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'], ['auth']);
+$router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
+$router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
+$router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 
 // Admin → Settings (owner/admin only). Specific action routes are registered
 // before the generic save route so they take precedence.

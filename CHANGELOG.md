@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 3 — reviews & protocol:**
+  - `Models\Review` (CRUD, access checks, PICO decode, status, reference
+    metrics that degrade to zeros until the references table exists),
+    `Models\ReviewUser` (membership), `Models\ExclusionReason`, and the
+    `006_exclusion_reasons.sql` migration.
+  - `ReviewsController`: list (active/archived), create, view (workspace
+    dashboard), edit protocol, update, archive/unarchive — with owner/member
+    access guards and audit logging.
+  - Protocol editor: title, research question, **PICO/PICOS** fields,
+    inclusion/exclusion criteria, screening mode (double-blind / double-blind+
+    third / single / pilot), reviewers-required, pilot count, and per-review
+    exclusion reasons (seeded from admin defaults).
+  - Dashboard now lists the user's reviews as cards; review workspace shows
+    protocol summary, metric cards, team and exclusion reasons.
 - **Phase 2 — admin panel & encrypted settings:**
   - `Core\Crypto` (AES-256-GCM) for sensitive values, keyed by `APP_KEY`.
   - `Models\Setting` (typed serialize/deserialize incl. transparent encryption)
