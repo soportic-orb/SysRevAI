@@ -294,10 +294,99 @@ html, body {
     font-size: 13px;
 }
 
+/* Forms (steps 3, 5, 6) */
+.form-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 8px; }
+.field { display: flex; flex-direction: column; }
+.field--narrow { max-width: 120px; }
+.form-row--split { display: flex; gap: 16px; }
+.form-row--split > .field { flex: 1; }
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background: var(--c-surface);
+    color: var(--c-text);
+}
+.input:focus, .select:focus { outline: 2px solid var(--c-primary); outline-offset: 1px; }
+.field-help { font-size: 12px; color: var(--c-muted); margin-top: 4px; }
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.checkbox input { width: 16px; height: 16px; }
+
+/* Log output (Composer / migrations) */
+.log-output {
+    background: #0f1b26;
+    color: #d6e2ec;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 280px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 12px 0 20px;
+}
+
+/* Password strength meter */
+.pw-meter {
+    height: 6px;
+    background: var(--c-border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+.pw-meter__bar { height: 100%; width: 0; transition: width .2s ease, background .2s ease; }
+.pw-meter__label { font-size: 12px; color: var(--c-muted); margin-top: 4px; }
+
+/* Recommendations list */
+.recommend { margin: 0 0 24px; padding-left: 18px; }
+.recommend li { margin-bottom: 8px; color: var(--c-muted); font-size: 14px; }
+
+/* Success hero (step 7) */
+.success-hero { text-align: center; padding: 8px 0 16px; }
+.success-hero__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--c-ok);
+    color: #fff;
+    font-size: 28px;
+    margin-bottom: 12px;
+}
+
+/* Donate card */
+.donate-card {
+    text-align: center;
+    background: #fff5fa;
+    border: 1px solid #f6cfe2;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+.donate-card__text { margin: 0 0 12px; color: #7a2c52; font-size: 14px; }
+.btn--donate { background: #ff69b4; color: #fff; }
+.btn--donate:hover { background: #e85aa3; }
+
 @media (max-width: 560px) {
     .card { padding: 22px; }
     .steps-mini__label { display: none; }
     .actions { flex-direction: column-reverse; align-items: stretch; }
     .actions__right { justify-content: stretch; }
     .actions .btn { width: 100%; justify-content: center; }
+    .form-row--split { flex-direction: column; gap: 16px; }
+    .field--narrow { max-width: none; }
 }
