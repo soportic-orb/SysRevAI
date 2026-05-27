@@ -302,3 +302,309 @@ function check_requirements(): array
 
     return ['groups' => $groups, 'blocking_ok' => $blockingOk];
 }
+
+/* ── Step 2: dependencies ──────────────────────────────────────────────── */
+
+/** Required FQCNs that must exist once Composer has run. */
+function required_classes(): array
+{
+    return [
+        'GuzzleHttp\\Client'                  => 'guzzlehttp/guzzle',
+        'Smalot\\PdfParser\\Parser'           => 'smalot/pdfparser',
+        'PhpOffice\\PhpWord\\PhpWord'         => 'phpoffice/phpword',
+        'PhpOffice\\PhpSpreadsheet\\Spreadsheet' => 'phpoffice/phpspreadsheet',
+        'Dotenv\\Dotenv'                      => 'vlucas/phpdotenv',
+        'PHPMailer\\PHPMailer\\PHPMailer'     => 'phpmailer/phpmailer',
+    ];
+}
+
+/** Attempt to run Composer to install dependencies. Returns ['ok','output','message']. */
+function attempt_composer_install(): array
+{
+    $bin = detect_composer();
+    if ($bin === null) {
+        return ['ok' => false, 'output' => '', 'message' => t('step2.composer_missing')];
+    }
+    if (!function_exists('shell_exec')) {
+        return ['ok' => false, 'output' => '', 'message' => 'shell_exec is disabled on this host.'];
+    }
+    $cmd = 'cd ' . escapeshellarg(base_path())
+         . ' && ' . escapeshellcmd($bin)
+         . ' install --no-dev --no-interaction --prefer-dist 2>&1';
+    $output = (string) @shell_exec($cmd);
+    $ok = is_file(base_path('vendor/autoload.php'));
+    install_log(2, $ok ? 'ok' : 'fail', 'composer install attempted');
+    return [
+        'ok'      => $ok,
+        'output'  => $output,
+        'message' => $ok ? t('step2.install_ok') : t('step2.install_failed'),
+    ];
+}
+
+/** Inspect the dependency state without installing anything. */
+function dependencies_status(): array
+{
+    $autoload = base_path('vendor/autoload.php');
+    $present  = is_file($autoload);
+
+    if ($present && !class_exists('GuzzleHttp\\Client', false)) {
+        require_once $autoload;
+    }
+
+    $missing = [];
+    if ($present) {
+        foreach (required_classes() as $class => $package) {
+            if (!class_exists($class)) {
+                $missing[] = $package;
+            }
+        }
+    }
+
+    return [
+        'present'      => $present,
+        'classes_ok'   => $present && $missing === [],
+        'missing'      => $missing,
+        'has_exec'     => function_exists('proc_open') && !in_array('proc_open', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true),
+        'composer_bin' => $present ? null : detect_composer(),
+    ];
+}
+
+/** Return a composer command if a binary is callable, else null. */
+function detect_composer(): ?string
+{
+    if (!function_exists('shell_exec')) {
+        return null;
+    }
+    foreach (['composer', 'composer.phar'] as $bin) {
+        $out = @shell_exec(escapeshellcmd($bin) . ' --version 2>/dev/null');
+        if (is_string($out) && stripos($out, 'composer') !== false) {
+            return $bin;
+        }
+    }
+    return null;
+}
+
+/* ── Step 3: database ──────────────────────────────────────────────────── */
+
+/**
+ * Build a PDO connection from a config array.
+ * @param bool $withDb whether to select the database in the DSN.
+ */
+function db_connect(array $cfg, bool $withDb = true): PDO
+{
+    $charset = $cfg['charset'] ?: 'utf8mb4';
+    $dsn = "mysql:host={$cfg['host']};port={$cfg['port']};charset={$charset}";
+    if ($withDb) {
+        $dsn = "mysql:host={$cfg['host']};port={$cfg['port']};dbname={$cfg['database']};charset={$charset}";
+    }
+    return new PDO($dsn, $cfg['username'], $cfg['password'], [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ]);
+}
+
+/**
+ * Test a database connection, optionally creating the database first.
+ * Returns ['ok' => bool, 'message' => string, 'created' => bool].
+ */
+function db_test(array $cfg, bool $create = false): array
+{
+    try {
+        if ($create) {
+            $server = db_connect($cfg, false);
+            $charset = $cfg['charset'] ?: 'utf8mb4';
+            $name = str_replace('`', '', (string) $cfg['database']);
+            $server->exec(
+                "CREATE DATABASE IF NOT EXISTS `{$name}` "
+                . "CHARACTER SET {$charset} COLLATE {$charset}_unicode_ci"
+            );
+        }
+        db_connect($cfg, true); // selects the db; throws on failure
+        return ['ok' => true, 'message' => t('step3.test_ok'), 'created' => $create];
+    } catch (Throwable $e) {
+        return ['ok' => false, 'message' => $e->getMessage(), 'created' => false];
+    }
+}
+
+/* ── Step 4: migrations + seed ─────────────────────────────────────────── */
+
+/**
+ * Apply every migration in database/migrations in order, substituting the
+ * configured table prefix. DDL auto-commits in MySQL, so we report per-file
+ * results and stop at the first failure rather than relying on rollback.
+ *
+ * Returns ['ok' => bool, 'log' => [['file','table','ok','error']], 'error' => ?string].
+ */
+function run_migrations(array $cfg): array
+{
+    $dir = base_path('database/migrations');
+    $files = glob($dir . '/*.sql') ?: [];
+    sort($files);
+
+    $log = [];
+    try {
+        $pdo = db_connect($cfg, true);
+    } catch (Throwable $e) {
+        return ['ok' => false, 'log' => [], 'error' => $e->getMessage()];
+    }
+
+    foreach ($files as $file) {
+        $name = basename($file);
+        $sql  = (string) file_get_contents($file);
+        $sql  = str_replace('{prefix}', (string) $cfg['prefix'], $sql);
+
+        // Derive the table name for a friendly log line.
+        $table = preg_match('/CREATE TABLE IF NOT EXISTS `([^`]+)`/i', $sql, $m) ? $m[1] : $name;
+
+        try {
+            $pdo->exec($sql);
+            $log[] = ['file' => $name, 'table' => $table, 'ok' => true, 'error' => null];
+            install_log(4, 'ok', "migration {$name} applied");
+        } catch (Throwable $e) {
+            $log[] = ['file' => $name, 'table' => $table, 'ok' => false, 'error' => $e->getMessage()];
+            install_log(4, 'fail', "migration {$name}: " . $e->getMessage());
+            return ['ok' => false, 'log' => $log, 'error' => $e->getMessage()];
+        }
+    }
+
+    return ['ok' => true, 'log' => $log, 'error' => null];
+}
+
+/** Insert minimal seed data into the settings table (idempotent). */
+function seed_defaults(array $cfg, array $general): array
+{
+    try {
+        $pdo    = db_connect($cfg, true);
+        $prefix = (string) $cfg['prefix'];
+        $rows = [
+            ['site.name',          (string) ($general['site_name'] ?? 'SysRevAI'), 'string',  'general', 1],
+            ['site.url',           (string) ($general['app_url'] ?? ''),           'string',  'general', 1],
+            ['app.version',        '0.1.0-dev',                                    'string',  'general', 1],
+            ['app.locale',         (string) ($general['locale'] ?? 'ca'),          'string',  'general', 1],
+            ['app.timezone',       (string) ($general['timezone'] ?? 'Europe/Madrid'), 'string', 'general', 1],
+            ['security.force_https', !empty($general['force_https']) ? '1' : '0',  'bool',    'security', 0],
+        ];
+        $stmt = $pdo->prepare(
+            "INSERT INTO `{$prefix}settings` (`key`,`value`,`type`,`group`,`is_public`)
+             VALUES (?,?,?,?,?)
+             ON DUPLICATE KEY UPDATE `value`=VALUES(`value`)"
+        );
+        foreach ($rows as $r) {
+            $stmt->execute($r);
+        }
+        return ['ok' => true, 'error' => null];
+    } catch (Throwable $e) {
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
+}
+
+/* ── Step 6: admin account ─────────────────────────────────────────────── */
+
+/**
+ * Validate a password against the policy: ≥12 chars, upper, lower, digit, symbol.
+ */
+function password_meets_policy(string $pw): bool
+{
+    return strlen($pw) >= 12
+        && preg_match('/[A-Z]/', $pw)
+        && preg_match('/[a-z]/', $pw)
+        && preg_match('/\d/', $pw)
+        && preg_match('/[^A-Za-z0-9]/', $pw);
+}
+
+/** Insert the owner account. Returns ['ok' => bool, 'error' => ?string]. */
+function create_admin(array $cfg, array $admin): array
+{
+    try {
+        $pdo    = db_connect($cfg, true);
+        $prefix = (string) $cfg['prefix'];
+        $stmt = $pdo->prepare(
+            "INSERT INTO `{$prefix}users`
+                (`name`,`email`,`password_hash`,`role`,`status`,`locale`,`is_active`,`email_verified_at`)
+             VALUES (?,?,?, 'owner','active', ?, 1, NOW())"
+        );
+        $stmt->execute([
+            $admin['name'],
+            $admin['email'],
+            $admin['password_hash'],
+            $admin['locale'] ?? 'ca',
+        ]);
+        return ['ok' => true, 'error' => null];
+    } catch (Throwable $e) {
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
+}
+
+/* ── Step 7: finalization ──────────────────────────────────────────────── */
+
+/** Generate a fresh APP_KEY (base64-encoded 32 random bytes). */
+function generate_app_key(): string
+{
+    return 'base64:' . base64_encode(random_bytes(32));
+}
+
+/** Best-effort detection of the public base URL from the current request. */
+function detect_base_url(): string
+{
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+          || ($_SERVER['SERVER_PORT'] ?? null) == 443;
+    $scheme = $https ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    // Strip the trailing /install/... from the path to get the app root.
+    $path   = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path   = preg_replace('#/install/.*$#', '', $path) ?? '';
+    return rtrim("{$scheme}://{$host}{$path}", '/');
+}
+
+/** Write the .env file from collected wizard data. Returns ['ok','error']. */
+function write_env(array $data): array
+{
+    $appKey = $data['app_key'] ?? generate_app_key();
+    $esc = static fn (string $v): string => '"' . str_replace('"', '\"', $v) . '"';
+
+    $lines = [
+        '# Generated by the SysRevAI web installer on ' . date('c'),
+        '',
+        'APP_NAME=' . $esc((string) ($data['general']['site_name'] ?? 'SysRevAI')),
+        'APP_ENV=production',
+        'APP_DEBUG=false',
+        'APP_URL=' . $esc((string) ($data['general']['app_url'] ?? '')),
+        'APP_TIMEZONE=' . $esc((string) ($data['general']['timezone'] ?? 'Europe/Madrid')),
+        'APP_LOCALE=' . ($data['general']['locale'] ?? 'ca'),
+        'APP_KEY=' . $appKey,
+        '',
+        'DB_HOST=' . $esc((string) $data['db']['host']),
+        'DB_PORT=' . (int) $data['db']['port'],
+        'DB_DATABASE=' . $esc((string) $data['db']['database']),
+        'DB_USERNAME=' . $esc((string) $data['db']['username']),
+        'DB_PASSWORD=' . $esc((string) $data['db']['password']),
+        'DB_CHARSET=' . ($data['db']['charset'] ?: 'utf8mb4'),
+        'DB_PREFIX=' . $esc((string) $data['db']['prefix']),
+        '',
+        'FORCE_HTTPS=' . (!empty($data['general']['force_https']) ? 'true' : 'false'),
+        'SESSION_LIFETIME=120',
+        '',
+    ];
+
+    $path = base_path('.env');
+    $ok = @file_put_contents($path, implode("\n", $lines)) !== false;
+    if ($ok) {
+        @chmod($path, 0600);
+        return ['ok' => true, 'error' => null];
+    }
+    return ['ok' => false, 'error' => 'cannot write ' . $path];
+}
+
+/** Create config/installed.lock with timestamp, version and an integrity hash. */
+function write_lock(string $appKey): array
+{
+    $payload = [
+        'installed_at' => date('c'),
+        'version'      => '0.1.0-dev',
+        'integrity'    => hash('sha256', $appKey . '|' . date('Y-m-d')),
+    ];
+    $path = base_path('config/installed.lock');
+    $ok = @file_put_contents($path, json_encode($payload, JSON_PRETTY_PRINT)) !== false;
+    return $ok ? ['ok' => true, 'error' => null] : ['ok' => false, 'error' => 'cannot write ' . $path];
+}

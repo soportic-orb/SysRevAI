@@ -37,45 +37,159 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
     $from   = (int) ($_POST['step'] ?? 0);
 
-    if ($action === 'set_locale') {
-        $loc = (string) ($_POST['locale'] ?? 'ca');
-        if (in_array($loc, ['ca', 'es', 'en'], true)) {
-            $_SESSION['install']['locale'] = $loc;
-        }
-        header('Location: index.php?step=0');
+    $redirect = static function (int $step, bool $error = false): never {
+        header('Location: index.php?step=' . $step . ($error ? '&error=1' : ''));
         exit;
-    }
+    };
 
-    if ($action === 'back') {
-        header('Location: index.php?step=' . max(0, $from - 1));
-        exit;
-    }
+    switch ($action) {
+        case 'set_locale':
+            $loc = (string) ($_POST['locale'] ?? 'ca');
+            if (in_array($loc, ['ca', 'es', 'en'], true)) {
+                $_SESSION['install']['locale'] = $loc;
+            }
+            $redirect(0);
 
-    if ($action === 'next') {
-        $valid = match ($from) {
-            1       => check_requirements()['blocking_ok'],
-            default => true, // step 0 + placeholder steps 2–7
-        };
+        case 'back':
+            $redirect(max(0, $from - 1));
 
-        if ($valid) {
-            mark_step_complete($from);
-            install_log($from, 'ok', 'step completed');
-            $next = min($from + 1, INSTALLER_TOTAL_STEPS - 1);
-            header('Location: index.php?step=' . $next);
-            exit;
-        }
+        // Step 2 — attempt Composer install.
+        case 'deps_install':
+            $_SESSION['install']['deps_result'] = attempt_composer_install();
+            $redirect(2);
 
-        install_log($from, 'fail', 'validation failed, cannot advance');
-        $flash_error = t('step1.fix_needed');
-        header('Location: index.php?step=' . $from . '&error=1');
-        exit;
+        // Step 3 — test the DB connection (and optionally create the database).
+        case 'db_test':
+            $cfg = [
+                'host'     => trim((string) ($_POST['host'] ?? '127.0.0.1')),
+                'port'     => (int) ($_POST['port'] ?? 3306),
+                'database' => trim((string) ($_POST['database'] ?? '')),
+                'username' => trim((string) ($_POST['username'] ?? '')),
+                'password' => (string) ($_POST['password'] ?? ''),
+                'prefix'   => preg_replace('/[^a-zA-Z0-9_]/', '', (string) ($_POST['prefix'] ?? 'sra_')) ?? 'sra_',
+                'charset'  => preg_replace('/[^a-z0-9]/', '', strtolower((string) ($_POST['charset'] ?? 'utf8mb4'))) ?: 'utf8mb4',
+                'create'   => !empty($_POST['create_db']),
+            ];
+            $_SESSION['install']['db'] = $cfg;
+            $res = db_test($cfg, $cfg['create']);
+            $_SESSION['install']['db_test_result'] = $res;
+            $_SESSION['install']['db_tested'] = $res['ok'];
+            $redirect(3);
+
+        // Step 4 — run migrations + seed.
+        case 'run_migrations':
+            $cfg = $_SESSION['install']['db'] ?? null;
+            if (!$cfg) {
+                $redirect(3, true);
+            }
+            $res = run_migrations($cfg);
+            if ($res['ok']) {
+                seed_defaults($cfg, []);
+                $_SESSION['install']['migrated'] = true;
+            }
+            $_SESSION['install']['migrate_result'] = $res;
+            $redirect(4);
+
+        // Step 7 — finalize. Renders inline (cannot redirect: the lock seals re-entry).
+        case 'finalize':
+            $result = [];
+            $db      = $_SESSION['install']['db'] ?? [];
+            $general = $_SESSION['install']['general'] ?? [];
+            $admin   = $_SESSION['install']['admin'] ?? [];
+            $appKey  = generate_app_key();
+
+            $result['env']   = write_env(['db' => $db, 'general' => $general, 'app_key' => $appKey]);
+            $result['admin'] = create_admin($db, $admin);
+            seed_defaults($db, $general); // update defaults with the real general settings
+
+            if ($result['env']['ok'] && $result['admin']['ok']) {
+                $result['lock'] = write_lock($appKey);
+            } else {
+                $result['lock'] = ['ok' => false, 'error' => 'skipped (previous step failed)'];
+            }
+            $result['success'] = $result['env']['ok'] && $result['admin']['ok'] && $result['lock']['ok'];
+            $_SESSION['install']['finalize_result'] = $result;
+            install_log(7, $result['success'] ? 'ok' : 'fail', 'finalize');
+            // Fall through to render step 7 inline.
+            $step          = 7;
+            $forcedRender  = true;
+            break;
+
+        case 'next':
+            // Per-step capture + validation before advancing.
+            $valid = true;
+            switch ($from) {
+                case 1:
+                    $valid = check_requirements()['blocking_ok'];
+                    break;
+                case 3:
+                    $valid = !empty($_SESSION['install']['db_tested']);
+                    break;
+                case 4:
+                    $valid = !empty($_SESSION['install']['migrated']);
+                    break;
+                case 5:
+                    $_SESSION['install']['general'] = [
+                        'site_name'   => trim((string) ($_POST['site_name'] ?? 'SysRevAI')) ?: 'SysRevAI',
+                        'app_url'     => trim((string) ($_POST['base_url'] ?? detect_base_url())),
+                        'locale'      => in_array(($_POST['default_lang'] ?? 'ca'), ['ca', 'es', 'en'], true) ? $_POST['default_lang'] : 'ca',
+                        'timezone'    => trim((string) ($_POST['timezone'] ?? 'Europe/Madrid')) ?: 'Europe/Madrid',
+                        'force_https' => !empty($_POST['force_https']),
+                    ];
+                    break;
+                case 6:
+                    $errors = [];
+                    $name  = trim((string) ($_POST['full_name'] ?? ''));
+                    $email = trim((string) ($_POST['email'] ?? ''));
+                    $pw    = (string) ($_POST['password'] ?? '');
+                    $pw2   = (string) ($_POST['confirm'] ?? '');
+                    $loc   = in_array(($_POST['preferred_lang'] ?? 'ca'), ['ca', 'es', 'en'], true) ? $_POST['preferred_lang'] : 'ca';
+
+                    if ($name === '') {
+                        $errors[] = t('step6.name_required');
+                    }
+                    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $errors[] = t('step6.email_invalid');
+                    }
+                    if (!password_meets_policy($pw)) {
+                        $errors[] = t('step6.pw_weak');
+                    }
+                    if ($pw !== $pw2) {
+                        $errors[] = t('step6.pw_mismatch');
+                    }
+
+                    if ($errors === []) {
+                        $_SESSION['install']['admin'] = [
+                            'name'          => $name,
+                            'email'         => $email,
+                            'password_hash' => password_hash($pw, PASSWORD_ARGON2ID),
+                            'locale'        => $loc,
+                        ];
+                        unset($_SESSION['install']['step6_errors']);
+                    } else {
+                        $_SESSION['install']['step6_errors'] = $errors;
+                        $_SESSION['install']['step6_old'] = ['name' => $name, 'email' => $email, 'locale' => $loc];
+                        $valid = false;
+                    }
+                    break;
+            }
+
+            if ($valid) {
+                mark_step_complete($from);
+                install_log($from, 'ok', 'step completed');
+                $redirect(min($from + 1, INSTALLER_TOTAL_STEPS - 1));
+            }
+            install_log($from, 'fail', 'validation failed at step ' . $from);
+            $redirect($from, true);
     }
 }
 
 /* ── Resolve the step to render ────────────────────────────────────────── */
 
-$requested = isset($_GET['step']) ? (int) $_GET['step'] : 0;
-$step      = resolve_step($requested);
+if (empty($forcedRender)) {
+    $requested = isset($_GET['step']) ? (int) $_GET['step'] : 0;
+    $step      = resolve_step($requested);
+}
 $hasError  = isset($_GET['error']);
 $L         = lang();
 

@@ -4,23 +4,31 @@ declare(strict_types=1);
 
 /*
 |------------------------------------------------------------------------------
-| Front controller (bootstrap stub)
+| Front controller
 |------------------------------------------------------------------------------
-| The full MVC router lands in Phase 1. For now this entry point performs the
-| "is the platform installed?" check described in the spec: if there is no
-| config/installed.lock, every request to the root is redirected to the guided
-| web installer.
+| If the platform is not installed yet (no config/installed.lock), redirect to
+| the guided web installer. Otherwise boot the application and dispatch the
+| request through the router.
 */
 
-$lockFile = dirname(__DIR__) . '/config/installed.lock';
+// When running under the PHP built-in server (development), let it serve real
+// files and directories (assets, the installer) directly. No effect under
+// Apache/Nginx, where the web server handles static files itself.
+if (PHP_SAPI === 'cli-server') {
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    $target = __DIR__ . $path;
+    if ($path !== '/' && (is_file($target) || is_dir($target))) {
+        return false;
+    }
+}
 
-if (!is_file($lockFile)) {
+$base = dirname(__DIR__);
+
+if (!is_file($base . '/config/installed.lock')) {
     header('Location: install/');
     exit;
 }
 
-// Installed, but the application router is not implemented yet (later phase).
-http_response_code(503);
-header('Content-Type: text/plain; charset=utf-8');
-echo "SysRevAI is installed. The application will be available once the core "
-   . "router lands in an upcoming build phase.";
+require $base . '/src/bootstrap.php';
+
+SysRevAI\Core\App::run();

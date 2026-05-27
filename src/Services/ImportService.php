@@ -1,0 +1,364 @@
+<?php
+
+declare(strict_types=1);
+
+namespace SysRevAI\Services;
+
+/**
+ * Reference import parsers: RIS, BibTeX, CSV, PubMed XML and EndNote XML.
+ *
+ * Each parser returns a list of normalized reference arrays with the keys:
+ *   title, authors[], year|null, journal, abstract, doi, pmid, url, keywords[]
+ */
+final class ImportService
+{
+    public const FORMATS = ['ris', 'bibtex', 'csv', 'pubmed', 'endnote'];
+
+    /** Guess the format from filename + content; null if unknown. */
+    public static function detectFormat(string $filename, string $content): ?string
+    {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $head = ltrim(substr($content, 0, 4096));
+
+        if (in_array($ext, ['ris', 'nbib'], true) || preg_match('/^TY\s{2}-\s/m', $head)) {
+            return 'ris';
+        }
+        if ($ext === 'bib' || str_contains($head, '@article') || preg_match('/^@\w+\s*\{/m', $head)) {
+            return 'bibtex';
+        }
+        if (str_contains($head, '<PubmedArticle') || str_contains($head, '<PubmedArticleSet')) {
+            return 'pubmed';
+        }
+        if (str_contains($head, '<records>') || str_contains($head, '<xml>') || str_contains($head, 'EndNote')) {
+            return 'endnote';
+        }
+        if ($ext === 'csv' || str_contains($head, ',')) {
+            return 'csv';
+        }
+        if ($ext === 'xml') {
+            return str_contains($content, 'PubmedArticle') ? 'pubmed' : 'endnote';
+        }
+        return null;
+    }
+
+    /** @return array{refs:array<int,array>,errors:string[]} */
+    public static function parse(string $content, string $format): array
+    {
+        return match ($format) {
+            'ris'     => self::parseRis($content),
+            'bibtex'  => self::parseBibtex($content),
+            'csv'     => self::parseCsv($content),
+            'pubmed'  => self::parsePubmed($content),
+            'endnote' => self::parseEndnote($content),
+            default   => ['refs' => [], 'errors' => ['Unknown format']],
+        };
+    }
+
+    private static function blank(): array
+    {
+        return ['title' => '', 'authors' => [], 'year' => null, 'journal' => '',
+                'abstract' => '', 'doi' => '', 'pmid' => '', 'url' => '', 'keywords' => []];
+    }
+
+    private static function clean(string $s): string
+    {
+        return trim(preg_replace('/\s+/u', ' ', strip_tags($s)) ?? '');
+    }
+
+    private static function year(string $s): ?int
+    {
+        return preg_match('/\b(1[5-9]\d{2}|20\d{2}|21\d{2})\b/', $s, $m) ? (int) $m[1] : null;
+    }
+
+    /* ── RIS / NBIB ────────────────────────────────────────────────────── */
+
+    private static function parseRis(string $content): array
+    {
+        $refs = [];
+        $errors = [];
+        $cur = self::blank();
+        $open = false;
+        $lastTag = null;
+
+        foreach (preg_split('/\r\n|\r|\n/', $content) as $line) {
+            if (preg_match('/^([A-Z][A-Z0-9])\s{2}-\s?(.*)$/', $line, $m)) {
+                $tag = $m[1];
+                $val = trim($m[2]);
+                $lastTag = $tag;
+                $open = true;
+                switch ($tag) {
+                    case 'TI': case 'T1': $cur['title'] = $cur['title'] ?: $val; break;
+                    case 'AU': case 'A1': if ($val !== '') $cur['authors'][] = $val; break;
+                    case 'PY': case 'Y1': $cur['year'] = self::year($val); break;
+                    case 'JO': case 'JF': case 'JA': case 'T2': $cur['journal'] = $cur['journal'] ?: $val; break;
+                    case 'AB': case 'N2': $cur['abstract'] = trim($cur['abstract'] . ' ' . $val); break;
+                    case 'DO': $cur['doi'] = $val; break;
+                    case 'UR': case 'L1': $cur['url'] = $cur['url'] ?: $val; break;
+                    case 'KW': if ($val !== '') $cur['keywords'][] = $val; break;
+                    case 'AN': case 'ID': if ($cur['pmid'] === '' && preg_match('/(\d{6,9})/', $val, $mm)) $cur['pmid'] = $mm[1]; break;
+                    case 'ER':
+                        if ($cur['title'] !== '' || $cur['authors'] !== []) $refs[] = $cur;
+                        $cur = self::blank();
+                        $open = false;
+                        break;
+                }
+            } elseif ($open && $lastTag !== null && trim($line) !== '') {
+                // continuation line
+                if ($lastTag === 'AB' || $lastTag === 'N2') {
+                    $cur['abstract'] = trim($cur['abstract'] . ' ' . trim($line));
+                }
+            }
+        }
+        if ($cur['title'] !== '' || $cur['authors'] !== []) {
+            $refs[] = $cur;
+        }
+        if ($refs === []) {
+            $errors[] = 'No RIS records found.';
+        }
+        return ['refs' => array_map([self::class, 'normalize'], $refs), 'errors' => $errors];
+    }
+
+    /* ── BibTeX ─────────────────────────────────────────────────────────── */
+
+    private static function parseBibtex(string $content): array
+    {
+        $refs = [];
+        $errors = [];
+        $len = strlen($content);
+        $i = 0;
+        while (($at = strpos($content, '@', $i)) !== false) {
+            $brace = strpos($content, '{', $at);
+            if ($brace === false) {
+                break;
+            }
+            // Find matching closing brace for the entry.
+            $depth = 0;
+            $end = $brace;
+            for ($j = $brace; $j < $len; $j++) {
+                if ($content[$j] === '{') $depth++;
+                elseif ($content[$j] === '}') { $depth--; if ($depth === 0) { $end = $j; break; } }
+            }
+            $body = substr($content, $brace + 1, $end - $brace - 1);
+            $i = $end + 1;
+
+            $ref = self::blank();
+            foreach (self::bibtexFields($body) as $key => $val) {
+                $val = self::clean(str_replace(['{', '}'], '', $val));
+                switch ($key) {
+                    case 'title': $ref['title'] = $val; break;
+                    case 'author': $ref['authors'] = array_map('trim', preg_split('/\s+and\s+/i', $val) ?: []); break;
+                    case 'year': $ref['year'] = self::year($val); break;
+                    case 'journal': case 'journaltitle': case 'booktitle': $ref['journal'] = $ref['journal'] ?: $val; break;
+                    case 'abstract': $ref['abstract'] = $val; break;
+                    case 'doi': $ref['doi'] = $val; break;
+                    case 'url': $ref['url'] = $ref['url'] ?: $val; break;
+                    case 'pmid': $ref['pmid'] = $val; break;
+                    case 'keywords': case 'keyword': $ref['keywords'] = array_map('trim', preg_split('/[;,]/', $val) ?: []); break;
+                }
+            }
+            if ($ref['title'] !== '' || $ref['authors'] !== []) {
+                $refs[] = $ref;
+            }
+        }
+        if ($refs === []) {
+            $errors[] = 'No BibTeX entries found.';
+        }
+        return ['refs' => array_map([self::class, 'normalize'], $refs), 'errors' => $errors];
+    }
+
+    /** Extract field => raw-value pairs from a BibTeX entry body. */
+    private static function bibtexFields(string $body): array
+    {
+        $fields = [];
+        $len = strlen($body);
+        $i = 0;
+        while ($i < $len) {
+            if (!preg_match('/\G[\s,]*([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*/A', $body, $m, 0, $i)) {
+                $i++;
+                continue;
+            }
+            $key = strtolower($m[1]);
+            $i += strlen($m[0]);
+            if ($i >= $len) break;
+            $val = '';
+            if ($body[$i] === '{') {
+                $depth = 0;
+                for ($j = $i; $j < $len; $j++) {
+                    if ($body[$j] === '{') $depth++;
+                    elseif ($body[$j] === '}') { $depth--; if ($depth === 0) { $val = substr($body, $i + 1, $j - $i - 1); $i = $j + 1; break; } }
+                }
+            } elseif ($body[$i] === '"') {
+                $j = strpos($body, '"', $i + 1);
+                $j = $j === false ? $len : $j;
+                $val = substr($body, $i + 1, $j - $i - 1);
+                $i = $j + 1;
+            } else {
+                preg_match('/\G([^,]*)/A', $body, $mm, 0, $i);
+                $val = trim($mm[1] ?? '');
+                $i += strlen($mm[1] ?? '');
+            }
+            $fields[$key] = $val;
+        }
+        return $fields;
+    }
+
+    /* ── CSV ─────────────────────────────────────────────────────────────── */
+
+    private static function parseCsv(string $content): array
+    {
+        $refs = [];
+        $errors = [];
+        $rows = array_map(
+            static fn (string $line): array => str_getcsv($line, ',', '"', ''),
+            preg_split('/\r\n|\r|\n/', trim($content)) ?: []
+        );
+        if (count($rows) < 2) {
+            return ['refs' => [], 'errors' => ['CSV has no data rows.']];
+        }
+        $headers = array_map(static fn ($h) => strtolower(trim((string) $h)), $rows[0]);
+        $find = static function (array $names) use ($headers): ?int {
+            foreach ($headers as $idx => $h) {
+                foreach ($names as $n) {
+                    if ($h === $n || str_contains($h, $n)) return $idx;
+                }
+            }
+            return null;
+        };
+        $cols = [
+            'title'    => $find(['title']),
+            'authors'  => $find(['authors', 'author']),
+            'year'     => $find(['year', 'publication year']),
+            'journal'  => $find(['journal', 'source', 'publication']),
+            'abstract' => $find(['abstract']),
+            'doi'      => $find(['doi']),
+            'pmid'     => $find(['pmid', 'pubmed']),
+            'url'      => $find(['url', 'link']),
+            'keywords' => $find(['keywords', 'keyword']),
+        ];
+        for ($r = 1; $r < count($rows); $r++) {
+            $row = $rows[$r];
+            if (count($row) === 1 && trim((string) $row[0]) === '') continue;
+            $get = static fn (?int $c) => $c !== null && isset($row[$c]) ? trim((string) $row[$c]) : '';
+            $ref = self::blank();
+            $ref['title']    = $get($cols['title']);
+            $ref['authors']  = $get($cols['authors']) !== '' ? array_map('trim', preg_split('/;|\band\b|\/\//', $get($cols['authors'])) ?: []) : [];
+            $ref['year']     = self::year($get($cols['year']));
+            $ref['journal']  = $get($cols['journal']);
+            $ref['abstract'] = $get($cols['abstract']);
+            $ref['doi']      = $get($cols['doi']);
+            $ref['pmid']     = $get($cols['pmid']);
+            $ref['url']      = $get($cols['url']);
+            $ref['keywords'] = $get($cols['keywords']) !== '' ? array_map('trim', preg_split('/[;,]/', $get($cols['keywords'])) ?: []) : [];
+            if ($ref['title'] !== '' || $ref['authors'] !== []) {
+                $refs[] = $ref;
+            }
+        }
+        if ($refs === []) {
+            $errors[] = 'No usable rows in CSV (need a "title" column).';
+        }
+        return ['refs' => array_map([self::class, 'normalize'], $refs), 'errors' => $errors];
+    }
+
+    /* ── PubMed XML ──────────────────────────────────────────────────────── */
+
+    private static function parsePubmed(string $content): array
+    {
+        $doc = self::loadXml($content);
+        if ($doc === null) {
+            return ['refs' => [], 'errors' => ['Invalid XML.']];
+        }
+        $xp = new \DOMXPath($doc);
+        $refs = [];
+        foreach ($xp->query('//PubmedArticle') as $node) {
+            $ref = self::blank();
+            $ref['title']   = self::clean(self::xpText($xp, './/ArticleTitle', $node));
+            $ref['journal'] = self::clean(self::xpText($xp, './/Journal/Title', $node));
+            $ref['year']    = self::year(self::xpText($xp, './/JournalIssue/PubDate/Year', $node)
+                              ?: self::xpText($xp, './/JournalIssue/PubDate/MedlineDate', $node));
+            $abs = [];
+            foreach ($xp->query('.//Abstract/AbstractText', $node) as $a) {
+                $abs[] = $a->textContent;
+            }
+            $ref['abstract'] = self::clean(implode(' ', $abs));
+            $ref['pmid'] = self::clean(self::xpText($xp, './/PMID', $node));
+            foreach ($xp->query('.//ArticleId[@IdType="doi"] | .//ELocationID[@EIdType="doi"]', $node) as $d) {
+                $ref['doi'] = self::clean($d->textContent);
+                break;
+            }
+            foreach ($xp->query('.//AuthorList/Author', $node) as $au) {
+                $last = self::xpText($xp, './LastName', $au);
+                $fore = self::xpText($xp, './ForeName', $au) ?: self::xpText($xp, './Initials', $au);
+                $name = trim($last . ($fore ? ', ' . $fore : ''));
+                if ($name !== '') $ref['authors'][] = $name;
+            }
+            foreach ($xp->query('.//Keyword', $node) as $k) {
+                $kw = self::clean($k->textContent);
+                if ($kw !== '') $ref['keywords'][] = $kw;
+            }
+            if ($ref['title'] !== '') $refs[] = $ref;
+        }
+        return ['refs' => array_map([self::class, 'normalize'], $refs),
+                'errors' => $refs === [] ? ['No PubMed articles found.'] : []];
+    }
+
+    /* ── EndNote XML ─────────────────────────────────────────────────────── */
+
+    private static function parseEndnote(string $content): array
+    {
+        $doc = self::loadXml($content);
+        if ($doc === null) {
+            return ['refs' => [], 'errors' => ['Invalid XML.']];
+        }
+        $xp = new \DOMXPath($doc);
+        $refs = [];
+        foreach ($xp->query('//records/record') as $node) {
+            $ref = self::blank();
+            $ref['title']    = self::clean(self::xpText($xp, './/titles/title', $node));
+            $ref['journal']  = self::clean(self::xpText($xp, './/periodical/full-title', $node) ?: self::xpText($xp, './/titles/secondary-title', $node));
+            $ref['year']     = self::year(self::xpText($xp, './/dates/year', $node));
+            $ref['abstract'] = self::clean(self::xpText($xp, './/abstract', $node));
+            $ref['doi']      = self::clean(self::xpText($xp, './/electronic-resource-num', $node));
+            $ref['url']      = self::clean(self::xpText($xp, './/urls//url', $node));
+            foreach ($xp->query('.//contributors/authors/author', $node) as $au) {
+                $name = self::clean($au->textContent);
+                if ($name !== '') $ref['authors'][] = $name;
+            }
+            foreach ($xp->query('.//keywords/keyword', $node) as $k) {
+                $kw = self::clean($k->textContent);
+                if ($kw !== '') $ref['keywords'][] = $kw;
+            }
+            if ($ref['title'] !== '') $refs[] = $ref;
+        }
+        return ['refs' => array_map([self::class, 'normalize'], $refs),
+                'errors' => $refs === [] ? ['No EndNote records found.'] : []];
+    }
+
+    private static function loadXml(string $content): ?\DOMDocument
+    {
+        $prev = libxml_use_internal_errors(true);
+        $doc = new \DOMDocument();
+        $ok = $doc->loadXML($content, LIBXML_NOCDATA | LIBXML_NONET);
+        libxml_clear_errors();
+        libxml_use_internal_errors($prev);
+        return $ok ? $doc : null;
+    }
+
+    private static function xpText(\DOMXPath $xp, string $query, \DOMNode $ctx): string
+    {
+        $n = $xp->query($query, $ctx);
+        return ($n !== false && $n->length > 0) ? trim($n->item(0)->textContent) : '';
+    }
+
+    /** Final tidy-up applied to every parsed reference. */
+    private static function normalize(array $ref): array
+    {
+        $ref['title']    = self::clean((string) $ref['title']);
+        $ref['journal']  = self::clean((string) $ref['journal']);
+        $ref['abstract'] = trim((string) $ref['abstract']);
+        $ref['doi']      = strtolower(trim(preg_replace('#^https?://(dx\.)?doi\.org/#i', '', (string) $ref['doi']) ?? ''));
+        $ref['pmid']     = preg_replace('/\D/', '', (string) $ref['pmid']) ?? '';
+        $ref['authors']  = array_values(array_filter(array_map('trim', $ref['authors'])));
+        $ref['keywords'] = array_values(array_filter(array_map('trim', $ref['keywords'])));
+        return $ref;
+    }
+}
