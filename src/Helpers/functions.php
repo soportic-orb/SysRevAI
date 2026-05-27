@@ -68,14 +68,12 @@ if (!function_exists('config')) {
 
 if (!function_exists('setting')) {
     /**
-     * Read a runtime setting from the `settings` table (DB-backed, cached).
-     *
-     * Placeholder until the Config singleton lands in Phase 2; returns the
-     * provided default so early code can reference settings safely.
+     * Read a runtime setting from the `settings` table (DB-backed, cached in
+     * the Config singleton). Sensitive values are transparently decrypted.
      */
     function setting(string $key, mixed $default = null): mixed
     {
-        return $default;
+        return \SysRevAI\Core\Config::get($key, $default);
     }
 }
 

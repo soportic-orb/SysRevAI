@@ -28,8 +28,8 @@ composer install
 # Option A — Docker (recommended)
 docker compose up -d        # then open http://localhost:8080
 
-# Option B — built-in PHP server (point docroot at public/)
-php -S 127.0.0.1:8080 -t public
+# Option B — built-in PHP server (front-controller routing)
+php -S 127.0.0.1:8080 -t public public/index.php
 ```
 
 On first access you'll be redirected to the web installer at `/install/`.

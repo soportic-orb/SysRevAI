@@ -130,8 +130,61 @@ a:hover { text-decoration: underline; }
 .donate { color: #c2487f; font-weight: 600; }
 .donate:hover { color: #a23667; }
 
+.topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
+
+/* Admin layout */
+.admin { display: flex; max-width: 1080px; margin: 0 auto; gap: 28px; padding: 28px 24px 64px; }
+.admin__sidebar { flex: 0 0 220px; }
+.admin__title { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--c-muted); margin: 4px 0 12px; }
+.admin__nav { display: flex; flex-direction: column; gap: 2px; }
+.admin__link {
+    padding: 9px 12px; border-radius: 8px; color: var(--c-muted);
+    font-weight: 500; font-size: 15px;
+}
+.admin__link:hover { background: var(--c-surface); color: var(--c-text); text-decoration: none; }
+.admin__link.is-active { background: var(--c-surface); color: var(--c-primary); box-shadow: var(--shadow); }
+.admin__content { flex: 1; min-width: 0; }
+
+.section__title { margin: 0 0 16px; font-size: 22px; }
+.section__subtitle { margin: 0 0 8px; font-size: 17px; }
+.section__intro { color: var(--c-muted); margin: 0 0 18px; }
+.section-card {
+    background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 24px; margin-bottom: 20px;
+}
+.section-card--inline { display: flex; align-items: center; gap: 16px; }
+
+.form-row { display: flex; }
+.form-row--split { gap: 16px; }
+.form-row--split > .field { flex: 1; }
+.select {
+    width: 100%; padding: 10px 12px; font-size: 15px; font-family: inherit;
+    border: 1px solid var(--c-border); border-radius: 8px; background: var(--c-surface); color: var(--c-text);
+}
+.select:focus { outline: 2px solid var(--c-primary); outline-offset: 1px; }
+.input--color { padding: 4px; height: 42px; }
+.field-help { font-size: 12px; color: var(--c-muted); margin-top: 4px; }
+.checkbox { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.checkbox input { width: 16px; height: 16px; }
+
+.toggles { border: 1px solid var(--c-border); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.toggles legend { font-weight: 600; font-size: 14px; padding: 0 6px; }
+
+.actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.actions--start { justify-content: flex-start; }
+
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; margin: 0; }
+.kv dt { color: var(--c-muted); font-weight: 600; }
+.kv dd { margin: 0; }
+.link-ext { font-size: 14px; }
+
 @media (max-width: 640px) {
     .topbar { gap: 12px; padding: 0 14px; }
     .topbar__nav { gap: 12px; }
     .topbar__name { display: none; }
+    .admin { flex-direction: column; gap: 16px; }
+    .admin__sidebar { flex: none; }
+    .admin__nav { flex-direction: row; flex-wrap: wrap; }
+    .form-row--split { flex-direction: column; gap: 16px; }
 }

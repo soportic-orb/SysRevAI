@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 2 — admin panel & encrypted settings:**
+  - `Core\Crypto` (AES-256-GCM) for sensitive values, keyed by `APP_KEY`.
+  - `Models\Setting` (typed serialize/deserialize incl. transparent encryption)
+    and `Core\Config` singleton backing a real `setting()` helper (DB-cached,
+    decrypts on read, degrades to defaults pre-install).
+  - `Models\ActivityLog` + `005_activity_log.sql` migration; settings changes
+    are audited by key name only (never the secret value).
+  - Admin → Settings panel (owner/admin only) with sidebar layout and four
+    complete sections: **General**, **Claude (AI)** (API key stored encrypted,
+    models, temperature, max tokens, per-feature toggles, monthly cost limit,
+    and a working "Verify connection" via `Services\ClaudeService`),
+    **Security**, and **About** (version/license/repo + author support with a
+    dashboard-mention toggle).
+  - Routes guarded by `auth`+`admin` middleware; CSRF enforced on saves.
+  - Built-in-server routing shim in the front controller so `php -S ... -t
+    public public/index.php` serves assets, the installer and routes in dev.
 - **Phase 1 — application core (MVC):**
   - `bootstrap.php` with a resilient autoload path (Composer when present, plus a
     native PSR-4 fallback) and `.env` loading (phpdotenv or a native `Core\Env`).
