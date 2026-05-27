@@ -167,6 +167,18 @@ a:hover { text-decoration: underline; }
 
 .topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
 
+/* Import / references */
+.toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.toolbar .input { max-width: 280px; }
+.pager { display: flex; gap: 14px; align-items: center; justify-content: center; margin-top: 18px; }
+
+/* Duplicate resolution */
+.dup-pair { display: grid; grid-template-columns: 1fr 1fr auto; gap: 18px; align-items: center; }
+.dup-side { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.dup-side strong { font-size: 15px; }
+.dup-meta { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+@media (max-width: 700px) { .dup-pair { grid-template-columns: 1fr; } .dup-meta { align-items: flex-start; } }
+
 /* Notification bell */
 .bell { position: relative; }
 .bell__btn { position: relative; display: inline-flex; align-items: center; color: var(--c-muted); padding: 6px; }

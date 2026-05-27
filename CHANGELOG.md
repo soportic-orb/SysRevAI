@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 5 — import & deduplication:**
+  - `008_references.sql` migration: `references` (with FULLTEXT on title+abstract),
+    `import_logs` and `duplicates` tables — this activates the real dashboard /
+    review metrics.
+  - `Services\ImportService`: robust parsers for **RIS, BibTeX, CSV, PubMed XML
+    and EndNote XML** with format auto-detection and UTF-8 normalization.
+  - `Services\DeduplicationService`: **level 1 (exact)** by DOI / PMID /
+    normalized key (title + first author + year) — auto-marks duplicates — and
+    **level 2 (fuzzy)** Jaro-Winkler on normalized titles (≥0.92, year-bucketed)
+    recorded as pending candidates for manual/semantic resolution.
+  - `ImportController` (file upload or paste, with import history),
+    `ReferencesController` (filter by status + search + pagination) and
+    `DuplicatesController` (confirm/reject candidate pairs).
+  - `Models\Reference`, `Models\ImportLog`, `Models\Duplicate`; references and
+    import links wired into the review workspace.
 - **Phase 4 — multi-user collaboration:**
   - `007_collaboration.sql` migration: invitations, notifications, comments and
     screening_assignments (the assignments table is ready for Phase 6).

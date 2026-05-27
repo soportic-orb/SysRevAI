@@ -17,10 +17,13 @@ use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
 use SysRevAI\Controllers\DashboardController;
+use SysRevAI\Controllers\DuplicatesController;
+use SysRevAI\Controllers\ImportController;
 use SysRevAI\Controllers\InvitationsController;
 use SysRevAI\Controllers\MembersController;
 use SysRevAI\Controllers\NotificationsController;
 use SysRevAI\Controllers\ProfileController;
+use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
@@ -53,6 +56,13 @@ $router->post('/reviews/{id}/team/revoke', [MembersController::class, 'revokeInv
 // Review comments.
 $router->post('/reviews/{id}/comments/delete', [CommentsController::class, 'delete'], ['auth']);
 $router->post('/reviews/{id}/comments', [CommentsController::class, 'store'], ['auth']);
+
+// Import & references & duplicates.
+$router->get('/reviews/{id}/references', [ReferencesController::class, 'index'], ['auth']);
+$router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
+$router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
+$router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 'resolve'], ['auth']);
 
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 

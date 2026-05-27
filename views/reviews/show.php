@@ -26,16 +26,18 @@ $metricKeys = ['imported', 'duplicate', 'ta_screening', 'ta_included', 'ft_scree
             <span class="tag tag--<?= e((string) $review['status']) ?>"><?= e(__('reviews.status_' . $review['status'])) ?></span>
             <span class="tag tag--soft"><?= e(__('reviews.mode_' . $review['screening_mode'])) ?></span>
         </div>
-        <?php if ($isOwner): ?>
-            <div class="btn-row">
+        <div class="btn-row">
+            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/references"><?= e(__('references.title')) ?></a>
+            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a>
+            <?php if ($isOwner): ?>
                 <a class="btn btn--ghost" href="/reviews/<?= $id ?>/team"><?= e(__('team.title')) ?></a>
                 <a class="btn btn--ghost" href="/reviews/<?= $id ?>/protocol"><?= e(__('reviews.edit_protocol')) ?></a>
                 <form method="post" action="/reviews/<?= $id ?>/archive">
                     <?= csrf_field() ?>
                     <button class="btn btn--ghost"><?= e($review['status'] === 'archived' ? __('reviews.unarchive') : __('reviews.archive')) ?></button>
                 </form>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div class="metrics">
