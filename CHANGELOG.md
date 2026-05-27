@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 6 — title/abstract screening with blinding:**
+  - `009_screening_decisions.sql` migration (per-reviewer decisions, resolutions,
+    time spent).
+  - `Services\ScreeningService`: promote imported references into screening,
+    serve the next reference for a reviewer (blinded — never showing others'
+    decisions), detect agreement (auto include/exclude) vs. conflict, and
+    resolve conflicts; required-reviewer count derives from the screening mode.
+  - `ScreeningController` + `Models\ScreeningDecision`: Tinder-style one-card
+    screening (Include/Maybe/Exclude) with **keyboard shortcuts (I/E/M)**,
+    exclusion reasons, notes, time tracking, and a per-reviewer progress bar.
+  - Conflict queue for resolvers (owner / `can_resolve_conflicts`) with
+    side-by-side decisions and a final adjudication; resolvers are notified when
+    a conflict arises.
+  - **Coordinator view**: an un-blinded overview of every reviewer's decisions,
+    gated to owner/admin, with a warning banner, audit logging, and screening
+    disabled while active.
 - **Phase 5 — import & deduplication:**
   - `008_references.sql` migration: `references` (with FULLTEXT on title+abstract),
     `import_logs` and `duplicates` tables — this activates the real dashboard /

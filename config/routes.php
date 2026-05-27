@@ -25,6 +25,7 @@ use SysRevAI\Controllers\NotificationsController;
 use SysRevAI\Controllers\ProfileController;
 use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
+use SysRevAI\Controllers\ScreeningController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
 
@@ -63,6 +64,14 @@ $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
 $router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 'resolve'], ['auth']);
+
+// Title/abstract screening.
+$router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
+$router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
+$router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
+$router->post('/reviews/{id}/screen/coordinator', [ScreeningController::class, 'toggleCoordinator'], ['auth']);
+$router->get('/reviews/{id}/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
+$router->post('/reviews/{id}/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
 
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 

@@ -38,6 +38,21 @@ final class ReviewUser
         return $row !== null;
     }
 
+    /** User IDs allowed to resolve conflicts: the owner plus flagged members. */
+    public static function resolverIds(int $reviewId, int $ownerId): array
+    {
+        $table = Database::table('review_users');
+        $rows = Database::select(
+            "SELECT user_id FROM `{$table}`
+             WHERE review_id = ? AND removed_at IS NULL
+               AND (can_resolve_conflicts = 1 OR role IN ('owner','admin'))",
+            [$reviewId]
+        );
+        $ids = array_map(static fn ($r) => (int) $r['user_id'], $rows);
+        $ids[] = $ownerId;
+        return array_values(array_unique($ids));
+    }
+
     public static function updateMembership(
         int $reviewId,
         int $userId,
