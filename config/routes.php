@@ -12,6 +12,7 @@ declare(strict_types=1);
 */
 
 use SysRevAI\Controllers\Admin\MaintenanceController;
+use SysRevAI\Controllers\Admin\ReportsController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AboutController;
@@ -184,5 +185,9 @@ $router->post('/admin/maintenance/clear-logs', [MaintenanceController::class, 'c
 $router->post('/admin/maintenance/backup', [MaintenanceController::class, 'createBackup'], $admin);
 $router->post('/admin/maintenance/backup-delete', [MaintenanceController::class, 'deleteBackup'], $admin);
 $router->get('/admin/maintenance/backup/{name}', [MaintenanceController::class, 'downloadBackup'], $admin);
+
+// Admin → Reports.
+$router->get('/admin/reports/fulltext-coverage.csv', [ReportsController::class, 'fulltextCoverageCsv'], $admin);
+$router->get('/admin/reports/fulltext-coverage', [ReportsController::class, 'fulltextCoverage'], $admin);
 
 return $router;

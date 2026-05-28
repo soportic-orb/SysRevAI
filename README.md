@@ -117,6 +117,9 @@ A `flock` ensures only one instance runs at a time and the worker exits on its
 own after ~50 seconds (so it never blocks the next tick). The worker is a
 no-op when the module is disabled in **Admin → Full-text (APIs)**.
 
+For everything else (sources, configuration, legal scope, where files live),
+see [`docs/full-text-retrieval.md`](docs/full-text-retrieval.md).
+
 ### Roadmap (build phases)
 
 | Phase | Scope | Status |

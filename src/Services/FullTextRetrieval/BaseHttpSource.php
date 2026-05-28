@@ -48,6 +48,12 @@ abstract class BaseHttpSource implements FullTextSourceInterface
      */
     protected function get(string $url, array $headers = [], int $timeoutSec = 15): array
     {
+        // Per-source request budget — checked before every call so a misbehaving
+        // worker can never blow through an API's daily quota.
+        if (!RateLimiter::acquire($this->name(), $this->rateLimit())) {
+            return ['status' => 429, 'body' => '', 'headers' => [], 'error' => 'rate_limited', 'ms' => 0];
+        }
+
         $headers = array_merge([
             'User-Agent: ' . $this->userAgent(),
             'Accept: application/json',
