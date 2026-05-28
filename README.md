@@ -104,6 +104,19 @@ sed 's/{prefix}/sra_/g' database/seeds/demo.sql | mysql -u <user> -p <database>
 as the admin user you created during installation and you'll see the demo
 review on your dashboard.
 
+### Background worker (full-text retrieval)
+
+The full-text retrieval module drains its queue from a small CLI worker. Add
+a cron entry on the server so it runs once a minute:
+
+```cron
+* * * * * php /path/to/sysrevai/bin/worker.php >> /path/to/sysrevai/storage/logs/worker.log 2>&1
+```
+
+A `flock` ensures only one instance runs at a time and the worker exits on its
+own after ~50 seconds (so it never blocks the next tick). The worker is a
+no-op when the module is disabled in **Admin → Full-text (APIs)**.
+
 ### Roadmap (build phases)
 
 | Phase | Scope | Status |

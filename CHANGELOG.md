@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Full-text retrieval — UI in review + queue worker:**
+  - **References list** now shows a coloured **status dot** per row (available
+    via X / not found yet / queued / not attempted) with a tooltip, plus a
+    one-click **"Retrieve"** button that runs the cascade synchronously
+    against the configured sources.
+  - **Bulk actions** above the table: enqueue every reference that hasn't
+    succeeded yet, retry only those whose previous attempts failed, and
+    shortcut links to the queue and coverage pages.
+  - **`/reviews/{id}/full-text-queue`** page (`RetrievalQueueController`):
+    live counters (pending / processing / completed / failed), the latest
+    100 jobs with their requester and timestamps, JSON poll endpoint
+    refreshing the counters every 5 s, and an owner-only "Cancel all
+    pending" action.
+  - **`/reviews/{id}/full-text-coverage`** page: total / attempted / with
+    text / coverage % plus the top hit sources for this review and the manual
+    fallback options (DOI, Google Scholar, manual PDF upload).
+  - **`bin/worker.php`** CLI worker — `flock`-guarded, exits after ~50 s, no-op
+    when the module is disabled; documented in the README with the cron entry.
+  - `Models\ReferenceFullTextStatus::mapForReview()`,
+    `Models\RetrievalQueue::inFlightForReview()`,
+    `Models\RetrievalQueue::forReview()`,
+    `Models\RetrievalQueue::cancelPendingForReview()`.
 - **Full-text retrieval — foundations + admin section + 4 OA sources:**
   - `015_full_text_retrieval.sql` migration: `retrieval_attempts` (per-source
     audit log), `reference_fulltext_status` (consolidated state with PDF/XML

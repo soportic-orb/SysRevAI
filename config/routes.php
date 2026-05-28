@@ -19,7 +19,9 @@ use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
 use SysRevAI\Controllers\DashboardController;
 use SysRevAI\Controllers\DuplicatesController;
+use SysRevAI\Controllers\FullTextRetrievalController;
 use SysRevAI\Controllers\ImportController;
+use SysRevAI\Controllers\RetrievalQueueController;
 use SysRevAI\Controllers\InvitationsController;
 use SysRevAI\Controllers\MembersController;
 use SysRevAI\Controllers\NotificationsController;
@@ -79,6 +81,15 @@ $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['au
 $router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/duplicates/check-ai', [DuplicatesController::class, 'checkAi'], ['auth']);
 $router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 'resolve'], ['auth']);
+
+// Full-text retrieval per review.
+$router->post('/reviews/{id}/full-text/enqueue-all', [FullTextRetrievalController::class, 'enqueueAll'], ['auth']);
+$router->post('/reviews/{id}/full-text/retry-failed', [FullTextRetrievalController::class, 'retryFailed'], ['auth']);
+$router->get('/reviews/{id}/full-text-coverage', [FullTextRetrievalController::class, 'coverage'], ['auth']);
+$router->get('/reviews/{id}/full-text-queue/poll', [RetrievalQueueController::class, 'poll'], ['auth']);
+$router->post('/reviews/{id}/full-text-queue/cancel-all', [RetrievalQueueController::class, 'cancelAll'], ['auth']);
+$router->get('/reviews/{id}/full-text-queue', [RetrievalQueueController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/full-text', [FullTextRetrievalController::class, 'retrieve'], ['auth']);
 
 // Title/abstract screening.
 $router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'suggest'], ['auth']);

@@ -192,6 +192,17 @@ a:hover { text-decoration: underline; }
 .rob-domain__title { margin: 0 0 8px; font-size: 15px; }
 .rob-domain__actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 
+/* Full-text retrieval — references list + queue */
+.ft-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(0,0,0,.1); cursor: help; }
+.ft-dot--ok { background: var(--c-ok); }
+.ft-dot--none { background: var(--c-warn); }
+.ft-dot--queued { background: var(--c-primary); }
+.ft-dot--never { background: #dde3e9; }
+.tag--pending { background: #eef1f4; color: var(--c-muted); }
+.tag--processing { background: #eaf4fb; color: #1b3a4d; }
+.tag--completed { background: #e6f6f1; color: #06624a; }
+.tag--failed { background: #fbe9e1; color: var(--c-fail); }
+
 /* Full-text retrieval admin */
 .ft-source { padding: 14px 0; border-bottom: 1px solid var(--c-border); }
 .ft-source:last-of-type { border-bottom: 0; }

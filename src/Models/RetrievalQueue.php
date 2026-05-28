@@ -60,6 +60,50 @@ final class RetrievalQueue
         );
     }
 
+    /** Reference IDs currently pending or in flight for the given review. */
+    public static function inFlightForReview(int $reviewId): array
+    {
+        $rq   = Database::table('retrieval_queue');
+        $refs = Database::table('references');
+        $rows = Database::select(
+            "SELECT q.reference_id FROM `{$rq}` q
+             JOIN `{$refs}` r ON r.id = q.reference_id
+             WHERE r.review_id = ? AND q.status IN ('pending','processing')",
+            [$reviewId]
+        );
+        return array_map(static fn ($r) => (int) $r['reference_id'], $rows);
+    }
+
+    /** Jobs (any status) for the given review, newest first. */
+    public static function forReview(int $reviewId, int $limit = 100): array
+    {
+        $rq   = Database::table('retrieval_queue');
+        $refs = Database::table('references');
+        $users = Database::table('users');
+        $limit = max(1, min($limit, 500));
+        return Database::select(
+            "SELECT q.*, r.title AS ref_title, u.name AS requested_by_name
+             FROM `{$rq}` q
+             JOIN `{$refs}` r ON r.id = q.reference_id
+             LEFT JOIN `{$users}` u ON u.id = q.requested_by
+             WHERE r.review_id = ?
+             ORDER BY q.id DESC LIMIT {$limit}",
+            [$reviewId]
+        );
+    }
+
+    public static function cancelPendingForReview(int $reviewId): int
+    {
+        $rq   = Database::table('retrieval_queue');
+        $refs = Database::table('references');
+        return Database::affecting(
+            "UPDATE `{$rq}` q JOIN `{$refs}` r ON r.id = q.reference_id
+             SET q.status = 'failed', q.completed_at = NOW(), q.error_message = 'cancelled'
+             WHERE r.review_id = ? AND q.status = 'pending'",
+            [$reviewId]
+        );
+    }
+
     /** @return array{pending:int,processing:int,completed:int,failed:int} */
     public static function summary(): array
     {
