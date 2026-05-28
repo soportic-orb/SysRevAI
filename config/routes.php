@@ -26,6 +26,7 @@ use SysRevAI\Controllers\ProfileController;
 use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Controllers\ChatController;
+use SysRevAI\Controllers\ExtractionController;
 use SysRevAI\Controllers\FullTextScreeningController;
 use SysRevAI\Controllers\PdfController;
 use SysRevAI\Controllers\ScreeningController;
@@ -90,6 +91,15 @@ $router->get('/reviews/{id}/full-text', [FullTextScreeningController::class, 'sc
 $router->post('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'upload'], ['auth']);
 $router->get('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'serve'], ['auth']);
 $router->post('/reviews/{id}/references/{refId}/chat', [ChatController::class, 'send'], ['auth']);
+
+// Data extraction (literal /template before the {refId} pattern).
+$router->get('/reviews/{id}/extraction', [ExtractionController::class, 'index'], ['auth']);
+$router->get('/reviews/{id}/extraction/template', [ExtractionController::class, 'templateEdit'], ['auth']);
+$router->post('/reviews/{id}/extraction/template', [ExtractionController::class, 'templateSave'], ['auth']);
+$router->post('/reviews/{id}/extraction/{refId}/ai', [ExtractionController::class, 'ai'], ['auth']);
+$router->post('/reviews/{id}/extraction/{refId}/approve', [ExtractionController::class, 'approve'], ['auth']);
+$router->get('/reviews/{id}/extraction/{refId}', [ExtractionController::class, 'edit'], ['auth']);
+$router->post('/reviews/{id}/extraction/{refId}', [ExtractionController::class, 'save'], ['auth']);
 
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 

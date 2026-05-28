@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 9 — data extraction:**
+  - `012_extraction.sql` migration: `extraction_templates` (per-review,
+    JSON-defined fields) and `extraction_data` (per-(reference, reviewer,
+    template) submission with draft/submitted/approved status).
+  - `Models\ExtractionTemplate` (typical predefined fields seeded the first
+    time the page is opened) and `Models\ExtractionData` (upsert, approve,
+    side-by-side data for the compare view).
+  - `Services\ExtractionService`: per-field-type sanitization (text/textarea/
+    number/date/select/multi-select) and a compact AI payload shape.
+  - `ExtractionController`: template editor (owner) with add/remove fields,
+    per-reference extraction form rendered from the template, draft/submit
+    actions, **"Fill with AI"** (Claude reads the PDF text — or abstract as
+    fallback — and proposes values for the form, persisted as draft for
+    review), owner approval that marks the reference as `extracted`, and an
+    embedded **side-by-side compare** panel showing other reviewers'
+    submissions.
 - **Phase 8 — full text, PDF viewer & article chat:**
   - `011_full_text.sql` migration: `reference_full_text` (FULLTEXT on
     extracted_text) and `ai_chat_history` tables.

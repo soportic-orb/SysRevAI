@@ -167,6 +167,17 @@ a:hover { text-decoration: underline; }
 
 .topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
 
+/* Extraction template editor */
+.tpl-row { border: 1px solid var(--c-border); border-radius: 8px; padding: 14px; margin-bottom: 12px; background: var(--c-surface); }
+.tpl-row__actions { margin-top: 8px; }
+.tpl-options { margin-top: 10px; }
+.compare-row { padding: 8px 0; border-bottom: 1px solid var(--c-border); }
+.compare-row summary { cursor: pointer; display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.compare-row .kv { margin-top: 8px; font-size: 13px; }
+.tag--draft { background: #eef1f4; color: var(--c-muted); }
+.tag--submitted { background: #eaf4fb; color: #1b3a4d; }
+.tag--approved { background: #e6f6f1; color: #06624a; }
+
 /* Full-text screening */
 .ft-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
 .ft-main { min-width: 0; }
