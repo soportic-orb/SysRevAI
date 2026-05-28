@@ -493,6 +493,7 @@ return [
             'files'       => 'Arxius',
             'languages'   => 'Idiomes',
             'fulltext'    => 'Text complet (APIs)',
+            'reports'     => 'Informes',
             'maintenance' => 'Manteniment',
             'about'       => 'Sobre / Llicència',
         ],
@@ -567,6 +568,17 @@ return [
             'test_intro'       => 'Introdueix un DOI o PMID i llança la cadena sencera. No s\'escriu res a la BD.',
             'test_run'         => 'Provar',
             'testing'          => 'Consultant fonts…',
+        ],
+
+        'reports' => [
+            'fulltext_title' => 'Informe de cobertura de text complet',
+            'fulltext_intro' => 'Visió global de quantes referències tenen text complet recuperat per cada revisió i font.',
+            'top_sources'    => 'Fonts amb més encerts',
+            'hits'           => 'Èxits',
+            'per_review'     => 'Cobertura per revisió',
+            'no_text_list'   => 'Referències sense text complet',
+            'all_covered'    => 'Totes les referències tenen text complet — bona feina.',
+            'attempts'       => 'Intents',
         ],
 
         'about' => [

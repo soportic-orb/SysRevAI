@@ -23,6 +23,7 @@ $nav = [
     'files'       => '/admin/settings/files',
     'languages'   => '/admin/settings/languages',
     'fulltext'    => '/admin/settings/fulltext',
+    'reports'     => '/admin/reports/fulltext-coverage',
     'maintenance' => '/admin/maintenance',
     'about'       => '/admin/settings/about',
 ];

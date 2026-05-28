@@ -492,6 +492,7 @@ return [
             'files'       => 'Archivos',
             'languages'   => 'Idiomas',
             'fulltext'    => 'Texto completo (APIs)',
+            'reports'     => 'Informes',
             'maintenance' => 'Mantenimiento',
             'about'       => 'Acerca de / Licencia',
         ],
@@ -566,6 +567,17 @@ return [
             'test_intro'       => 'Introduce un DOI o PMID y ejecuta la cadena completa. No se escribe nada en la BD.',
             'test_run'         => 'Probar',
             'testing'          => 'Consultando fuentes…',
+        ],
+
+        'reports' => [
+            'fulltext_title' => 'Informe de cobertura de texto completo',
+            'fulltext_intro' => 'Visión global de cuántas referencias tienen texto completo recuperado por revisión y por fuente.',
+            'top_sources'    => 'Fuentes con más aciertos',
+            'hits'           => 'Aciertos',
+            'per_review'     => 'Cobertura por revisión',
+            'no_text_list'   => 'Referencias sin texto completo',
+            'all_covered'    => 'Todas las referencias tienen texto completo — buen trabajo.',
+            'attempts'       => 'Intentos',
         ],
 
         'about' => [

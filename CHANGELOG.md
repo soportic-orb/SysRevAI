@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Full-text retrieval — rate limiting, admin coverage report, docs (sub-phases 9-11):**
+  - `016_rate_limit_counters.sql` migration + `Services\FullTextRetrieval\RateLimiter`:
+    per-source sliding-window budget enforced through one `rate_limit_counters`
+    row updated atomically with `INSERT ... ON DUPLICATE KEY UPDATE`. Wired
+    into `BaseHttpSource::get()` so every source class is throttled without
+    code changes. Fails open without a DB so unit tests + pre-install still
+    work.
+  - **Admin → Reports → Full-text coverage** (`/admin/reports/fulltext-coverage`,
+    `ReportsController`): platform-wide stats (total / attempted / with-text /
+    %), top hit sources, per-review breakdown, and the list of references that
+    still have no full text. **CSV export** at
+    `/admin/reports/fulltext-coverage.csv` with the same list (up to 2 000
+    rows, UTF-8 BOM for Excel). New sidebar entry "Reports" in the admin
+    layout.
+  - **`docs/full-text-retrieval.md`**: end-to-end guide of the module
+    (sources, configuration, worker cron, rate limiting, file layout,
+    legal/ethical scope). README links to it.
 - **Full-text retrieval — real PDF / JATS XML download + integration (sub-phase 8):**
   - `Services\FullTextRetrieval\JatsParser` parses PMC / Europe PMC JATS XML
     into structured content (title, abstract, sections) plus a single

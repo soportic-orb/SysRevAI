@@ -492,6 +492,7 @@ return [
             'files'       => 'Files',
             'languages'   => 'Languages',
             'fulltext'    => 'Full-text (APIs)',
+            'reports'     => 'Reports',
             'maintenance' => 'Maintenance',
             'about'       => 'About / License',
         ],
@@ -566,6 +567,17 @@ return [
             'test_intro'       => 'Enter a DOI or PMID and run the full chain. Nothing is written to the database.',
             'test_run'         => 'Test',
             'testing'          => 'Querying sources…',
+        ],
+
+        'reports' => [
+            'fulltext_title' => 'Full-text coverage report',
+            'fulltext_intro' => 'Platform-wide view of how many references have full text retrieved, broken down by review and by source.',
+            'top_sources'    => 'Top hit sources',
+            'hits'           => 'Hits',
+            'per_review'     => 'Coverage per review',
+            'no_text_list'   => 'References without full text',
+            'all_covered'    => 'Every reference has full text — well done.',
+            'attempts'       => 'Attempts',
         ],
 
         'about' => [
