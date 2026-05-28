@@ -184,6 +184,73 @@ final class ClaudeService
             : ['ok' => false, 'error' => $res['error']];
     }
 
+    /**
+     * Scientific Copilot — conversational assistant for researchers inside
+     * a specific review. Takes the review's protocol context so the model
+     * can answer methodology questions, summarise the team's progress and
+     * reason about included / excluded references. Recent chat history is
+     * passed as the messages array; the system prompt stays fixed.
+     *
+     * @param array<string,mixed>                            $review     Review row.
+     * @param array<string,string>                           $pico       PICO fields.
+     * @param array<string,int>                              $metrics    Pre-computed counts.
+     * @param array<int,array{role:string,content:string}>  $history    Prior turns (oldest first).
+     * @param string                                         $userMessage Latest user message.
+     * @return array{ok:bool,reply?:string,error?:string}
+     */
+    public function copilotChat(array $review, array $pico, array $metrics, array $history, string $userMessage, ?int $reviewId = null): array
+    {
+        if ($e = $this->guard('copilot')) {
+            return $e;
+        }
+
+        $context = [
+            'review_title'        => (string) ($review['title'] ?? ''),
+            'research_question'   => (string) ($review['question'] ?? ''),
+            'population'          => $pico['population'] ?? '',
+            'intervention'        => $pico['intervention'] ?? '',
+            'comparison'          => $pico['comparison'] ?? '',
+            'outcome'             => $pico['outcome'] ?? '',
+            'study_design'        => $pico['study_design'] ?? '',
+            'inclusion_criteria'  => (string) ($review['inclusion_criteria'] ?? ''),
+            'exclusion_criteria'  => (string) ($review['exclusion_criteria'] ?? ''),
+            'screening_mode'      => (string) ($review['screening_mode'] ?? ''),
+            'metrics'             => $metrics,
+        ];
+
+        $system = "You are SysRevAI's Scientific Copilot, an assistant for researchers carrying out a systematic "
+            . "literature review. Your role:\n"
+            . " • Help with methodology questions about systematic reviews (PRISMA, screening, risk of bias, "
+            . "data extraction, meta-analysis).\n"
+            . " • Answer questions about THIS review based on the protocol context below.\n"
+            . " • Suggest concrete next steps the team can take.\n"
+            . " • If asked about specific articles, remind the user that you only see metadata from the "
+            . "protocol unless they paste excerpts.\n\n"
+            . "Tone: warm but professional, concise, evidence-aware. Reply in the same language as the user's "
+            . "question. Use plain prose with short paragraphs; only use bullet lists when really helpful. "
+            . "Never invent facts — if you don't know, say so and propose how to find out.\n\n"
+            . "REVIEW CONTEXT (JSON):\n"
+            . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $messages = [];
+        // Keep at most the last 12 turns to stay within token budget.
+        $tail = array_slice($history, -12);
+        foreach ($tail as $h) {
+            $role = ($h['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user';
+            $content = (string) ($h['content'] ?? '');
+            if ($content === '') {
+                continue;
+            }
+            $messages[] = ['role' => $role, 'content' => $content];
+        }
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        $res = $this->request($this->modelComplex, $system, $messages, 1200, 'copilot', $reviewId, false);
+        return $res['ok']
+            ? ['ok' => true, 'reply' => (string) $res['text']]
+            : ['ok' => false, 'error' => $res['error']];
+    }
+
     public function checkSemanticDuplicate(array $refA, array $refB, ?int $reviewId = null): array
     {
         if ($e = $this->guard('dedup')) {

@@ -48,6 +48,8 @@ $router->get('/', static fn () => redirect(Auth::check() ? '/dashboard' : '/logi
 
 $router->get('/login', [AuthController::class, 'showLogin'], ['guest']);
 $router->post('/login', [AuthController::class, 'login'], ['guest']);
+$router->get('/login/2fa', [AuthController::class, 'show2fa'], ['guest']);
+$router->post('/login/2fa', [AuthController::class, 'verify2fa'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 
 // Public about page (no auth) and global search (auth).
@@ -64,6 +66,7 @@ $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'
 $router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
+$router->post('/reviews/{id}/copilot', [ReviewsController::class, 'copilot'], ['auth']);
 
 // Team / collaboration on a review.
 $router->get('/reviews/{id}/team', [MembersController::class, 'index'], ['auth']);
@@ -156,6 +159,13 @@ $router->post('/notifications/read-all', [NotificationsController::class, 'markA
 $router->post('/notifications/read', [NotificationsController::class, 'markRead'], ['auth']);
 
 // Profile.
+$router->get('/profile', [ProfileController::class, 'profile'], ['auth']);
+$router->post('/profile', [ProfileController::class, 'saveProfile'], ['auth']);
+$router->get('/profile/password', [ProfileController::class, 'password'], ['auth']);
+$router->post('/profile/password', [ProfileController::class, 'savePassword'], ['auth']);
+$router->get('/profile/two-factor', [ProfileController::class, 'twoFactor'], ['auth']);
+$router->post('/profile/two-factor/enable', [ProfileController::class, 'enableTwoFactor'], ['auth']);
+$router->post('/profile/two-factor/disable', [ProfileController::class, 'disableTwoFactor'], ['auth']);
 $router->get('/profile/notifications', [ProfileController::class, 'notifications'], ['auth']);
 $router->post('/profile/notifications', [ProfileController::class, 'saveNotifications'], ['auth']);
 

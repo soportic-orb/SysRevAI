@@ -114,6 +114,35 @@ final class User
         );
     }
 
+    /** Update the editable profile fields (name, email, locale). */
+    public static function updateProfile(int $id, string $name, string $email, string $locale): void
+    {
+        $table = Database::table('users');
+        Database::affecting(
+            "UPDATE `{$table}` SET name = ?, email = ?, locale = ? WHERE id = ?",
+            [$name, $email, $locale, $id]
+        );
+    }
+
+    public static function updatePassword(int $id, string $newHash): void
+    {
+        $table = Database::table('users');
+        Database::affecting(
+            "UPDATE `{$table}` SET password_hash = ? WHERE id = ?",
+            [$newHash, $id]
+        );
+    }
+
+    /** Store an encrypted TOTP secret (already encrypted by the caller). */
+    public static function setTwoFactorSecret(int $id, ?string $encryptedSecret): void
+    {
+        $table = Database::table('users');
+        Database::affecting(
+            "UPDATE `{$table}` SET two_factor_secret = ? WHERE id = ?",
+            [$encryptedSecret, $id]
+        );
+    }
+
     public static function countOwners(): int
     {
         $table = Database::table('users');

@@ -6,16 +6,18 @@ use SysRevAI\Core\Session;
 
 /** @var string[] $types */
 /** @var array $prefs */
+/** @var string $active */
 $enabled = static function (array $prefs, string $type, string $channel): bool {
     $default = $channel === 'in_app';
     return $prefs[$type][$channel] ?? $default;
 };
 ?>
-<div class="page page--narrow">
-    <div class="page__head">
+<div class="profile-layout">
+    <?php require config('paths.base') . '/views/partials/profile_nav.php'; ?>
+
+    <main class="profile-main">
         <h1 class="page__title"><?= e(__('profile.notifications_title')) ?></h1>
         <p class="page__subtitle"><?= e(__('profile.notifications_intro')) ?></p>
-    </div>
 
     <?php if (($flash = Session::pullFlash('success')) !== null): ?>
         <div class="alert alert--success"><?= e((string) $flash) ?></div>
@@ -43,4 +45,5 @@ $enabled = static function (array $prefs, string $type, string $channel): bool {
         </table>
         <div style="margin-top:16px"><button class="btn btn--primary"><?= e(__('admin.save')) ?></button></div>
     </form>
+    </main>
 </div>

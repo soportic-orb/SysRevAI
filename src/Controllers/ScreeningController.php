@@ -19,8 +19,11 @@ use SysRevAI\Services\ScreeningService;
 /**
  * Title/abstract screening: one reference at a time with reviewer blinding,
  * a conflict queue, and a coordinator (un-blinded) overview.
+ *
+ * Not final: FullTextScreeningController extends this to reuse the entire
+ * pipeline under the `ft` stage.
  */
-final class ScreeningController
+class ScreeningController
 {
     protected string $stage = 'ta';
 

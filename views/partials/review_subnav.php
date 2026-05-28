@@ -11,7 +11,7 @@ declare(strict_types=1);
  * as every other button across the app — no bespoke styling.
  *
  * @var array  $review     // review row (id, title, status, owner_id, screening_mode)
- * @var string $activeKey  // one of: overview screening fulltext extraction rob exports references import team protocol
+ * @var string $activeKey  // one of: overview screening fulltext extraction rob exports references team protocol
  */
 
 use SysRevAI\Core\Auth;
@@ -28,7 +28,6 @@ $links = [
     ['key' => 'rob',        'url' => "/reviews/{$id}/risk-of-bias", 'label' => __('rob.title'),             'style' => 'primary'],
     ['key' => 'exports',    'url' => "/reviews/{$id}/exports",      'label' => __('exports.title'),         'style' => 'ghost'],
     ['key' => 'references', 'url' => "/reviews/{$id}/references",   'label' => __('references.title'),      'style' => 'ghost'],
-    ['key' => 'import',     'url' => "/reviews/{$id}/import",       'label' => __('import.title'),          'style' => 'ghost'],
     ['key' => 'team',       'url' => "/reviews/{$id}/team",         'label' => __('team.title'),            'style' => 'ghost', 'owner' => true],
     ['key' => 'protocol',   'url' => "/reviews/{$id}/protocol",     'label' => __('reviews.edit_protocol'), 'style' => 'ghost', 'owner' => true],
 ];
@@ -41,13 +40,21 @@ $links = [
             </a>
             <a class="review-subnav__name" href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a>
             <span class="tag tag--<?= e((string) $review['status']) ?>"><?= e(__('reviews.status_' . $review['status'])) ?></span>
+            <?php if ($isOwner): ?>
+                <form method="post" action="/reviews/<?= $id ?>/archive" class="inline-form review-subnav__archive">
+                    <?= csrf_field() ?>
+                    <button class="btn btn--xs btn--ghost" type="submit">
+                        <?= e($review['status'] === 'archived' ? __('reviews.unarchive') : __('reviews.archive')) ?>
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
         <div class="review-subnav__actions">
             <?php foreach ($links as $link): ?>
                 <?php if (!empty($link['owner']) && !$isOwner) continue; ?>
                 <?php
                     $isActive = $link['key'] === $activeKey;
-                    $classes  = 'btn btn--sm ';
+                    $classes  = 'btn btn--xs ';
                     $classes .= $isActive ? 'btn--primary is-active' : ('btn--' . $link['style']);
                 ?>
                 <a class="<?= e($classes) ?>" href="<?= e($link['url']) ?>"
@@ -55,14 +62,6 @@ $links = [
                     <?= e($link['label']) ?>
                 </a>
             <?php endforeach; ?>
-            <?php if ($isOwner): ?>
-                <form method="post" action="/reviews/<?= $id ?>/archive" class="inline-form">
-                    <?= csrf_field() ?>
-                    <button class="btn btn--sm btn--ghost" type="submit">
-                        <?= e($review['status'] === 'archived' ? __('reviews.unarchive') : __('reviews.archive')) ?>
-                    </button>
-                </form>
-            <?php endif; ?>
         </div>
     </div>
 </nav>

@@ -72,7 +72,7 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
                 catch (\Throwable) { $unread = 0; }
                 require config('paths.base') . '/views/partials/notification_bell.php';
             ?>
-            <a class="topbar__name" href="/profile/notifications"><?= e((string) $user['name']) ?></a>
+            <a class="topbar__name" href="/profile"><?= e((string) $user['name']) ?></a>
             <form method="post" action="/logout" class="inline-form">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn--ghost btn--sm"><?= e(__('nav.logout')) ?></button>
@@ -102,6 +102,11 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
         require config('paths.base') . '/views/partials/donate_link.php';
     ?>
 </footer>
+
+<?php if ($reviewSubnav !== null): ?>
+    <?php require config('paths.base') . '/views/partials/copilot_widget.php'; ?>
+<?php endif; ?>
+
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
 </html>
