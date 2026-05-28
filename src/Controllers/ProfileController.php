@@ -11,6 +11,7 @@ use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Notification;
 use SysRevAI\Models\User;
+use SysRevAI\Services\AvatarStorage;
 use SysRevAI\Services\Totp;
 
 /**
@@ -59,6 +60,51 @@ final class ProfileController
         User::updateProfile((int) $user['id'], $name, $email, $locale);
         ActivityLog::record('profile.updated', ['email_changed' => $email !== $user['email']]);
         Session::flash('success', __('profile.saved'));
+        redirect('/profile');
+    }
+
+    /* ── Avatar ──────────────────────────────────────────────────────── */
+
+    public function uploadAvatar(): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            redirect('/login');
+        }
+        $result = AvatarStorage::store($_FILES['avatar'] ?? [], (int) $user['id']);
+        if (!$result['ok']) {
+            $msg = match ($result['error'] ?? '') {
+                'no_file'            => __('profile.avatar_no_file'),
+                'too_large'          => __('profile.avatar_too_large'),
+                'unsupported_format' => __('profile.avatar_bad_format'),
+                'cannot_create_dir', 'cannot_write' => __('profile.avatar_write_failed'),
+                default              => __('profile.avatar_generic_error'),
+            };
+            Session::flash('error', $msg);
+            redirect('/profile');
+        }
+        // Replace any previous file.
+        if (!empty($user['avatar_path'])) {
+            AvatarStorage::delete((string) $user['avatar_path']);
+        }
+        User::setAvatarPath((int) $user['id'], $result['path']);
+        ActivityLog::record('profile.avatar_uploaded');
+        Session::flash('success', __('profile.avatar_saved'));
+        redirect('/profile');
+    }
+
+    public function deleteAvatar(): void
+    {
+        $user = Auth::user();
+        if ($user === null) {
+            redirect('/login');
+        }
+        if (!empty($user['avatar_path'])) {
+            AvatarStorage::delete((string) $user['avatar_path']);
+            User::setAvatarPath((int) $user['id'], null);
+            ActivityLog::record('profile.avatar_removed');
+        }
+        Session::flash('success', __('profile.avatar_removed'));
         redirect('/profile');
     }
 

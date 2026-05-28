@@ -9,6 +9,9 @@ config/installed.lock
 # Uploaded user content
 public/uploads/*
 !public/uploads/.gitkeep
+!public/uploads/avatars/
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
 
 # Storage (runtime-generated)
 storage/logs/*

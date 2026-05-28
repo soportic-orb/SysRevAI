@@ -88,6 +88,12 @@ a:hover { text-decoration: underline; }
 }
 .brand__name { font-weight: 700; font-size: 17px; color: var(--c-text); }
 
+/* Force the HTML `hidden` attribute to actually hide elements — by default
+   the browser only adds `display: none`, which is overridden by any
+   explicit `display: flex/grid/block` in this stylesheet. The Copilot
+   panel and the collapsible card bodies need this guarantee. */
+[hidden] { display: none !important; }
+
 /* Top bar */
 .topbar {
     display: flex; align-items: center; gap: 24px;
@@ -101,7 +107,14 @@ a:hover { text-decoration: underline; }
 .topbar__nav a { color: var(--c-muted); font-weight: 500; font-size: 15px; }
 .topbar__nav a:hover { color: var(--c-text); text-decoration: none; }
 .topbar__user { display: flex; align-items: center; gap: 12px; }
-.topbar__name { font-size: 14px; color: var(--c-muted); }
+.topbar__name {
+    font-size: 14px; color: var(--c-muted);
+    display: inline-flex; align-items: center; gap: 8px;
+}
+.topbar__name:hover { color: var(--c-text); text-decoration: none; }
+.topbar__name-text { line-height: 1; }
+.avatar { display: inline-block; vertical-align: middle; }
+.avatar--initials { user-select: none; }
 .inline-form { display: inline; }
 
 /* Theme toggle (sun / moon) in the topbar. Only one of the two SVG icons
@@ -212,6 +225,15 @@ a:hover { text-decoration: underline; }
 .profile-nav__link.is-active { background: var(--c-bg); font-weight: 600; }
 .profile-main .page__title { margin: 0 0 18px; }
 .profile-main .section-card + .section-card { margin-top: 16px; }
+
+.profile-avatar-row {
+    display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap;
+}
+.profile-avatar-row .avatar {
+    border: 2px solid var(--c-border);
+    box-shadow: var(--shadow);
+}
+.profile-avatar-actions { flex: 1; min-width: 240px; }
 
 .profile-2fa-steps { padding-left: 20px; color: var(--c-muted); margin: 8px 0 16px; }
 .profile-2fa-steps li { margin: 4px 0; }

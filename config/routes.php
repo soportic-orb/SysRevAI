@@ -163,6 +163,8 @@ $router->post('/notifications/read', [NotificationsController::class, 'markRead'
 // Profile.
 $router->get('/profile', [ProfileController::class, 'profile'], ['auth']);
 $router->post('/profile', [ProfileController::class, 'saveProfile'], ['auth']);
+$router->post('/profile/avatar', [ProfileController::class, 'uploadAvatar'], ['auth']);
+$router->post('/profile/avatar/delete', [ProfileController::class, 'deleteAvatar'], ['auth']);
 $router->get('/profile/password', [ProfileController::class, 'password'], ['auth']);
 $router->post('/profile/password', [ProfileController::class, 'savePassword'], ['auth']);
 $router->get('/profile/two-factor', [ProfileController::class, 'twoFactor'], ['auth']);

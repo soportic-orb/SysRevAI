@@ -21,6 +21,39 @@ $locales = (array) config('supported_locales', ['ca', 'es', 'en']);
             <div class="alert alert--error"><?= e((string) $err) ?></div>
         <?php endif; ?>
 
+        <section class="section-card profile-avatar-card">
+            <h2 class="section__subtitle"><?= e(__('profile.avatar_title')) ?></h2>
+            <p class="section__intro"><?= e(__('profile.avatar_intro')) ?></p>
+            <div class="profile-avatar-row">
+                <?php $avatarUser = $user; $avatarSize = 96; require config('paths.base') . '/views/partials/avatar.php'; ?>
+                <div class="profile-avatar-actions">
+                    <form method="post" action="/profile/avatar" enctype="multipart/form-data" class="form-grid">
+                        <?= csrf_field() ?>
+                        <div class="field">
+                            <label class="field-label" for="avatar"><?= e(__('profile.avatar_choose')) ?></label>
+                            <input class="input" type="file" id="avatar" name="avatar"
+                                   accept="image/jpeg,image/png,image/webp,image/gif" required>
+                            <span class="field-help"><?= e(__('profile.avatar_help')) ?></span>
+                        </div>
+                        <div><button class="btn btn--primary"
+                                     data-busy-label="<?= e(__('common.working')) ?>">
+                            <?= e(__('profile.avatar_upload')) ?>
+                        </button></div>
+                    </form>
+                    <?php if (!empty($user['avatar_path'])): ?>
+                        <form method="post" action="/profile/avatar/delete" class="inline-form"
+                              onsubmit="return confirm('<?= e(__('profile.avatar_remove_confirm')) ?>')"
+                              style="margin-top:8px">
+                            <?= csrf_field() ?>
+                            <button class="btn btn--ghost btn--sm" type="submit">
+                                <?= e(__('profile.avatar_remove')) ?>
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+
         <form method="post" action="/profile" class="form-grid section-card">
             <?= csrf_field() ?>
             <div class="field">

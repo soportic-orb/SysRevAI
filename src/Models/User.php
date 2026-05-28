@@ -133,6 +133,16 @@ final class User
         );
     }
 
+    /** Persist the user's avatar path (relative to public/uploads). */
+    public static function setAvatarPath(int $id, ?string $relPath): void
+    {
+        $table = Database::table('users');
+        Database::affecting(
+            "UPDATE `{$table}` SET avatar_path = ? WHERE id = ?",
+            [$relPath, $id]
+        );
+    }
+
     /** Store an encrypted TOTP secret (already encrypted by the caller). */
     public static function setTwoFactorSecret(int $id, ?string $encryptedSecret): void
     {

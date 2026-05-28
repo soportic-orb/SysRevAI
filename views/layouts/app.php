@@ -87,7 +87,10 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
                 catch (\Throwable) { $unread = 0; }
                 require config('paths.base') . '/views/partials/notification_bell.php';
             ?>
-            <a class="topbar__name" href="/profile"><?= e((string) $user['name']) ?></a>
+            <a class="topbar__name" href="/profile">
+                <?php $avatarUser = $user; $avatarSize = 28; require config('paths.base') . '/views/partials/avatar.php'; ?>
+                <span class="topbar__name-text"><?= e((string) $user['name']) ?></span>
+            </a>
             <form method="post" action="/logout" class="inline-form">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn--ghost btn--sm"><?= e(__('nav.logout')) ?></button>
