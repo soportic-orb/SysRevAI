@@ -13,9 +13,14 @@ return [
     ],
 
     'common' => [
-        'working' => 'Trabajando, espera…',
-        'expand'  => 'Desplegar',
-        'collapse' => 'Plegar',
+        'working'      => 'Trabajando, espera…',
+        'expand'       => 'Desplegar',
+        'collapse'     => 'Plegar',
+        'close'        => 'Cerrar',
+        'info_about'   => 'Acerca de: %s',
+        'info_button'  => 'Información sobre esta sección',
+        'confirm_archive'   => '¿Seguro que quieres archivar esta revisión? Pasará a la lista de archivadas y dejará de aparecer en el tauler.',
+        'confirm_unarchive' => '¿Restaurar esta revisión a la lista activa?',
     ],
 
     'nav' => [
@@ -126,6 +131,12 @@ return [
     ],
 
     'rob' => [
+        'info_what_label'  => '¿Qué es la evaluación del riesgo de sesgo?',
+        'info_what'        => 'Es la valoración crítica de la calidad metodológica de cada estudio incluido. No es lo mismo que la calidad de la evidencia (GRADE): aquí se mide hasta qué punto el diseño, la conducción y el análisis del estudio individual pueden distorsionar sus resultados. El riesgo de sesgo se usa después para ponderar la confianza en la síntesis.',
+        'info_how_label'   => '¿Cómo funciona en SysRevAI?',
+        'info_how'         => 'La plataforma ofrece las cuatro herramientas estándar: RoB 2 para ensayos aleatorizados, ROBINS-I para estudios no aleatorizados, Newcastle-Ottawa para estudios observacionales (cohortes y casos-controles) y JBI para estudios cualitativos. Para cada estudio y cada dominio (aleatorización, desviaciones del protocolo, datos faltantes, medida del resultado, selección del resultado informado, etc.) emites un juicio: Bajo / Algunas preocupaciones / Alto / Sin información. SysRevAI genera el gráfico semáforo y el gráfico resumen apilado automáticamente.',
+        'info_best_label'  => 'Buenas prácticas',
+        'info_best'        => 'Dos evaluadores independientes por estudio y discusión de las discrepancias. | Justifica cada juicio en el campo de texto — sin justificación el lector del manuscrito no podrá replicar tu valoración. | Usa la herramienta apropiada al diseño del estudio; mezclarlas invalida la comparación. | La IA puede sugerir un juicio inicial, pero el juicio final siempre es humano y debe documentarse.',
         'title'        => 'Riesgo de sesgo',
         'tool'         => 'Herramienta',
         'tool_rob2'              => 'RoB 2',
@@ -170,6 +181,12 @@ return [
     ],
 
     'extraction' => [
+        'info_what_label'  => '¿Qué es la extracción de datos?',
+        'info_what'        => 'Es la recogida sistemática y estructurada de la información clave de cada estudio incluido: diseño, muestra, intervención, comparador, resultados, efectos adversos, financiación, etc. Es la materia prima a partir de la cual se redactarán las tablas de resultados y, si procede, el meta-análisis.',
+        'info_how_label'   => '¿Cómo funciona en SysRevAI?',
+        'info_how'         => 'Defines una plantilla con los campos que tu revisión necesita (texto libre, número, fecha, selección, multi-selección). Para cada estudio rellenas los campos manualmente; si quieres, le pides a la IA que los pre-rellene leyendo el PDF y tú validas — la IA nunca guarda sin tu aprobación. El estado de cada estudio (borrador / enviado / aprobado) marca el progreso del equipo.',
+        'info_best_label'  => 'Buenas prácticas',
+        'info_best'        => 'Haz un pilotaje de la plantilla con 3-5 estudios antes de extender al resto, ajusta los campos y vuelve a empezar. | Doble extracción independiente cuando los recursos lo permitan; comparación posterior y resolución de discrepancias. | Mantén las unidades consistentes (mmHg, kg, %…) — defínelas en el campo "ayuda" de la plantilla. | Documenta los datos que faltan y si los buscaste en el suplementario o pediste al autor.',
         'title'          => 'Extracción de datos',
         'edit_template'  => 'Editar plantilla',
         'template_name'  => 'Nombre de la plantilla',
@@ -213,6 +230,12 @@ return [
     ],
 
     'fulltext' => [
+        'info_what_label'  => '¿Qué es el cribado a texto completo?',
+        'info_what'        => 'Es el segundo filtro: se lee el PDF entero de las referencias que pasaron el cribado de título y resumen. Aquí se aplican todos los criterios de inclusión y exclusión del protocolo y se justifica el motivo de exclusión de los descartados, lo que alimenta directamente el diagrama PRISMA.',
+        'info_how_label'   => '¿Cómo funciona en SysRevAI?',
+        'info_how'         => 'La plataforma te muestra el PDF junto al protocolo de la revisión. Decides "Incluir", "Tal vez" o "Excluir" — igual que en T/R pero con la información completa. Si la referencia no tiene PDF, SysRevAI intenta recuperarlo automáticamente desde Unpaywall, PMC, OpenAlex y otras fuentes abiertas. Puedes chatear con el artículo (Article chat) para resolver dudas concretas sobre el contenido sin tener que leerlo entero.',
+        'info_best_label'  => 'Buenas prácticas',
+        'info_best'        => 'Mantén el esquema de doble revisor + coordinador para conflictos. | Registra siempre un motivo de exclusión específico; "no cumple los criterios" no sirve para PRISMA. | Si dependes de PDFs no abiertos, súbelos manualmente con tu acceso institucional — SysRevAI no rompe paywalls. | Documenta cualquier cambio del protocolo que surja al ver los textos completos.',
         'title'           => 'Cribado a texto completo',
         'start'           => 'Iniciar cribado a texto completo',
         'all_done'        => 'No tienes artículos pendientes de cribar a texto completo.',
@@ -272,6 +295,12 @@ return [
     ],
 
     'screening' => [
+        'info_what_label'  => '¿Qué es el cribado de título y resumen?',
+        'info_what'        => 'Es el primer filtro de la revisión. Cada revisor evalúa el título y el resumen de cada referencia para decidir si tiene potencial relevancia y debe pasar a la lectura del texto completo. Aquí no se descartan estudios por la calidad metodológica — solo por si encajan o no en la pregunta de investigación.',
+        'info_how_label'   => '¿Cómo funciona en SysRevAI?',
+        'info_how'         => 'La plataforma te muestra una referencia a la vez sin revelar las decisiones de los otros revisores (doble ciego cuando está activado en el protocolo). Decides "Incluir", "Tal vez" o "Excluir"; si excluyes puedes marcar el motivo. Las decisiones que entran en conflicto se acumulan en la cola de "Conflictos" y un revisor con rol de coordinador toma la decisión final.',
+        'info_best_label'  => 'Buenas prácticas',
+        'info_best'        => 'Trabaja con dos revisores independientes y un tercero para conflictos. | Haz una prueba piloto con 50-100 referencias para calibrar los criterios antes del cribado completo. | Usa motivos de exclusión consistentes — los necesitarás para el diagrama PRISMA. | Cuando dudes, marca "Tal vez": pasa a texto completo y allí se confirma.',
         'title'            => 'Cribado T/R',
         'start'            => 'Iniciar el cribado',
         'started'          => '%d referencias enviadas al cribado.',

@@ -41,7 +41,12 @@ $links = [
             <a class="review-subnav__name" href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a>
             <span class="tag tag--<?= e((string) $review['status']) ?>"><?= e(__('reviews.status_' . $review['status'])) ?></span>
             <?php if ($isOwner): ?>
-                <form method="post" action="/reviews/<?= $id ?>/archive" class="inline-form review-subnav__archive">
+                <?php $confirmMsg = $review['status'] === 'archived'
+                    ? __('common.confirm_unarchive')
+                    : __('common.confirm_archive'); ?>
+                <form method="post" action="/reviews/<?= $id ?>/archive"
+                      class="inline-form review-subnav__archive"
+                      onsubmit="return confirm('<?= e($confirmMsg) ?>');">
                     <?= csrf_field() ?>
                     <button class="btn btn--xs btn--ghost" type="submit">
                         <?= e($review['status'] === 'archived' ? __('reviews.unarchive') : __('reviews.archive')) ?>

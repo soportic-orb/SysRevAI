@@ -178,3 +178,52 @@
         if (e.persisted) window.SysRevAI.hideAiOverlay();
     });
 })();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Info modal. Any [data-info-target="modalId"] button opens the matching
+   <dialog id="modalId">. Uses the native HTMLDialogElement so we get the
+   ESC-to-close, focus trap and backdrop for free; falls back to a class
+   toggle on browsers without showModal() support.
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    document.addEventListener('click', function (e) {
+        var trigger = e.target.closest('[data-info-target]');
+        if (trigger) {
+            var id = trigger.getAttribute('data-info-target');
+            var dlg = document.getElementById(id);
+            if (!dlg) return;
+            e.preventDefault();
+            if (typeof dlg.showModal === 'function') {
+                dlg.showModal();
+            } else {
+                dlg.setAttribute('open', '');
+                dlg.classList.add('is-open');
+            }
+            return;
+        }
+
+        var closer = e.target.closest('[data-info-close]');
+        if (closer) {
+            var open = closer.closest('dialog.info-modal');
+            if (!open) return;
+            e.preventDefault();
+            if (typeof open.close === 'function') {
+                open.close();
+            } else {
+                open.removeAttribute('open');
+                open.classList.remove('is-open');
+            }
+        }
+    });
+
+    /* Click on the backdrop (outside the inner card) closes the modal. */
+    document.addEventListener('click', function (e) {
+        if (!(e.target instanceof HTMLDialogElement) || !e.target.classList.contains('info-modal')) return;
+        var inner = e.target.querySelector('.info-modal__inner');
+        if (inner && !inner.contains(e.target.ownerDocument.elementFromPoint(e.clientX, e.clientY))) {
+            if (typeof e.target.close === 'function') e.target.close();
+        }
+    });
+})();

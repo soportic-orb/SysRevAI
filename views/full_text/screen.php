@@ -23,7 +23,10 @@ $basePath = '/reviews/' . $id . '/full-text';
     <div class="page__head page__head--row">
         <div>
             <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
-            <h1 class="page__title"><?= e(__('fulltext.title')) ?></h1>
+            <h1 class="page__title">
+                <?= e(__('fulltext.title')) ?>
+                <?php $phaseKey = 'fulltext'; require config('paths.base') . '/views/partials/phase_info.php'; ?>
+            </h1>
         </div>
         <div class="btn-row">
             <?php if ($canCoordinate && $conflicts > 0): ?>
