@@ -118,9 +118,18 @@ if (!function_exists('base_url')) {
 }
 
 if (!function_exists('asset')) {
+    /**
+     * Build a URL for a static asset under public/assets/. Automatically
+     * appends ?v=<mtime> so browsers and proxies pick up new versions
+     * after every deploy without needing a hard refresh.
+     */
     function asset(string $path): string
     {
-        return base_url('assets/' . ltrim($path, '/'));
+        $rel = ltrim($path, '/');
+        $url = base_url('assets/' . $rel);
+        $file = (string) config('paths.base') . '/public/assets/' . $rel;
+        $mtime = @filemtime($file);
+        return $mtime ? $url . '?v=' . $mtime : $url;
     }
 }
 
