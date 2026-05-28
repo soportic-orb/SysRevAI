@@ -52,3 +52,14 @@ When self-hosting, please follow the security guidance baked into the platform:
   itself, but removing it is best practice).
 
 Thank you for practicing responsible disclosure. ❤️
+
+## Legal and ethical use of the full-text retrieval module
+
+SysRevAI's full-text retrieval module **only accesses content that is legally
+available through official APIs** (Unpaywall, Europe PMC, PMC/NCBI, OpenAlex
+and similar services). It does **not** bypass paywalls, scrape publisher
+HTML pages, or use Sci-Hub-style services.
+
+For articles that are not Open Access, users must rely on **their own
+institutional licences** to obtain the PDF and upload it manually. SysRevAI is
+not responsible for misuse by end users.

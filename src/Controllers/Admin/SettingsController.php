@@ -19,7 +19,7 @@ final class SettingsController
 {
     private const SECTIONS = [
         'general', 'claude', 'translate', 'email', 'apis',
-        'security', 'reviews', 'files', 'languages', 'about',
+        'security', 'reviews', 'files', 'languages', 'fulltext', 'about',
     ];
 
     public function index(): void
@@ -52,6 +52,7 @@ final class SettingsController
             'reviews'   => $this->saveReviews(),
             'files'     => $this->saveFiles(),
             'languages' => $this->saveLanguages(),
+            'fulltext'  => $this->saveFulltext(),
             'about'     => $this->saveAbout(),
             default     => null,
         };
@@ -226,7 +227,90 @@ final class SettingsController
         ActivityLog::record('settings.languages.updated');
     }
 
+    private function saveFulltext(): void
+    {
+        Config::set('fulltext.enabled', !empty($_POST['enabled']), 'bool', 'fulltext');
+        $mode = in_array(($_POST['mode'] ?? 'manual'), ['manual', 'on_import', 'scheduled'], true) ? $_POST['mode'] : 'manual';
+        Config::set('fulltext.mode', $mode, 'string', 'fulltext');
+        Config::set('fulltext.concurrency', max(1, min(10, (int) ($_POST['concurrency'] ?? 3))), 'int', 'fulltext');
+        Config::set('fulltext.timeout_seconds', max(5, (int) ($_POST['timeout_seconds'] ?? 60)), 'int', 'fulltext');
+        Config::set('fulltext.retry_after_days', max(1, (int) ($_POST['retry_after_days'] ?? 30)), 'int', 'fulltext');
+        Config::set('fulltext.exhaustive', !empty($_POST['exhaustive']), 'bool', 'fulltext');
+        Config::set('fulltext.polite_email', trim((string) ($_POST['polite_email'] ?? '')), 'string', 'fulltext');
+
+        // Priority order — accept either an ordered text field (one source per line) or a hidden CSV.
+        $known = array_keys(\SysRevAI\Services\FullTextRetrieval\FullTextRetrievalService::SOURCE_MAP);
+        $raw   = (string) ($_POST['priority'] ?? '');
+        $items = array_filter(array_map('trim', preg_split('/[\s,]+/', $raw) ?: []));
+        $items = array_values(array_intersect($items, $known));
+        if ($items === []) {
+            $items = \SysRevAI\Services\FullTextRetrieval\FullTextRetrievalService::DEFAULT_PRIORITY;
+        }
+        Config::set('fulltext.priority', $items, 'json', 'fulltext');
+
+        // Per-source configuration.
+        foreach ($known as $name) {
+            Config::set('fulltext.' . $name . '.enabled', !empty($_POST['sources'][$name]['enabled']), 'bool', 'fulltext');
+            if (isset($_POST['sources'][$name]['email'])) {
+                Config::set('fulltext.' . $name . '.email', trim((string) $_POST['sources'][$name]['email']), 'string', 'fulltext');
+            }
+        }
+
+        // PMC NCBI API key — only overwrite when the field is non-empty (encrypted).
+        $pmcKey = trim((string) ($_POST['sources']['pmc']['api_key'] ?? ''));
+        if ($pmcKey !== '') {
+            Config::set('fulltext.pmc.api_key', $pmcKey, 'encrypted', 'fulltext');
+        }
+
+        ActivityLog::record('settings.fulltext.updated');
+    }
+
     /* ── Integration actions ───────────────────────────────────────────── */
+
+    /** Verify a single full-text source (JSON response for AJAX). */
+    public function verifyFulltextSource(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        $name = (string) ($_POST['source'] ?? '');
+        $map  = \SysRevAI\Services\FullTextRetrieval\FullTextRetrievalService::SOURCE_MAP;
+        if (!isset($map[$name])) {
+            echo json_encode(['ok' => false, 'message' => 'Unknown source.']);
+            return;
+        }
+        $instance = new $map[$name]();
+        $check = $instance->verifyConnection();
+        ActivityLog::record('settings.fulltext.verify', ['source' => $name, 'ok' => (bool) $check['ok']]);
+        echo json_encode([
+            'ok'      => (bool) $check['ok'],
+            'message' => (string) $check['message'],
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /** Run the full chain for a test DOI/PMID (JSON response with the trace). */
+    public function testFulltextChain(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        $doi  = trim((string) ($_POST['doi'] ?? '')) ?: null;
+        $pmid = trim((string) ($_POST['pmid'] ?? '')) ?: null;
+        if ($doi === null && $pmid === null) {
+            echo json_encode(['ok' => false, 'error' => 'no_identifier']);
+            return;
+        }
+        $service = new \SysRevAI\Services\FullTextRetrieval\FullTextRetrievalService();
+        $result = $service->testChain($doi, $pmid);
+        ActivityLog::record('settings.fulltext.test', ['doi' => $doi, 'pmid' => $pmid, 'success' => $result['success']]);
+        echo json_encode([
+            'ok'       => true,
+            'success'  => $result['success'],
+            'attempts' => $result['attempts'],
+            'result'   => $result['result'] === null ? null : [
+                'source'        => $result['result']->source,
+                'pdf_url'       => $result['result']->pdfUrl,
+                'license_type'  => $result['result']->licenseType,
+                'version'       => $result['result']->version,
+            ],
+        ], JSON_UNESCAPED_UNICODE);
+    }
 
     public function sendTestEmail(): void
     {

@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Full-text retrieval — foundations + admin section + 4 OA sources:**
+  - `015_full_text_retrieval.sql` migration: `retrieval_attempts` (per-source
+    audit log), `reference_fulltext_status` (consolidated state with PDF/XML
+    paths and retry window) and `retrieval_queue` (background jobs).
+  - `Services\FullTextRetrieval`: a `FullTextSourceInterface` contract, a
+    `FullTextResult` value object, a `BaseHttpSource` with native cURL plus
+    polite User-Agent and exponential backoff on 429/503, and an orchestrator
+    (`FullTextRetrievalService`) that walks the configured chain in priority
+    order, logs every attempt and stops at the first hit (or queries every
+    enabled source under the optional exhaustive mode).
+  - Four official-API sources: **Unpaywall**, **OpenAlex**, **Europe PMC** and
+    **PMC (NCBI)** — each implementing `supports`, `retrieve` and
+    `verifyConnection`. No paywall bypassing or HTML scraping.
+  - New **Integrations → Full-text (APIs)** admin section with per-source
+    cards (enable, email, encrypted NCBI key, "Verify" button via JSON
+    endpoint), priority-order textarea, mode/concurrency/timeout/retry/
+    exhaustive toggles, and a **"Test the chain"** form that runs the full
+    cascade for a DOI/PMID and prints the trace without writing to the DB.
+  - SECURITY note describing the legal/ethical scope of the module.
+
 - **Phase 13 — polish:**
   - **Global search** at `/search` (auth-only) across every review the user
     can access, using the existing FULLTEXT index on `references(title,
