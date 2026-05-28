@@ -13,6 +13,12 @@ return [
         'tagline' => 'Revisions sistemàtiques potenciades amb IA',
     ],
 
+    'common' => [
+        'working' => 'Treballant, espera…',
+        'expand'  => 'Desplegar',
+        'collapse' => 'Plegar',
+    ],
+
     'nav' => [
         'dashboard'     => 'Tauler',
         'reviews'       => 'Revisions',
@@ -110,7 +116,7 @@ return [
         'failed'          => 'La IA no ha pogut generar el resum.',
         'no_text'         => 'No hi ha text disponible (cal pujar un PDF o que l\'article tingui abstract).',
         'translate'       => 'Traduir',
-        'translating'     => 'Traduint…',
+        'translating'     => 'Treballant, espera…',
         'translate_failed' => 'No s\'ha pogut traduir.',
         'model'           => 'Model',
         'section_background'  => 'Background',
@@ -509,7 +515,7 @@ return [
         'ai_upload_title'       => 'Pujar document de protocol (extracció amb IA)',
         'ai_upload_intro'       => 'Puja un PDF o document Word amb el teu protocol. La IA omplirà els camps perquè els revisis i editis abans de desar.',
         'ai_upload_analyze'     => 'Analitzar amb IA',
-        'ai_upload_running'     => 'Analitzant…',
+        'ai_upload_running'     => 'Treballant, espera…',
         'ai_upload_ok'          => 'Camps omplerts — revisa cadascun i desa.',
         'ai_upload_empty'       => 'No s\'ha pogut llegir el text del document. És un PDF escanejat?',
         'ai_upload_too_large'   => 'El fitxer supera la mida màxima permesa.',
@@ -627,7 +633,7 @@ return [
             'test_title'       => 'Provar la cadena',
             'test_intro'       => 'Introdueix un DOI o PMID i llança la cadena sencera. No s\'escriu res a la BD.',
             'test_run'         => 'Provar',
-            'testing'          => 'Consultant fonts…',
+            'testing'          => 'Treballant, espera…',
             'help_europepmc'   => 'No usa clau d\'API. El correu del "polite pool" s\'inclou al User-Agent perquè Europe PMC pugui contactar-te si hi ha qualsevol incidència.',
             'help_doaj'        => 'No requereix clau — DOAJ ofereix accés totalment obert als seus endpoints de lectura.',
             'help_arxiv'       => 'No usa clau d\'API. arXiv imposa un límit d\'una petició cada 3 segons; SysRevAI el respecta automàticament.',
@@ -832,7 +838,7 @@ return [
         'expand'       => 'Canviar mida del xat',
         'clear'        => 'Esborrar conversa',
         'clear_confirm'=> 'Esborrar la conversa? Només afecta a aquest dispositiu.',
-        'thinking'     => 'Pensant…',
+        'thinking'     => 'Treballant, espera…',
         'error'        => 'No s\'ha pogut contactar amb la IA. Torna-ho a intentar d\'aquí a un moment.',
         'budget'       => 'S\'ha esgotat el pressupost mensual de IA del lloc.',
         'disabled'     => 'El Copilot està desactivat des del panell d\'administració.',

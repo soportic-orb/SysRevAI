@@ -425,6 +425,7 @@ a:hover { text-decoration: underline; }
     transition: background .15s ease, border-color .15s ease, opacity .15s ease;
 }
 .btn:hover { text-decoration: none; }
+.btn.is-busy, .btn[disabled] { cursor: progress; opacity: .75; }
 .btn--sm { padding: 7px 12px; font-size: 13px; }
 .btn--xs { padding: 4px 10px; font-size: 12.5px; border-radius: 6px; }
 .btn--block { width: 100%; }
@@ -644,6 +645,60 @@ kbd { background: rgba(255,255,255,.25); border-radius: 4px; padding: 1px 5px; f
     padding: 24px; margin-bottom: 20px;
 }
 .section-card--inline { display: flex; align-items: center; gap: 16px; }
+
+/* Collapsible card (Protocol / Team on the review overview). */
+.collapse-card { padding: 0; overflow: hidden; }
+.collapse-card__head {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 16px 20px;
+    background: transparent; border: 0; cursor: pointer; text-align: left;
+    color: var(--c-text); font-family: inherit;
+    font-size: 16px; font-weight: 600;
+}
+.collapse-card__head:hover { background: var(--c-surface-2); }
+.collapse-card__head:focus-visible { outline: 2px solid var(--c-primary); outline-offset: -2px; }
+.collapse-card__head .icon--chevron {
+    color: var(--c-muted);
+    transition: transform .2s ease;
+}
+.collapse-card.is-collapsed .collapse-card__head .icon--chevron { transform: rotate(-90deg); }
+.collapse-card__title { display: inline-flex; align-items: center; gap: 8px; }
+.collapse-card__body { padding: 6px 20px 20px; border-top: 1px solid var(--c-border); font-size: 13.5px; }
+
+/* Protocol body: grid of icon-card items per PICO + wide rows for the
+   research question, inclusion / exclusion criteria. */
+.protocol-body { display: flex; flex-direction: column; gap: 12px; }
+.protocol-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+.protocol-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 12px; border: 1px solid var(--c-border); border-radius: 8px;
+    background: var(--c-surface-2);
+}
+.protocol-item--wide { grid-column: 1 / -1; }
+.protocol-item__icon {
+    flex: 0 0 28px; width: 28px; height: 28px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--c-surface); color: var(--c-text);
+    border: 1px solid var(--c-border);
+}
+.protocol-item__label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--c-muted); font-weight: 600; margin-bottom: 2px;
+}
+.protocol-item__value { color: var(--c-text); font-size: 13.5px; line-height: 1.5; word-break: break-word; }
+.protocol-item--include .protocol-item__icon { background: var(--c-tag-active-bg); color: var(--c-tag-active-fg); border-color: transparent; }
+.protocol-item--exclude .protocol-item__icon { background: var(--c-alert-error-bg); color: var(--c-alert-error-fg); border-color: transparent; }
+
+.team-block + .team-block { margin-top: 16px; }
+.team-block__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.team-block__title { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--c-text); }
+
+/* Discussion card title with the chat icon inline. */
+.discussion-card__title { display: flex; align-items: center; gap: 8px; }
 
 .form-row { display: flex; }
 .form-row--split { gap: 16px; }
