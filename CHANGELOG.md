@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Full-text retrieval — real PDF / JATS XML download + integration (sub-phase 8):**
+  - `Services\FullTextRetrieval\JatsParser` parses PMC / Europe PMC JATS XML
+    into structured content (title, abstract, sections) plus a single
+    plain-text rendition for the rest of the platform.
+  - `Services\FullTextRetrieval\FullTextDownloader` materialises a
+    `FullTextResult` to disk: downloads the PDF (with PDF magic-bytes
+    validation, size cap from the admin Files settings, abort-on-overflow
+    stream), downloads the JATS XML companion when present, runs JATS or the
+    existing `smalot/pdfparser` to extract text, and persists everything via
+    `ReferenceFullText::save` and `ReferenceFullTextStatus::markStored` so
+    Claude chat, AI summaries and full-text search treat retrieved articles
+    just like a manual PDF upload.
+  - `FileStorage::storeBytes` / `isStoredIn` for any-subdir secure writes
+    (used by the downloader for the new `storage/xml/` directory) with
+    path-traversal-safe verification. `storage/xml/` is gitignored.
+  - Orchestrator wired up: after a chain succeeds and `persist=true`, the
+    downloader runs automatically when `fulltext.download_immediately` is on
+    (default true). Download failures are non-fatal — the URL stays available
+    on the status row.
+  - Admin **Integrations → Full-text (APIs)** section gains the
+    "auto-download PDF/XML" toggle.
 - **Full-text retrieval — 5 additional sources (catalog now at 9):**
   - **`SemanticScholarSource`** — DOI/PMID → `openAccessPdf.url` via the graph
     API; optional encrypted API key (admin field).
