@@ -192,6 +192,13 @@ a:hover { text-decoration: underline; }
 .rob-domain__title { margin: 0 0 8px; font-size: 15px; }
 .rob-domain__actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 
+/* Full-text retrieval admin */
+.ft-source { padding: 14px 0; border-bottom: 1px solid var(--c-border); }
+.ft-source:last-of-type { border-bottom: 0; }
+.ft-source__actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.ft-source__status { font-size: 13px; }
+.ft-test-result { margin-top: 14px; padding: 12px 14px; background: #0f1b26; color: #d6e2ec; border-radius: 8px; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 12px; white-space: pre-wrap; max-height: 320px; overflow: auto; }
+
 /* Extraction template editor */
 .tpl-row { border: 1px solid var(--c-border); border-radius: 8px; padding: 14px; margin-bottom: 12px; background: var(--c-surface); }
 .tpl-row__actions { margin-top: 8px; }

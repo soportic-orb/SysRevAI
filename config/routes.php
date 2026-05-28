@@ -154,6 +154,8 @@ $router->get('/admin/settings/{section}', [SettingsController::class, 'show'], $
 $router->post('/admin/settings/claude/verify', [SettingsController::class, 'verifyClaude'], $admin);
 $router->post('/admin/settings/email/test', [SettingsController::class, 'sendTestEmail'], $admin);
 $router->post('/admin/settings/translate/verify', [SettingsController::class, 'verifyTranslate'], $admin);
+$router->post('/admin/settings/fulltext/verify', [SettingsController::class, 'verifyFulltextSource'], $admin);
+$router->post('/admin/settings/fulltext/test', [SettingsController::class, 'testFulltextChain'], $admin);
 $router->post('/admin/settings/{section}', [SettingsController::class, 'save'], $admin);
 
 // Admin → Users (order matters: literal paths before the {id} pattern).

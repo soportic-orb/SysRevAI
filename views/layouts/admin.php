@@ -22,6 +22,7 @@ $nav = [
     'reviews'     => '/admin/settings/reviews',
     'files'       => '/admin/settings/files',
     'languages'   => '/admin/settings/languages',
+    'fulltext'    => '/admin/settings/fulltext',
     'maintenance' => '/admin/maintenance',
     'about'       => '/admin/settings/about',
 ];
