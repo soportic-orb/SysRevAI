@@ -311,6 +311,8 @@ return [
         'exclude_reason'   => 'Exclusion reason',
         'no_reason'        => '— No reason —',
         'notes'            => 'Notes (optional)',
+        'notes_label'      => 'Notes',
+        'assessment_title' => 'Assessment',
         'include'          => 'Include',
         'exclude'          => 'Exclude',
         'maybe'            => 'Maybe',
