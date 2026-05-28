@@ -20,6 +20,7 @@ return [
         'notifications' => 'Notifications',
         'profile'       => 'Profile',
         'logout'        => 'Log out',
+        'theme_toggle'  => 'Toggle dark mode',
     ],
 
     'auth' => [
@@ -300,18 +301,21 @@ return [
 
     'import' => [
         'title'         => 'Import references',
-        'intro'         => 'Upload a file or paste the content. Formats: RIS, EndNote XML, PubMed XML, CSV, BibTeX.',
+        'intro'         => 'Upload a file or paste the content. Formats: RIS, EndNote XML, PubMed XML, CSV, BibTeX, or free-form text parsed by AI.',
         'format'        => 'Format',
+        'format_help'   => 'Pick "Free-text (AI)" to paste a Word bibliography or a numbered list in any citation style — the AI will detect each reference.',
         'auto_detect'   => 'Auto-detect',
         'fmt_ris'       => 'RIS',
         'fmt_bibtex'    => 'BibTeX',
         'fmt_csv'       => 'CSV',
         'fmt_pubmed'    => 'PubMed XML',
         'fmt_endnote'   => 'EndNote XML',
+        'fmt_freetext'  => 'Free-text (AI)',
         'file'          => 'File',
         'file_help'     => 'Max 20 MB. Extensions: .ris .nbib .bib .csv .xml .enw .txt',
         'paste'         => 'Or paste the content',
         'paste_help'    => 'Paste RIS/BibTeX/CSV text here if you have no file.',
+        'paste_freetext_hint' => 'For "Free-text (AI)" you can paste any citation style — APA, Vancouver, Harvard, numbered list… the AI parses each entry.',
         'submit'        => 'Import',
         'history'       => 'Import history',
         'imported'      => 'Imported',
@@ -320,6 +324,10 @@ return [
         'unknown_format' => 'Could not detect the format. Please select it manually.',
         'too_large'     => 'The file is too large (max 20 MB).',
         'result'        => 'Imported %d references — %d exact duplicates marked, %d fuzzy candidates.',
+        'ai_no_key'     => 'AI import needs a Claude API key. Ask an admin to set it under Settings → Claude.',
+        'ai_disabled'   => 'AI extraction is disabled in admin settings.',
+        'ai_budget'     => 'The monthly AI budget has been reached for this site.',
+        'ai_failed'     => 'AI parsing failed (%s). Try with fewer references or paste a cleaner block.',
     ],
 
     'references' => [

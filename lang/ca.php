@@ -21,6 +21,7 @@ return [
         'notifications' => 'Notificacions',
         'profile'       => 'Perfil',
         'logout'        => 'Tancar sessió',
+        'theme_toggle'  => 'Canviar entre mode clar i fosc',
     ],
 
     'auth' => [
@@ -301,18 +302,21 @@ return [
 
     'import' => [
         'title'         => 'Importar referències',
-        'intro'         => 'Puja un fitxer o enganxa el contingut. Formats: RIS, EndNote XML, PubMed XML, CSV, BibTeX.',
+        'intro'         => 'Puja un fitxer o enganxa el contingut. Formats: RIS, EndNote XML, PubMed XML, CSV, BibTeX, o text lliure interpretat per IA.',
         'format'        => 'Format',
+        'format_help'   => 'Tria "Text lliure (IA)" per enganxar una bibliografia de Word o una llista numerada en qualsevol estil — la IA detectarà cada referència.',
         'auto_detect'   => 'Detecció automàtica',
         'fmt_ris'       => 'RIS',
         'fmt_bibtex'    => 'BibTeX',
         'fmt_csv'       => 'CSV',
         'fmt_pubmed'    => 'PubMed XML',
         'fmt_endnote'   => 'EndNote XML',
+        'fmt_freetext'  => 'Text lliure (IA)',
         'file'          => 'Fitxer',
         'file_help'     => 'Màxim 20 MB. Extensions: .ris .nbib .bib .csv .xml .enw .txt',
         'paste'         => 'O enganxa el contingut',
         'paste_help'    => 'Enganxa aquí el text RIS/BibTeX/CSV si no tens fitxer.',
+        'paste_freetext_hint' => 'Per a "Text lliure (IA)" pots enganxar qualsevol estil de citació — APA, Vancouver, Harvard, llista numerada… la IA analitza cada entrada.',
         'submit'        => 'Importar',
         'history'       => 'Historial d\'importacions',
         'imported'      => 'Importades',
@@ -321,6 +325,10 @@ return [
         'unknown_format' => 'No s\'ha pogut detectar el format. Selecciona\'l manualment.',
         'too_large'     => 'El fitxer és massa gran (màx. 20 MB).',
         'result'        => 'Importades %d referències — %d duplicats exactes marcats, %d candidats difusos.',
+        'ai_no_key'     => 'La importació amb IA necessita una clau d\'API de Claude. Demana-la a un administrador a Configuració → Claude.',
+        'ai_disabled'   => 'L\'extracció amb IA està desactivada a la configuració.',
+        'ai_budget'     => 'S\'ha esgotat el pressupost mensual de IA del lloc.',
+        'ai_failed'     => 'L\'anàlisi amb IA ha fallat (%s). Prova amb menys referències o enganxa un bloc més net.',
     ],
 
     'references' => [
