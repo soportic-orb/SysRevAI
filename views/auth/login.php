@@ -29,4 +29,11 @@ declare(strict_types=1);
 
         <button type="submit" class="btn btn--primary btn--block"><?= e(__('auth.sign_in')) ?></button>
     </form>
+
+    <?php if (\SysRevAI\Controllers\AuthController::registrationOpen()): ?>
+        <p class="auth-card__footer">
+            <?= e(__('auth.no_account')) ?>
+            <a href="/register"><?= e(__('auth.register_link')) ?></a>
+        </p>
+    <?php endif; ?>
 </section>

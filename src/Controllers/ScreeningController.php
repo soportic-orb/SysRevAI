@@ -66,6 +66,8 @@ class ScreeningController
             'reasons'       => ExclusionReason::forReview($rid),
             'pending'       => $pending,
             'completed'     => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
+            'totalReferences' => ScreeningService::totalReferences($rid),
+            'totalInStage'    => ScreeningService::totalInStage($rid, $this->stage),
             'conflicts'     => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
             'canCoordinate' => $canCoordinate,
             'stage'         => $this->stage,
@@ -110,10 +112,29 @@ class ScreeningController
         $notes = trim((string) ($_POST['notes'] ?? '')) ?: null;
         $time = max(0, min(3600, (int) ($_POST['time_spent'] ?? 0)));
 
+        // Optional traceability: if the reviewer asked for an AI suggestion
+        // before deciding, the client posts the raw JSON back so we can
+        // persist exactly what the model recommended at decision time.
+        $aiJson = null;
+        $rawAi = (string) ($_POST['ai_suggestion_json'] ?? '');
+        if ($rawAi !== '') {
+            $decoded = json_decode($rawAi, true);
+            if (is_array($decoded) && isset($decoded['recommendation'])) {
+                $clean = [
+                    'recommendation' => (string) $decoded['recommendation'],
+                    'confidence'     => isset($decoded['confidence']) ? (float) $decoded['confidence'] : null,
+                    'reason'         => isset($decoded['reason']) ? (string) $decoded['reason'] : '',
+                    'language'       => isset($decoded['language']) ? (string) $decoded['language'] : '',
+                    'shown_at'       => isset($decoded['shown_at']) ? (string) $decoded['shown_at'] : '',
+                ];
+                $aiJson = json_encode($clean, JSON_UNESCAPED_UNICODE);
+            }
+        }
+
         $required = ScreeningService::requiredReviewers($review);
         $before = ScreeningDecision::decidedCount($referenceId, $this->stage);
 
-        ScreeningDecision::record($referenceId, (int) Auth::id(), $this->stage, $decision, $reason, $notes, $time);
+        ScreeningDecision::record($referenceId, (int) Auth::id(), $this->stage, $decision, $reason, $notes, $time, $aiJson);
         ScreeningService::evaluate($referenceId, $review, $this->stage);
 
         // If this decision completed the required set without finalizing, it is
@@ -147,9 +168,17 @@ class ScreeningController
             'inclusion' => $review['inclusion_criteria'],
             'exclusion' => $review['exclusion_criteria'],
         ];
+        // The AI's "reason" comes back in the reviewer's interface language
+        // so they can read it without an extra translation step.
+        $locale = \SysRevAI\Core\I18n::locale();
         $result = \SysRevAI\Services\ClaudeService::fromSettings()
-            ->suggestScreeningDecision($reference, $protocol, $rid);
+            ->suggestScreeningDecision($reference, $protocol, $rid, $locale);
 
+        // Surface the language back to the client so the saved trace
+        // records exactly which locale was used at decision time.
+        if (is_array($result) && ($result['ok'] ?? false)) {
+            $result['language'] = $locale;
+        }
         echo json_encode($result, JSON_UNESCAPED_UNICODE);
     }
 

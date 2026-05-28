@@ -8,6 +8,7 @@ use SysRevAI\Core\Auth;
 use SysRevAI\Core\Crypto;
 use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
+use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\User;
 use SysRevAI\Services\Totp;
 
@@ -97,6 +98,97 @@ final class AuthController
         redirect('/login');
     }
 
+    /* ── Self-registration (toggled in Admin → Users) ────────────────── */
+
+    public function showRegister(): void
+    {
+        if (!self::registrationOpen()) {
+            redirect('/login');
+        }
+        echo View::render('auth/register', [
+            'error'         => Session::pullFlash('register_error'),
+            'old'           => Session::pullFlash('register_old', ['name' => '', 'email' => '']),
+            'minLen'        => max(8, (int) (setting('security.min_password_length') ?? 12)),
+            'emailDomain'   => trim((string) (setting('registration.email_domain') ?? '')),
+            'manualApprove' => (bool) (setting('registration.manual_approval') ?? true),
+        ], 'layouts/auth');
+    }
+
+    public function register(): void
+    {
+        if (!self::registrationOpen()) {
+            redirect('/login');
+        }
+
+        $name  = trim((string) ($_POST['name'] ?? ''));
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+        $pw    = (string) ($_POST['password'] ?? '');
+        $pw2   = (string) ($_POST['confirm'] ?? '');
+
+        $back = static function (string $msg) use ($name, $email): void {
+            Session::flash('register_error', $msg);
+            Session::flash('register_old', ['name' => $name, 'email' => $email]);
+            redirect('/register');
+        };
+
+        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $back(__('auth.register_invalid'));
+        }
+        if ($pw !== $pw2) {
+            $back(__('auth.register_pw_mismatch'));
+        }
+
+        $minLen = max(8, (int) (setting('security.min_password_length') ?? 12));
+        if (!self::passwordMeetsPolicy($pw, $minLen)) {
+            $back(__('auth.register_pw_weak', $minLen));
+        }
+
+        $domain = trim((string) (setting('registration.email_domain') ?? ''));
+        if ($domain !== '') {
+            $needle = strtolower(ltrim($domain, '@'));
+            if (!str_ends_with($email, '@' . $needle)) {
+                $back(__('auth.register_bad_domain', $domain));
+            }
+        }
+        if (User::findByEmail($email) !== null) {
+            $back(__('auth.register_email_taken'));
+        }
+
+        $manualApprove = (bool) (setting('registration.manual_approval') ?? true);
+        $status = $manualApprove ? 'pending' : 'active';
+        $isActive = $manualApprove ? 0 : 1;
+
+        $id = User::create([
+            'name'          => $name,
+            'email'         => $email,
+            'password_hash' => password_hash($pw, PASSWORD_ARGON2ID),
+            'role'          => 'reviewer',
+            'status'        => $status,
+            'locale'        => (string) (setting('app.locale') ?? 'ca'),
+            'is_active'     => $isActive,
+        ]);
+        ActivityLog::record('users.self_registered', ['user_id' => $id, 'manual_approval' => $manualApprove]);
+
+        if ($manualApprove) {
+            Session::flash('login_email', $email);
+            Session::flash('login_error', __('auth.register_pending'));
+            redirect('/login');
+        }
+
+        // Auto-approved: log the user straight in.
+        $user = User::find($id);
+        if ($user !== null) {
+            Auth::login($user);
+            User::touchLogin($id);
+        }
+        redirect('/dashboard');
+    }
+
+    public static function registrationOpen(): bool
+    {
+        return (bool) (setting('registration.open') ?? false);
+    }
+
     /**
      * Mirrors Auth::attempt() but does NOT establish the session.
      * Used by the two-step login so the 2FA prompt sits between the
@@ -121,5 +213,14 @@ final class AuthController
             User::updatePassword((int) $user['id'], password_hash($password, PASSWORD_ARGON2ID));
         }
         return true;
+    }
+
+    private static function passwordMeetsPolicy(string $pw, int $minLen): bool
+    {
+        return strlen($pw) >= $minLen
+            && preg_match('/[A-Z]/', $pw)
+            && preg_match('/[a-z]/', $pw)
+            && preg_match('/\d/', $pw)
+            && preg_match('/[^A-Za-z0-9]/', $pw);
     }
 }

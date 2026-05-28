@@ -50,6 +50,8 @@ $router->get('/login', [AuthController::class, 'showLogin'], ['guest']);
 $router->post('/login', [AuthController::class, 'login'], ['guest']);
 $router->get('/login/2fa', [AuthController::class, 'show2fa'], ['guest']);
 $router->post('/login/2fa', [AuthController::class, 'verify2fa'], ['guest']);
+$router->get('/register', [AuthController::class, 'showRegister'], ['guest']);
+$router->post('/register', [AuthController::class, 'register'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 
 // Public about page (no auth) and global search (auth).
