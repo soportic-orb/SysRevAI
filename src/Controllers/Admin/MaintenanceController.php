@@ -9,7 +9,9 @@ use SysRevAI\Core\Database;
 use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
+use SysRevAI\Models\SystemUpdate;
 use SysRevAI\Services\BackupService;
+use SysRevAI\Services\UpdateService;
 
 /**
  * Admin → Maintenance: maintenance mode, cache/log cleanup, database backups,
@@ -25,7 +27,47 @@ final class MaintenanceController
             'system'           => $this->systemInfo(),
             'backups'          => BackupService::list(),
             'activity'         => $this->recentActivity(),
+            'updateInfo'       => Session::pullFlash('update_info'),
+            'updateHistory'    => SystemUpdate::recent(5),
+            'updateRepo'       => UpdateService::REPO,
+            'updateBranch'     => UpdateService::BRANCH,
         ], 'layouts/admin');
+    }
+
+    public function checkUpdates(): void
+    {
+        $result = (new UpdateService())->check();
+        ActivityLog::record('maintenance.update_check', [
+            'ok'         => $result['ok'],
+            'up_to_date' => $result['up_to_date'] ?? null,
+            'remote'     => $result['short'] ?? null,
+        ]);
+        Session::flash('update_info', $result);
+        if (!$result['ok']) {
+            Session::flash('admin_error', __('admin.maintenance.update_check_failed') . ' (' . ($result['error'] ?? '?') . ')');
+        }
+        redirect('/admin/maintenance');
+    }
+
+    public function applyUpdate(): void
+    {
+        $result = (new UpdateService())->apply();
+        if ($result['ok']) {
+            $msg = __('admin.maintenance.update_applied');
+            if (($result['migrations_run'] ?? 0) > 0) {
+                $msg .= ' (' . (int) $result['migrations_run'] . ' migrations)';
+            }
+            Session::flash('admin_success', $msg);
+        } else {
+            $hint = match ($result['error'] ?? '') {
+                'not_a_git_checkout' => __('admin.maintenance.update_not_git'),
+                'migration_failed'   => __('admin.maintenance.update_migration_failed'),
+                default              => __('admin.maintenance.update_failed'),
+            };
+            $extra = isset($result['output']) ? ': ' . $result['output'] : '';
+            Session::flash('admin_error', $hint . $extra);
+        }
+        redirect('/admin/maintenance');
     }
 
     public function toggleMaintenance(): void

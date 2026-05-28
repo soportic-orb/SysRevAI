@@ -50,6 +50,7 @@ return [
 
     'footer' => [
         'powered_by' => 'Codi obert (AGPL-3.0)',
+        'author'     => 'Desenvolupat per Octavi Rodriguez Blanco',
         'support'    => 'Donar suport al projecte',
     ],
 
@@ -507,7 +508,6 @@ return [
             'theme_dark'     => 'Fosc',
             'theme_auto'     => 'Automàtic',
             'footer_text'    => 'Text del peu de pàgina',
-            'show_branding'  => 'Mostrar "Powered by SysRevAI" al peu',
         ],
         'claude' => [
             'intro'             => 'Configura la integració amb l\'API de Claude (Anthropic). La clau es desa xifrada.',
@@ -588,7 +588,6 @@ return [
             'support_title' => 'Donar suport a l\'autor',
             'support_text'  => 'SysRevAI és un projecte de codi obert mantingut per un investigador en el seu temps lliure. Si et resulta útil, pots donar-li suport amb una donació voluntària.',
             'donate_btn'    => 'Donar',
-            'show_mention'  => 'Mostrar la menció a l\'autor al tauler',
         ],
         'translate' => [
             'intro'            => 'Configura Google Cloud Translation. El fitxer de credencials es desa fora del docroot amb permisos 0600.',
@@ -704,6 +703,27 @@ return [
             'no_activity'     => 'Sense activitat registrada.',
             'when'            => 'Quan',
             'action'          => 'Acció',
+            'updates'                 => 'Actualitzacions de la plataforma',
+            'updates_intro'           => 'Descarrega el codi més recent del repositori oficial:',
+            'check_updates'           => 'Buscar actualitzacions',
+            'update_now'              => 'Actualitzar ara',
+            'update_confirm'          => 'Aplicar l\'actualització ara? Se sobreescriuran els fitxers i s\'executaran les noves migracions.',
+            'update_local'            => 'Versió actual',
+            'update_remote'           => 'Versió disponible',
+            'update_unknown_local'    => 'desconeguda (no és una còpia git)',
+            'update_commits_behind'   => 'commits nous',
+            'update_message'          => 'Últim commit',
+            'update_committed_at'     => 'Data del commit',
+            'update_up_to_date'       => 'La plataforma està al dia.',
+            'update_check_failed'     => 'No s\'han pogut comprovar les actualitzacions',
+            'update_failed'           => 'Error en actualitzar',
+            'update_not_git'          => 'Aquesta instal·lació no és una còpia git — les actualitzacions OTA no estan disponibles. Torna a desplegar des del repositori per habilitar-les.',
+            'update_migration_failed' => 'Codi actualitzat però ha fallat una migració',
+            'update_applied'          => 'Actualització aplicada correctament.',
+            'update_history'          => 'Historial d\'actualitzacions',
+            'update_from'             => 'Des de',
+            'update_to'               => 'Fins a',
+            'update_status'           => 'Estat',
         ],
     ],
 ];

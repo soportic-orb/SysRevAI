@@ -32,7 +32,6 @@ final class ClaudeService
         private readonly string $apiKey,
         private readonly string $modelComplex = 'claude-opus-4-7',
         private readonly string $modelLight = 'claude-haiku-4-5-20251001',
-        private readonly float $temperature = 0.2,
         private readonly int $maxTokens = 4096,
     ) {
     }
@@ -43,7 +42,6 @@ final class ClaudeService
             (string) (setting('claude.api_key') ?? ''),
             (string) (setting('claude.model_complex') ?? 'claude-opus-4-7'),
             (string) (setting('claude.model_light') ?? 'claude-haiku-4-5-20251001'),
-            (float) (setting('claude.temperature') ?? 0.2),
             (int) (setting('claude.max_tokens') ?? 4096),
         );
     }
@@ -196,11 +194,10 @@ final class ClaudeService
     private function request(string $model, string $system, array $messages, int $maxTokens, string $feature, ?int $reviewId, bool $expectJson = false): array
     {
         $body = [
-            'model'       => $model,
-            'max_tokens'  => $maxTokens,
-            'temperature' => $this->temperature,
-            'system'      => $system,
-            'messages'    => $messages,
+            'model'      => $model,
+            'max_tokens' => $maxTokens,
+            'system'     => $system,
+            'messages'   => $messages,
         ];
 
         $lastError = 'request failed';

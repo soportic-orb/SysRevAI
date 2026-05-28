@@ -7,7 +7,6 @@ use SysRevAI\Core\Config;
 $hasKey   = Config::hasEncrypted('claude.api_key');
 $complex  = (string) (setting('claude.model_complex') ?? 'claude-opus-4-7');
 $light    = (string) (setting('claude.model_light') ?? 'claude-haiku-4-5-20251001');
-$temp     = (string) (setting('claude.temperature') ?? '0.2');
 $maxTok   = (int) (setting('claude.max_tokens') ?? 4096);
 $limit    = (int) (setting('claude.monthly_limit_usd') ?? 0);
 
@@ -50,16 +49,9 @@ $features = ['summaries', 'screening', 'extraction', 'bias', 'chat', 'dedup'];
         </div>
     </div>
 
-    <div class="form-row form-row--split">
-        <div class="field">
-            <label class="field-label" for="temperature"><?= e(__('admin.claude.temperature')) ?> (<span id="tempval"><?= e($temp) ?></span>)</label>
-            <input type="range" id="temperature" name="temperature" min="0" max="1" step="0.1"
-                   value="<?= e($temp) ?>" oninput="document.getElementById('tempval').textContent=this.value">
-        </div>
-        <div class="field">
-            <label class="field-label" for="max_tokens"><?= e(__('admin.claude.max_tokens')) ?></label>
-            <input class="input" id="max_tokens" name="max_tokens" type="number" min="1" value="<?= $maxTok ?>">
-        </div>
+    <div class="field">
+        <label class="field-label" for="max_tokens"><?= e(__('admin.claude.max_tokens')) ?></label>
+        <input class="input" id="max_tokens" name="max_tokens" type="number" min="1" value="<?= $maxTok ?>">
     </div>
 
     <div class="field">

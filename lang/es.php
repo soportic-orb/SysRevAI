@@ -49,6 +49,7 @@ return [
 
     'footer' => [
         'powered_by' => 'Código abierto (AGPL-3.0)',
+        'author'     => 'Desarrollado por Octavi Rodriguez Blanco',
         'support'    => 'Apoyar el proyecto',
     ],
 
@@ -506,7 +507,6 @@ return [
             'theme_dark'     => 'Oscuro',
             'theme_auto'     => 'Automático',
             'footer_text'    => 'Texto del pie de página',
-            'show_branding'  => 'Mostrar "Powered by SysRevAI" en el pie',
         ],
         'claude' => [
             'intro'             => 'Configura la integración con la API de Claude (Anthropic). La clave se guarda cifrada.',
@@ -587,7 +587,6 @@ return [
             'support_title' => 'Apoyar al autor',
             'support_text'  => 'SysRevAI es un proyecto open source mantenido por un investigador en su tiempo libre. Si te resulta útil, puedes apoyarlo con una donación voluntaria.',
             'donate_btn'    => 'Donar',
-            'show_mention'  => 'Mostrar la mención al autor en el panel',
         ],
         'translate' => [
             'intro'            => 'Configura Google Cloud Translation. El archivo de credenciales se guarda fuera del docroot con permisos 0600.',
@@ -703,6 +702,27 @@ return [
             'no_activity'     => 'Sin actividad registrada.',
             'when'            => 'Cuándo',
             'action'          => 'Acción',
+            'updates'                 => 'Actualizaciones de la plataforma',
+            'updates_intro'           => 'Descarga el código más reciente del repositorio oficial:',
+            'check_updates'           => 'Buscar actualizaciones',
+            'update_now'              => 'Actualizar ahora',
+            'update_confirm'          => '¿Aplicar la actualización ahora? Se sobrescribirán los archivos y se ejecutarán las nuevas migraciones.',
+            'update_local'            => 'Versión actual',
+            'update_remote'           => 'Versión disponible',
+            'update_unknown_local'    => 'desconocida (no es una copia git)',
+            'update_commits_behind'   => 'commits nuevos',
+            'update_message'          => 'Último commit',
+            'update_committed_at'     => 'Fecha del commit',
+            'update_up_to_date'       => 'La plataforma está al día.',
+            'update_check_failed'     => 'No se pudo comprobar actualizaciones',
+            'update_failed'           => 'Fallo al actualizar',
+            'update_not_git'          => 'Esta instalación no es una copia de git — las actualizaciones OTA no están disponibles. Vuelve a desplegar desde el repositorio para habilitarlas.',
+            'update_migration_failed' => 'Código actualizado pero falló una migración',
+            'update_applied'          => 'Actualización aplicada correctamente.',
+            'update_history'          => 'Historial de actualizaciones',
+            'update_from'             => 'Desde',
+            'update_to'               => 'Hasta',
+            'update_status'           => 'Estado',
         ],
     ],
 ];

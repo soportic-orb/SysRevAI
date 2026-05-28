@@ -49,6 +49,7 @@ return [
 
     'footer' => [
         'powered_by' => 'Open source (AGPL-3.0)',
+        'author'     => 'Developed by Octavi Rodriguez Blanco',
         'support'    => 'Support the project',
     ],
 
@@ -506,7 +507,6 @@ return [
             'theme_dark'     => 'Dark',
             'theme_auto'     => 'Auto',
             'footer_text'    => 'Footer text',
-            'show_branding'  => 'Show "Powered by SysRevAI" in the footer',
         ],
         'claude' => [
             'intro'             => 'Configure the Claude API (Anthropic) integration. The key is stored encrypted.',
@@ -587,7 +587,6 @@ return [
             'support_title' => 'Support the author',
             'support_text'  => 'SysRevAI is an open-source project maintained by a researcher in their spare time. If you find it useful, you can support it with a voluntary donation.',
             'donate_btn'    => 'Donate',
-            'show_mention'  => 'Show the author mention on the dashboard',
         ],
         'translate' => [
             'intro'            => 'Configure Google Cloud Translation. The credentials file is stored outside the docroot with 0600 permissions.',
@@ -703,6 +702,27 @@ return [
             'no_activity'     => 'No activity logged.',
             'when'            => 'When',
             'action'          => 'Action',
+            'updates'                 => 'Platform updates',
+            'updates_intro'           => 'Pull the latest code from the official repository:',
+            'check_updates'           => 'Check for updates',
+            'update_now'              => 'Update now',
+            'update_confirm'          => 'Apply the update now? Files will be overwritten and any new migrations will run.',
+            'update_local'            => 'Current version',
+            'update_remote'           => 'Available version',
+            'update_unknown_local'    => 'unknown (not a git checkout)',
+            'update_commits_behind'   => 'new commits',
+            'update_message'          => 'Last commit',
+            'update_committed_at'     => 'Committed at',
+            'update_up_to_date'       => 'The platform is up to date.',
+            'update_check_failed'     => 'Could not check for updates',
+            'update_failed'           => 'Update failed',
+            'update_not_git'          => 'This installation is not a git checkout — OTA updates are unavailable. Re-deploy from the repository to enable them.',
+            'update_migration_failed' => 'Code updated but a migration failed',
+            'update_applied'          => 'Update applied successfully.',
+            'update_history'          => 'Update history',
+            'update_from'             => 'From',
+            'update_to'               => 'To',
+            'update_status'           => 'Status',
         ],
     ],
 ];

@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Platform improvements — OTA updates, branding & UX polish:**
+  - **Over-the-air updates**: new "Platform updates" card in **Admin →
+    Maintenance** with **Check for updates** (queries the GitHub commits API
+    for the configured repo/branch and shows the new commit ID, message,
+    author and how many commits the local checkout is behind) and **Update
+    now** (runs `git fetch` + `git reset --hard FETCH_HEAD` in the project
+    root, then replays any unseen migrations using a new
+    `schema_migrations` ledger table). Failures are logged with their git or
+    SQL error; an update history of the last 5 attempts is shown inline.
+    New `Services\UpdateService`, `Models\SystemUpdate`, migration
+    `017_system_updates.sql`, routes `/admin/maintenance/update-check` and
+    `/admin/maintenance/update-apply`. Cleanly degrades when the install is
+    not a git checkout (tarball deploy).
+  - **Accent color now actually applies**: layouts inject `--c-primary`,
+    `--c-primary-d` (auto-darkened) and `--c-on-primary` (auto-contrast
+    black/white) from the saved `ui.accent_color` setting. Default accent
+    changed to **`#c9f24c`** (lime).
+  - **Brand icon**: new `public/assets/img/sysrevai-icon.svg` (document +
+    magnifying glass on the platform accent) wired as `<link rel="icon">`
+    in all three layouts (app, admin, auth).
+  - **Footer**: appended *"Developed by Octavi Rodriguez Blanco"* (with ca /
+    es translations) after the existing "Open source (AGPL-3.0)" mention in
+    both the app and admin footers.
+
 - **Full-text retrieval — rate limiting, admin coverage report, docs (sub-phases 9-11):**
   - `016_rate_limit_counters.sql` migration + `Services\FullTextRetrieval\RateLimiter`:
     per-source sliding-window budget enforced through one `rate_limit_counters`
@@ -306,6 +330,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Views and layouts (app shell + minimal auth layout), login page, dashboard
     with metric cards, and 403/404 error pages; core i18n in ca/es/en.
   - The footer donation link is always present; the login screen never shows it.
+
+### Changed
+- **Removed** the "Show 'Powered by SysRevAI' in the footer" checkbox in
+  General settings — the footer is always visible now.
+- **Removed** the "Show the author mention on the dashboard" checkbox in
+  About / License settings.
+
+### Fixed
+- **Claude API**: removed the deprecated `temperature` request parameter so
+  Claude 4.x models stop returning *"temperature is deprecated for this
+  model"*. The temperature input is also gone from the admin Claude form.
 
 ### Added (foundations)
 - Project foundations: directory structure, `composer.json`, documented
