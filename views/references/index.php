@@ -68,11 +68,17 @@ $qs = static function (array $extra) use ($status, $search): string {
             <span class="muted"><?= e(__('fulltext.bulk_title')) ?>:</span>
             <form method="post" action="/reviews/<?= $id ?>/full-text/enqueue-all" style="display:inline">
                 <?= csrf_field() ?>
-                <button class="btn btn--ghost btn--sm"><?= e(__('fulltext.bulk_enqueue')) ?></button>
+                <button class="btn btn--ghost btn--sm"
+                        data-busy-label="<?= e(__('common.working')) ?>">
+                    <?= e(__('fulltext.bulk_enqueue')) ?>
+                </button>
             </form>
             <form method="post" action="/reviews/<?= $id ?>/full-text/retry-failed" style="display:inline">
                 <?= csrf_field() ?>
-                <button class="btn btn--ghost btn--sm"><?= e(__('fulltext.bulk_retry')) ?></button>
+                <button class="btn btn--ghost btn--sm"
+                        data-busy-label="<?= e(__('common.working')) ?>">
+                    <?= e(__('fulltext.bulk_retry')) ?>
+                </button>
             </form>
         </div>
     <?php endif; ?>
@@ -133,7 +139,10 @@ $qs = static function (array $extra) use ($status, $search): string {
                                         <?php elseif (!$queued): ?>
                                             <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/full-text" style="display:inline">
                                                 <?= csrf_field() ?>
-                                                <button class="btn btn--ghost btn--sm"><?= e(__('fulltext.retrieve')) ?></button>
+                                                <button class="btn btn--ghost btn--sm"
+                                                        data-busy-label="<?= e(__('common.working')) ?>">
+                                                    <?= e(__('fulltext.retrieve')) ?>
+                                                </button>
                                             </form>
                                         <?php endif; ?>
                                     </td>

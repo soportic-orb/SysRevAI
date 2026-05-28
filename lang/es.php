@@ -12,6 +12,12 @@ return [
         'tagline' => 'Revisiones sistemáticas potenciadas con IA',
     ],
 
+    'common' => [
+        'working' => 'Trabajando, espera…',
+        'expand'  => 'Desplegar',
+        'collapse' => 'Plegar',
+    ],
+
     'nav' => [
         'dashboard'     => 'Panel',
         'reviews'       => 'Revisiones',
@@ -109,7 +115,7 @@ return [
         'failed'          => 'La IA no pudo generar el resumen.',
         'no_text'         => 'No hay texto disponible (sube un PDF o que el artículo tenga abstract).',
         'translate'       => 'Traducir',
-        'translating'     => 'Traduciendo…',
+        'translating'     => 'Trabajando, espera…',
         'translate_failed' => 'No se pudo traducir.',
         'model'           => 'Modelo',
         'section_background'  => 'Background',
@@ -508,7 +514,7 @@ return [
         'ai_upload_title'       => 'Subir documento de protocolo (extracción con IA)',
         'ai_upload_intro'       => 'Sube un PDF o documento Word con tu protocolo. La IA rellenará los campos para que los revises y edites antes de guardar.',
         'ai_upload_analyze'     => 'Analizar con IA',
-        'ai_upload_running'     => 'Analizando…',
+        'ai_upload_running'     => 'Trabajando, espera…',
         'ai_upload_ok'          => 'Campos rellenados — revisa cada uno y guarda.',
         'ai_upload_empty'       => 'No se ha podido leer el texto del documento. ¿Es un PDF escaneado?',
         'ai_upload_too_large'   => 'El archivo supera el tamaño máximo permitido.',
@@ -626,7 +632,7 @@ return [
             'test_title'       => 'Probar la cadena',
             'test_intro'       => 'Introduce un DOI o PMID y ejecuta la cadena completa. No se escribe nada en la BD.',
             'test_run'         => 'Probar',
-            'testing'          => 'Consultando fuentes…',
+            'testing'          => 'Trabajando, espera…',
             'help_europepmc'   => 'No usa clave de API. El correo del "polite pool" se incluye en el User-Agent para que Europe PMC pueda contactarte si hay alguna incidencia.',
             'help_doaj'        => 'No requiere clave — DOAJ ofrece acceso totalmente abierto a sus endpoints de lectura.',
             'help_arxiv'       => 'No usa clave de API. arXiv impone un límite de una petición cada 3 segundos; SysRevAI lo respeta automáticamente.',
@@ -831,7 +837,7 @@ return [
         'expand'       => 'Cambiar tamaño del chat',
         'clear'        => 'Borrar conversación',
         'clear_confirm'=> '¿Borrar la conversación? Solo afecta a este dispositivo.',
-        'thinking'     => 'Pensando…',
+        'thinking'     => 'Trabajando, espera…',
         'error'        => 'No se ha podido contactar con la IA. Vuelve a intentarlo en un momento.',
         'budget'       => 'Se ha alcanzado el presupuesto mensual de IA del sitio.',
         'disabled'     => 'El Copilot está desactivado desde el panel de administración.',

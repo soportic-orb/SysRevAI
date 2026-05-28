@@ -12,6 +12,12 @@ return [
         'tagline' => 'AI-powered systematic reviews',
     ],
 
+    'common' => [
+        'working' => 'Working, please wait…',
+        'expand'  => 'Expand',
+        'collapse' => 'Collapse',
+    ],
+
     'nav' => [
         'dashboard'     => 'Dashboard',
         'reviews'       => 'Reviews',
@@ -109,7 +115,7 @@ return [
         'failed'          => 'The AI could not generate the summary.',
         'no_text'         => 'No text available (upload a PDF or the article needs an abstract).',
         'translate'       => 'Translate',
-        'translating'     => 'Translating…',
+        'translating'     => 'Working, please wait…',
         'translate_failed' => 'Translation failed.',
         'model'           => 'Model',
         'section_background'  => 'Background',
@@ -508,7 +514,7 @@ return [
         'ai_upload_title'       => 'Upload protocol document (AI extraction)',
         'ai_upload_intro'       => 'Upload a PDF or Word document with your protocol. The AI will pre-fill the fields below for you to review and edit before saving.',
         'ai_upload_analyze'     => 'Analyse with AI',
-        'ai_upload_running'     => 'Analysing…',
+        'ai_upload_running'     => 'Working, please wait…',
         'ai_upload_ok'          => 'Fields filled — please review each one and save.',
         'ai_upload_empty'       => 'Could not read text from the document. Is it a scanned PDF?',
         'ai_upload_too_large'   => 'The file is too large for the configured upload limit.',
@@ -626,7 +632,7 @@ return [
             'test_title'       => 'Test the chain',
             'test_intro'       => 'Enter a DOI or PMID and run the full chain. Nothing is written to the database.',
             'test_run'         => 'Test',
-            'testing'          => 'Querying sources…',
+            'testing'          => 'Working, please wait…',
             'help_europepmc'   => 'No API key. The polite-pool email above identifies SysRevAI in the User-Agent so Europe PMC can contact you if anything goes wrong.',
             'help_doaj'        => 'No API key needed — DOAJ provides fully open access to its read endpoints.',
             'help_arxiv'       => 'No API key. arXiv self-imposes a limit of one request every 3 seconds; SysRevAI respects it automatically.',
@@ -831,7 +837,7 @@ return [
         'expand'       => 'Resize chat',
         'clear'        => 'Clear conversation',
         'clear_confirm'=> 'Clear the conversation? This only affects this device.',
-        'thinking'     => 'Thinking…',
+        'thinking'     => 'Working, please wait…',
         'error'        => 'Something went wrong contacting the AI. Try again in a moment.',
         'budget'       => 'The monthly AI budget has been reached for this site.',
         'disabled'     => 'The Copilot is disabled in admin settings.',
