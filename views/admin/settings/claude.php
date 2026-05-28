@@ -15,7 +15,7 @@ $models = [
     'claude-sonnet-4-6'          => 'Claude Sonnet 4.6',
     'claude-haiku-4-5-20251001'  => 'Claude Haiku 4.5',
 ];
-$features = ['summaries', 'screening', 'extraction', 'bias', 'chat', 'dedup'];
+$features = ['summaries', 'screening', 'extraction', 'bias', 'chat', 'dedup', 'copilot'];
 ?>
 <h1 class="section__title"><?= e(__('admin.sections.claude')) ?></h1>
 <p class="section__intro"><?= e(__('admin.claude.intro')) ?></p>

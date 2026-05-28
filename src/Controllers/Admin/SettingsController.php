@@ -97,7 +97,7 @@ final class SettingsController
         Config::set('claude.max_tokens', max(1, (int) ($_POST['max_tokens'] ?? 4096)), 'int', 'integrations');
         Config::set('claude.monthly_limit_usd', max(0, (int) ($_POST['monthly_limit_usd'] ?? 0)), 'int', 'integrations');
 
-        foreach (['summaries', 'screening', 'extraction', 'bias', 'chat', 'dedup'] as $feature) {
+        foreach (['summaries', 'screening', 'extraction', 'bias', 'chat', 'dedup', 'copilot'] as $feature) {
             Config::set('claude.feature.' . $feature, !empty($_POST['feature'][$feature]), 'bool', 'integrations');
         }
 

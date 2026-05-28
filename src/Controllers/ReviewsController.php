@@ -159,6 +159,49 @@ final class ReviewsController
         echo json_encode(['ok' => true, 'data' => $result['data']], JSON_UNESCAPED_UNICODE);
     }
 
+    /**
+     * Scientific Copilot endpoint. Any member of the review can chat.
+     * History lives on the client (localStorage); we receive the last
+     * few turns plus the new message and reply once.
+     */
+    public function copilot(string $id): void
+    {
+        $review = $this->loadOrDeny((int) $id);
+        header('Content-Type: application/json; charset=utf-8');
+
+        $raw = file_get_contents('php://input') ?: '';
+        $body = json_decode($raw, true);
+        if (!is_array($body)) {
+            $body = $_POST;
+        }
+        $message = trim((string) ($body['message'] ?? ''));
+        $history = is_array($body['history'] ?? null) ? $body['history'] : [];
+
+        if ($message === '') {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'empty_message']);
+            return;
+        }
+
+        $result = ClaudeService::fromSettings()->copilotChat(
+            $review,
+            Review::pico($review),
+            Review::metrics((int) $id),
+            $history,
+            $message,
+            (int) $id,
+        );
+
+        if (!$result['ok']) {
+            ActivityLog::record('copilot.failed', ['error' => $result['error'] ?? 'unknown'], (int) $id);
+            http_response_code(502);
+            echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'failed']);
+            return;
+        }
+        ActivityLog::record('copilot.message', [], (int) $id);
+        echo json_encode(['ok' => true, 'reply' => $result['reply']], JSON_UNESCAPED_UNICODE);
+    }
+
     public function archive(string $id): void
     {
         $review = $this->loadOrDeny((int) $id, true);
