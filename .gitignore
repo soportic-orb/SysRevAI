@@ -21,6 +21,7 @@ storage/backups/*
 !storage/backups/.gitkeep
 storage/pdfs/*
 !storage/pdfs/.gitkeep
+storage/worker.lock
 
 # OS / editor noise
 .DS_Store

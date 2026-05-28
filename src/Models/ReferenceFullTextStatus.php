@@ -69,6 +69,24 @@ final class ReferenceFullTextStatus
         );
     }
 
+    /** Status rows for every reference in a review, keyed by reference_id. */
+    public static function mapForReview(int $reviewId): array
+    {
+        $rfs  = Database::table('reference_fulltext_status');
+        $refs = Database::table('references');
+        $rows = Database::select(
+            "SELECT s.* FROM `{$rfs}` s
+             JOIN `{$refs}` r ON r.id = s.reference_id
+             WHERE r.review_id = ?",
+            [$reviewId]
+        );
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row['reference_id']] = $row;
+        }
+        return $map;
+    }
+
     /** Aggregated coverage numbers for a review (or globally if 0). */
     public static function coverage(int $reviewId = 0): array
     {

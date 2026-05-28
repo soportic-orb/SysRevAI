@@ -34,6 +34,9 @@ final class ReferencesController
             'statuses'      => Reference::STATUSES,
             'metrics'       => Review::metrics($rid),
             'pendingDups'   => Duplicate::pendingCount($rid),
+            'ftStatus'      => \SysRevAI\Models\ReferenceFullTextStatus::mapForReview($rid),
+            'ftInFlight'    => \SysRevAI\Models\RetrievalQueue::inFlightForReview($rid),
+            'ftEnabled'     => (bool) (setting('fulltext.enabled') ?? false),
         ]);
     }
 
