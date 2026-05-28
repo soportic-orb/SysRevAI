@@ -66,6 +66,8 @@ class ScreeningController
             'reasons'       => ExclusionReason::forReview($rid),
             'pending'       => $pending,
             'completed'     => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
+            'totalReferences' => ScreeningService::totalReferences($rid),
+            'totalInStage'    => ScreeningService::totalInStage($rid, $this->stage),
             'conflicts'     => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
             'canCoordinate' => $canCoordinate,
             'stage'         => $this->stage,
