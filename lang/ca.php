@@ -502,12 +502,10 @@ return [
             'site_name'      => 'Nom del lloc',
             'default_locale' => 'Idioma per defecte',
             'timezone'       => 'Zona horària',
-            'accent_color'   => 'Color d\'accent',
             'theme'          => 'Tema visual',
             'theme_light'    => 'Clar',
             'theme_dark'     => 'Fosc',
             'theme_auto'     => 'Automàtic',
-            'footer_text'    => 'Text del peu de pàgina',
         ],
         'claude' => [
             'intro'             => 'Configura la integració amb l\'API de Claude (Anthropic). La clau es desa xifrada.',

@@ -36,13 +36,11 @@ $nav = [
     <title><?= e($appName) ?> — <?= e(__('admin.title')) ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/sysrevai-icon.svg')) ?>">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
-    <?php $_accent = accent_color(); ?>
-    <style>:root{--c-primary:<?= e($_accent) ?>;--c-primary-d:<?= e(darken_hex($_accent, 18)) ?>;--c-on-primary:<?= e(on_color_text($_accent)) ?>;}</style>
 </head>
 <body>
 <header class="topbar">
     <a class="topbar__brand" href="/dashboard">
-        <span class="brand__mark">SR</span>
+        <img class="brand__mark" src="<?= e(asset('img/sysrevai-icon.svg')) ?>" alt="">
         <span class="brand__name"><?= e($appName) ?></span>
     </a>
     <nav class="topbar__nav">

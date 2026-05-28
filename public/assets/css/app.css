@@ -31,9 +31,9 @@ a:hover { text-decoration: underline; }
 
 /* Brand */
 .brand__mark {
-    display: inline-flex; align-items: center; justify-content: center;
+    display: inline-block;
     width: 32px; height: 32px; border-radius: 8px;
-    background: var(--c-primary); color: var(--c-on-primary); font-weight: 700; font-size: 13px; letter-spacing: .5px;
+    object-fit: contain;
 }
 .brand__name { font-weight: 700; font-size: 17px; color: var(--c-text); }
 

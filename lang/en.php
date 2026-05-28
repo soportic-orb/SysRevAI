@@ -501,12 +501,10 @@ return [
             'site_name'      => 'Site name',
             'default_locale' => 'Default language',
             'timezone'       => 'Timezone',
-            'accent_color'   => 'Accent color',
             'theme'          => 'Theme',
             'theme_light'    => 'Light',
             'theme_dark'     => 'Dark',
             'theme_auto'     => 'Auto',
-            'footer_text'    => 'Footer text',
         ],
         'claude' => [
             'intro'             => 'Configure the Claude API (Anthropic) integration. The key is stored encrypted.',
