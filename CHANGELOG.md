@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 12 — exports:**
+  - `Services\ExportService` + `ExportController`: per-review export hub at
+    `/reviews/{id}/exports` with a PRISMA preview and download buttons.
+  - **PRISMA 2020 flow diagram**: native SVG generated from live counts
+    (identified → duplicates removed → screened T/A → excluded → eligibility
+    full-text → excluded → included), editable in any vector tool.
+  - **CSV** (streamed via `php://output` with UTF-8 BOM) and **Excel `.xlsx`**
+    of references plus extracted-template columns (using PhpSpreadsheet when
+    installed; graceful flash error otherwise).
+  - **Word `.docx`** review document (title, question, protocol/PICO,
+    inclusion/exclusion, included studies as a citation list) via PhpWord
+    (graceful fallback when not installed).
+  - **RevMan 5 (`.rm5`)** Cochrane XML skeleton with the cover sheet and
+    included-studies metadata (title, year, source, DOI, PMID) via native
+    DOMDocument.
 - **Phase 11 — AI summaries & translation:**
   - `014_summaries_translations.sql` migration: `ai_summaries` (one row per
     `(reference, language)`, structured JSON with background/methods/results/

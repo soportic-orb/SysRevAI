@@ -59,6 +59,21 @@ return [
         'back_home' => 'Volver al inicio',
     ],
 
+    'exports' => [
+        'title'             => 'Exportar',
+        'intro'             => 'Genera los archivos de difusión de la revisión.',
+        'prisma_title'      => 'Diagrama PRISMA 2020',
+        'prisma_help'       => 'SVG editable con los conteos actuales de la revisión.',
+        'download_prisma'   => 'Descargar PRISMA (SVG)',
+        'data_title'        => 'Referencias y datos extraídos',
+        'data_help'         => 'CSV o Excel con una fila por referencia y una columna por cada campo de la plantilla de extracción.',
+        'doc_title'         => 'Documento de la revisión',
+        'doc_help'          => 'Word con el protocolo y los estudios incluidos. RevMan 5 con los metadatos de los estudios.',
+        'phpspreadsheet_not_installed' => 'PhpSpreadsheet no está instalado. Ejecuta "composer install" en el servidor.',
+        'phpword_not_installed'        => 'PhpWord no está instalado. Ejecuta "composer install" en el servidor.',
+        'review_not_found'             => 'Revisión no encontrada.',
+    ],
+
     'summary' => [
         'title'           => 'Resumen',
         'abstract'        => 'Resumen (abstract)',

@@ -59,6 +59,21 @@ return [
         'back_home' => 'Back to home',
     ],
 
+    'exports' => [
+        'title'             => 'Export',
+        'intro'             => 'Generate the publication artifacts for the review.',
+        'prisma_title'      => 'PRISMA 2020 flow diagram',
+        'prisma_help'       => 'Editable SVG with the review\'s current counts.',
+        'download_prisma'   => 'Download PRISMA (SVG)',
+        'data_title'        => 'References and extracted data',
+        'data_help'         => 'CSV or Excel with one row per reference and one column per extraction-template field.',
+        'doc_title'         => 'Review document',
+        'doc_help'          => 'Word with the protocol and the included studies. RevMan 5 with study metadata.',
+        'phpspreadsheet_not_installed' => 'PhpSpreadsheet is not installed. Run "composer install" on the server.',
+        'phpword_not_installed'        => 'PhpWord is not installed. Run "composer install" on the server.',
+        'review_not_found'             => 'Review not found.',
+    ],
+
     'summary' => [
         'title'           => 'Summary',
         'abstract'        => 'Abstract',

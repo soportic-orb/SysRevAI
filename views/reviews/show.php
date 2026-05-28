@@ -31,6 +31,7 @@ $metricKeys = ['imported', 'duplicate', 'ta_screening', 'ta_included', 'ft_scree
             <a class="btn btn--primary" href="/reviews/<?= $id ?>/full-text"><?= e(__('fulltext.title')) ?></a>
             <a class="btn btn--primary" href="/reviews/<?= $id ?>/extraction"><?= e(__('extraction.title')) ?></a>
             <a class="btn btn--primary" href="/reviews/<?= $id ?>/risk-of-bias"><?= e(__('rob.title')) ?></a>
+            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/exports"><?= e(__('exports.title')) ?></a>
             <a class="btn btn--ghost" href="/reviews/<?= $id ?>/references"><?= e(__('references.title')) ?></a>
             <a class="btn btn--ghost" href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a>
             <?php if ($isOwner): ?>

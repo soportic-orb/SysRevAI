@@ -60,6 +60,21 @@ return [
         'back_home' => 'Tornar a l\'inici',
     ],
 
+    'exports' => [
+        'title'             => 'Exportar',
+        'intro'             => 'Genera els arxius de difusió de la revisió.',
+        'prisma_title'      => 'Diagrama PRISMA 2020',
+        'prisma_help'       => 'SVG editable amb els conteus actuals de la revisió.',
+        'download_prisma'   => 'Descarregar PRISMA (SVG)',
+        'data_title'        => 'Referències i dades extretes',
+        'data_help'         => 'CSV o Excel amb una fila per referència i una columna per cada camp de la plantilla d\'extracció.',
+        'doc_title'         => 'Document de la revisió',
+        'doc_help'          => 'Word amb el protocol i els estudis inclosos. RevMan 5 amb les metadades dels estudis.',
+        'phpspreadsheet_not_installed' => 'PhpSpreadsheet no està instal·lat. Executa "composer install" al servidor.',
+        'phpword_not_installed'        => 'PhpWord no està instal·lat. Executa "composer install" al servidor.',
+        'review_not_found'             => 'Revisió no trobada.',
+    ],
+
     'summary' => [
         'title'           => 'Resum',
         'abstract'        => 'Resum (abstract)',

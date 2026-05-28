@@ -167,6 +167,10 @@ a:hover { text-decoration: underline; }
 
 .topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
 
+/* Exports */
+.prisma-preview { background: #fff; border: 1px solid var(--c-border); border-radius: 8px; padding: 14px; overflow: auto; margin: 8px 0 14px; }
+.prisma-preview svg { display: block; max-width: 100%; height: auto; }
+
 /* Summaries + translation */
 .translate-block { }
 .translate-block__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
