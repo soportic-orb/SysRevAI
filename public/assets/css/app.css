@@ -52,6 +52,64 @@ a:hover { text-decoration: underline; }
 .topbar__name { font-size: 14px; color: var(--c-muted); }
 .inline-form { display: inline; }
 
+/* Persistent secondary nav (rendered by layouts/app.php when the user is
+   inside a review). Stays under the topbar on every /reviews/{id}/... page
+   so all the review actions are always one click away. */
+.review-subnav {
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    box-shadow: 0 1px 2px rgba(16,35,53,.04);
+    position: sticky; top: 0; z-index: 5;
+}
+.review-subnav__inner {
+    max-width: 1080px; margin: 0 auto;
+    padding: 10px 24px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.review-subnav__title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--c-muted);
+}
+.review-subnav__back { color: var(--c-muted); font-weight: 700; }
+.review-subnav__back:hover { color: var(--c-text); text-decoration: none; }
+.review-subnav__name {
+    color: var(--c-text); font-weight: 600; font-size: 15px;
+    max-width: 60ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.review-subnav__name:hover { text-decoration: none; color: var(--c-primary-d); }
+.review-subnav__links {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+.review-subnav__form { display: inline; margin: 0; padding: 0; }
+.review-subnav__btn {
+    display: inline-flex; align-items: center;
+    padding: 6px 11px; border-radius: 6px; border: 1px solid transparent;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    background: transparent; color: var(--c-text);
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.review-subnav__btn:hover { background: #f0f3f6; text-decoration: none; }
+.review-subnav__btn--primary {
+    background: var(--c-primary); color: var(--c-on-primary); border-color: var(--c-primary);
+}
+.review-subnav__btn--primary:hover { background: var(--c-primary-d); border-color: var(--c-primary-d); }
+.review-subnav__btn--ghost {
+    border-color: var(--c-border); color: var(--c-text); background: var(--c-surface);
+}
+.review-subnav__btn--ghost:hover { border-color: var(--c-muted); }
+.review-subnav__btn.is-active {
+    background: var(--c-text); color: #fff; border-color: var(--c-text);
+}
+.review-subnav__btn.is-active:hover { background: #0f1923; border-color: #0f1923; }
+
+@media (max-width: 720px) {
+    .review-subnav { position: static; }
+    .review-subnav__inner { padding: 8px 12px; }
+    .review-subnav__name { max-width: 28ch; }
+    .review-subnav__btn { padding: 5px 9px; font-size: 12px; }
+}
+
 /* Content / page */
 .content { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
 .page__head { margin-bottom: 24px; }

@@ -456,6 +456,8 @@ return [
         'exclusion_reasons'  => 'Motius d\'exclusió',
         'one_per_line'       => 'Un per línia.',
         'edit_protocol'      => 'Editar protocol',
+        'overview'           => 'Vista general',
+        'subnav_aria'        => 'Accions de la revisió',
         'archive'            => 'Arxivar',
         'unarchive'          => 'Desarxivar',
         'archived'           => 'Arxivades',

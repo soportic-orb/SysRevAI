@@ -19,30 +19,8 @@ $metricKeys = ['imported', 'duplicate', 'ta_screening', 'ta_included', 'ft_scree
         <div class="alert alert--success"><?= e((string) $flash) ?></div>
     <?php endif; ?>
 
-    <div class="page__head page__head--row">
-        <div>
-            <div class="breadcrumb"><a href="/reviews"><?= e(__('nav.reviews')) ?></a> /</div>
-            <h1 class="page__title"><?= e((string) $review['title']) ?></h1>
-            <span class="tag tag--<?= e((string) $review['status']) ?>"><?= e(__('reviews.status_' . $review['status'])) ?></span>
-            <span class="tag tag--soft"><?= e(__('reviews.mode_' . $review['screening_mode'])) ?></span>
-        </div>
-        <div class="btn-row">
-            <a class="btn btn--primary" href="/reviews/<?= $id ?>/screen"><?= e(__('screening.title')) ?></a>
-            <a class="btn btn--primary" href="/reviews/<?= $id ?>/full-text"><?= e(__('fulltext.title')) ?></a>
-            <a class="btn btn--primary" href="/reviews/<?= $id ?>/extraction"><?= e(__('extraction.title')) ?></a>
-            <a class="btn btn--primary" href="/reviews/<?= $id ?>/risk-of-bias"><?= e(__('rob.title')) ?></a>
-            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/exports"><?= e(__('exports.title')) ?></a>
-            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/references"><?= e(__('references.title')) ?></a>
-            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a>
-            <?php if ($isOwner): ?>
-                <a class="btn btn--ghost" href="/reviews/<?= $id ?>/team"><?= e(__('team.title')) ?></a>
-                <a class="btn btn--ghost" href="/reviews/<?= $id ?>/protocol"><?= e(__('reviews.edit_protocol')) ?></a>
-                <form method="post" action="/reviews/<?= $id ?>/archive">
-                    <?= csrf_field() ?>
-                    <button class="btn btn--ghost"><?= e($review['status'] === 'archived' ? __('reviews.unarchive') : __('reviews.archive')) ?></button>
-                </form>
-            <?php endif; ?>
-        </div>
+    <div class="page__head">
+        <span class="tag tag--soft"><?= e(__('reviews.mode_' . $review['screening_mode'])) ?></span>
     </div>
 
     <div class="metrics">

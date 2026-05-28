@@ -455,6 +455,8 @@ return [
         'exclusion_reasons'  => 'Exclusion reasons',
         'one_per_line'       => 'One per line.',
         'edit_protocol'      => 'Edit protocol',
+        'overview'           => 'Overview',
+        'subnav_aria'        => 'Review actions',
         'archive'            => 'Archive',
         'unarchive'          => 'Unarchive',
         'archived'           => 'Archived',

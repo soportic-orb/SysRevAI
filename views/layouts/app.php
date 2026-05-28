@@ -7,6 +7,40 @@ declare(strict_types=1);
 $appName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
 $user    = auth_user();
 $version = (string) config('app.version', '0.1.0-dev');
+
+/* ── Review subnav context ──────────────────────────────────────────────────
+ * Whenever the request path matches /reviews/{numeric-id}[/...], expose a
+ * persistent secondary navigation bar under the topbar so the user always
+ * has the review's actions one click away — even from /screen, /extraction
+ * or any deep page inside the review. */
+$reviewSubnav = null;
+$reviewSubnavActive = '';
+$_path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
+    $_rid = (int) $_m[1];
+    try {
+        $_r = \SysRevAI\Models\Review::find($_rid);
+    } catch (\Throwable) {
+        $_r = null;
+    }
+    if (is_array($_r)) {
+        $reviewSubnav = $_r;
+        // Resolve the "active" tab from the URL segment after the ID.
+        $reviewSubnavActive = match ($_m[3] ?? '') {
+            ''               => 'overview',
+            'screen'         => 'screening',
+            'full-text'      => 'fulltext',
+            'extraction'     => 'extraction',
+            'risk-of-bias'   => 'rob',
+            'exports'        => 'exports',
+            'references'     => 'references',
+            'import'         => 'import',
+            'team'           => 'team',
+            'protocol'       => 'protocol',
+            default          => '',
+        };
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= e(current_locale()) ?>">
@@ -46,6 +80,14 @@ $version = (string) config('app.version', '0.1.0-dev');
         <?php endif; ?>
     </div>
 </header>
+
+<?php if ($reviewSubnav !== null): ?>
+    <?php
+        $review = $reviewSubnav;
+        $activeKey = $reviewSubnavActive;
+        require config('paths.base') . '/views/partials/review_subnav.php';
+    ?>
+<?php endif; ?>
 
 <main class="content">
     <?= $content ?>
