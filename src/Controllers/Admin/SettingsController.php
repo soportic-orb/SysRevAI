@@ -75,10 +75,9 @@ final class SettingsController
         $locale = in_array(($_POST['default_locale'] ?? 'ca'), ['ca', 'es', 'en'], true) ? $_POST['default_locale'] : 'ca';
         Config::set('app.locale', $locale, 'string', 'general', true);
         Config::set('app.timezone', trim((string) ($_POST['timezone'] ?? 'Europe/Madrid')) ?: 'Europe/Madrid', 'string', 'general');
-        Config::set('ui.accent_color', $this->sanitizeHex((string) ($_POST['accent_color'] ?? '#0072b2')), 'string', 'general', true);
+        Config::set('ui.accent_color', $this->sanitizeHex((string) ($_POST['accent_color'] ?? '#c9f24c')), 'string', 'general', true);
         Config::set('ui.theme', in_array(($_POST['theme'] ?? 'light'), ['light', 'dark', 'auto'], true) ? $_POST['theme'] : 'light', 'string', 'general', true);
         Config::set('site.footer_text', trim((string) ($_POST['footer_text'] ?? '')), 'string', 'general', true);
-        Config::set('site.show_branding', !empty($_POST['show_branding']), 'bool', 'general', true);
 
         ActivityLog::record('settings.general.updated');
     }
@@ -97,9 +96,6 @@ final class SettingsController
         Config::set('claude.model_complex', $complex, 'string', 'integrations');
         Config::set('claude.model_light', $light, 'string', 'integrations');
 
-        $temp = (float) ($_POST['temperature'] ?? 0.2);
-        $temp = max(0.0, min(1.0, $temp));
-        Config::set('claude.temperature', (string) $temp, 'string', 'integrations');
         Config::set('claude.max_tokens', max(1, (int) ($_POST['max_tokens'] ?? 4096)), 'int', 'integrations');
         Config::set('claude.monthly_limit_usd', max(0, (int) ($_POST['monthly_limit_usd'] ?? 0)), 'int', 'integrations');
 
@@ -125,7 +121,7 @@ final class SettingsController
 
     private function saveAbout(): void
     {
-        Config::set('about.show_dashboard_mention', !empty($_POST['show_dashboard_mention']), 'bool', 'about', true);
+        // The About panel is read-only (no settings to persist).
         ActivityLog::record('settings.about.updated');
     }
 
@@ -373,6 +369,6 @@ final class SettingsController
 
     private function sanitizeHex(string $value): string
     {
-        return preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? strtolower($value) : '#0072b2';
+        return preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? strtolower($value) : '#c9f24c';
     }
 }

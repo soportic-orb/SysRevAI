@@ -185,6 +185,8 @@ $router->post('/admin/maintenance/clear-logs', [MaintenanceController::class, 'c
 $router->post('/admin/maintenance/backup', [MaintenanceController::class, 'createBackup'], $admin);
 $router->post('/admin/maintenance/backup-delete', [MaintenanceController::class, 'deleteBackup'], $admin);
 $router->get('/admin/maintenance/backup/{name}', [MaintenanceController::class, 'downloadBackup'], $admin);
+$router->post('/admin/maintenance/update-check', [MaintenanceController::class, 'checkUpdates'], $admin);
+$router->post('/admin/maintenance/update-apply', [MaintenanceController::class, 'applyUpdate'], $admin);
 
 // Admin → Reports.
 $router->get('/admin/reports/fulltext-coverage.csv', [ReportsController::class, 'fulltextCoverageCsv'], $admin);

@@ -5,10 +5,9 @@ declare(strict_types=1);
 $siteName = (string) (setting('site.name') ?? 'SysRevAI');
 $locale   = (string) (setting('app.locale') ?? config('app.locale', 'ca'));
 $timezone = (string) (setting('app.timezone') ?? config('app.timezone', 'Europe/Madrid'));
-$accent   = (string) (setting('ui.accent_color') ?? '#0072b2');
+$accent   = (string) (setting('ui.accent_color') ?? '#c9f24c');
 $theme    = (string) (setting('ui.theme') ?? 'light');
 $footer   = (string) (setting('site.footer_text') ?? '');
-$branding = (bool) (setting('site.show_branding') ?? true);
 ?>
 <h1 class="section__title"><?= e(__('admin.sections.general')) ?></h1>
 
@@ -54,11 +53,6 @@ $branding = (bool) (setting('site.show_branding') ?? true);
         <label class="field-label" for="footer_text"><?= e(__('admin.general.footer_text')) ?></label>
         <input class="input" id="footer_text" name="footer_text" value="<?= e($footer) ?>">
     </div>
-
-    <label class="checkbox">
-        <input type="checkbox" name="show_branding" value="1" <?= $branding ? 'checked' : '' ?>>
-        <?= e(__('admin.general.show_branding')) ?>
-    </label>
 
     <div><button type="submit" class="btn btn--primary"><?= e(__('admin.save')) ?></button></div>
 </form>

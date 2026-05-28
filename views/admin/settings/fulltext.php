@@ -28,6 +28,22 @@ $sourceLabel = [
     'arxiv'            => 'arXiv',
     'biorxiv'          => 'bioRxiv / medRxiv',
 ];
+
+// Short explanation + direct URL where the user can obtain credentials or
+// read the official docs. The text keys live under admin.apis.* (shared
+// with the "Other APIs" panel) for the five overlapping sources, and under
+// admin.fulltext.* for the four that only appear here.
+$sourceHelp = [
+    'unpaywall'        => ['key' => 'admin.apis.help_unpaywall',         'link_key' => 'admin.apis.link_unpaywall',         'url' => 'https://unpaywall.org/products/api'],
+    'europepmc'        => ['key' => 'admin.fulltext.help_europepmc',     'link_key' => 'admin.fulltext.link_europepmc',     'url' => 'https://europepmc.org/RestfulWebService'],
+    'pmc'              => ['key' => 'admin.apis.help_pubmed',            'link_key' => 'admin.apis.link_pubmed',            'url' => 'https://www.ncbi.nlm.nih.gov/account/settings/'],
+    'openalex'         => ['key' => 'admin.apis.help_openalex',          'link_key' => 'admin.apis.link_openalex',          'url' => 'https://docs.openalex.org/how-to-use-the-api/rate-limits-and-authentication'],
+    'semantic_scholar' => ['key' => 'admin.apis.help_semantic_scholar',  'link_key' => 'admin.apis.link_semantic_scholar',  'url' => 'https://www.semanticscholar.org/product/api#api-key-form'],
+    'crossref'         => ['key' => 'admin.apis.help_crossref',          'link_key' => 'admin.apis.link_crossref',          'url' => 'https://www.crossref.org/documentation/retrieve-metadata/rest-api/tips-for-using-the-crossref-rest-api/'],
+    'doaj'             => ['key' => 'admin.fulltext.help_doaj',          'link_key' => 'admin.fulltext.link_doaj',          'url' => 'https://doaj.org/api/v3/docs'],
+    'arxiv'            => ['key' => 'admin.fulltext.help_arxiv',         'link_key' => 'admin.fulltext.link_arxiv',         'url' => 'https://info.arxiv.org/help/api/index.html'],
+    'biorxiv'          => ['key' => 'admin.fulltext.help_biorxiv',       'link_key' => 'admin.fulltext.link_biorxiv',       'url' => 'https://api.biorxiv.org/'],
+];
 ?>
 <h1 class="section__title"><?= e(__('admin.sections.fulltext')) ?></h1>
 <p class="section__intro"><?= e(__('admin.fulltext.intro')) ?></p>
@@ -99,6 +115,14 @@ $sourceLabel = [
         ?>
         <div class="api-block ft-source" data-source="<?= e($name) ?>">
             <h3 class="section__subtitle"><?= e($sourceLabel[$name] ?? $name) ?></h3>
+            <?php if (isset($sourceHelp[$name])): ?>
+                <p class="api-help">
+                    <?= e(__($sourceHelp[$name]['key'])) ?>
+                    <a href="<?= e($sourceHelp[$name]['url']) ?>" target="_blank" rel="noopener noreferrer">
+                        <?= e(__($sourceHelp[$name]['link_key'])) ?> &rarr;
+                    </a>
+                </p>
+            <?php endif; ?>
             <label class="checkbox">
                 <input type="checkbox" name="sources[<?= e($name) ?>][enabled]" value="1" <?= $sEnabled ? 'checked' : '' ?>>
                 <?= e(__('admin.fulltext.enable_source')) ?>

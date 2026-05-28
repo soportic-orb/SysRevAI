@@ -34,7 +34,10 @@ $nav = [
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($appName) ?> — <?= e(__('admin.title')) ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/sysrevai-icon.svg')) ?>">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+    <?php $_accent = accent_color(); ?>
+    <style>:root{--c-primary:<?= e($_accent) ?>;--c-primary-d:<?= e(darken_hex($_accent, 18)) ?>;--c-on-primary:<?= e(on_color_text($_accent)) ?>;}</style>
 </head>
 <body>
 <header class="topbar">
@@ -89,7 +92,7 @@ $nav = [
 </div>
 
 <footer class="appfooter">
-    <span><?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?></span>
+    <span><?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?> · <?= e(__('footer.author')) ?></span>
     <?php
         $style = 'footer';
         $donateLabel = __('footer.support');
