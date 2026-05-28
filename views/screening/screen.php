@@ -147,6 +147,7 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
             sPanel.hidden = false;
             sPanel.className = 'ai-suggest__panel';
             sPanel.textContent = sBtn.getAttribute('data-loading');
+            window.SysRevAI && window.SysRevAI.showAiOverlay && window.SysRevAI.showAiOverlay();
             fetch(sBtn.getAttribute('data-url'), { headers: { 'X-Requested-With': 'fetch' } })
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
@@ -160,7 +161,8 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
                         sPanel.textContent = sBtn.getAttribute('data-error');
                     }
                 })
-                .catch(function () { sPanel.textContent = sBtn.getAttribute('data-error'); });
+                .catch(function () { sPanel.textContent = sBtn.getAttribute('data-error'); })
+                .finally(function () { window.SysRevAI && window.SysRevAI.hideAiOverlay && window.SysRevAI.hideAiOverlay(); });
         });
     }
 })();

@@ -84,7 +84,7 @@ $renderField = static function (array $f, mixed $val): void {
                 </div>
             </form>
 
-            <form method="post" action="/reviews/<?= $id ?>/extraction/<?= $refId ?>/ai" class="section-card section-card--inline">
+            <form method="post" action="/reviews/<?= $id ?>/extraction/<?= $refId ?>/ai" class="section-card section-card--inline" data-ai-action>
                 <?= csrf_field() ?>
                 <button class="btn btn--ghost">&#10024; <?= e(__('extraction.fill_ai')) ?></button>
                 <span class="field-help"><?= e(__('extraction.fill_ai_help')) ?></span>

@@ -96,6 +96,7 @@ $authors = json_decode((string) $reference['authors_json'], true) ?: [];
             var original = btn.textContent;
             btn.disabled = true;
             btn.textContent = btn.getAttribute('data-loading');
+            window.SysRevAI && window.SysRevAI.showAiOverlay && window.SysRevAI.showAiOverlay();
 
             var fd = new FormData();
             fd.append('_csrf', csrf);
@@ -113,7 +114,10 @@ $authors = json_decode((string) $reference['authors_json'], true) ?: [];
                     }
                 })
                 .catch(function () { alert(btn.getAttribute('data-error')); })
-                .finally(function () { btn.disabled = false; btn.textContent = original; });
+                .finally(function () {
+                    btn.disabled = false; btn.textContent = original;
+                    window.SysRevAI && window.SysRevAI.hideAiOverlay && window.SysRevAI.hideAiOverlay();
+                });
         });
     });
 })();

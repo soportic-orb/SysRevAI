@@ -49,7 +49,7 @@ $id = (int) $review['id'];
                             <input type="hidden" name="decision" value="reject">
                             <button class="btn btn--ghost btn--sm"><?= e(__('duplicates.reject')) ?></button>
                         </form>
-                        <form method="post" action="/reviews/<?= $id ?>/duplicates/check-ai">
+                        <form method="post" action="/reviews/<?= $id ?>/duplicates/check-ai" data-ai-action>
                             <?= csrf_field() ?>
                             <input type="hidden" name="duplicate_id" value="<?= (int) $d['id'] ?>">
                             <button class="btn btn--ghost btn--sm">&#10024; <?= e(__('duplicates.ai_check')) ?></button>

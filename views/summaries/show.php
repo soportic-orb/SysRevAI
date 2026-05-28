@@ -70,7 +70,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
 
         <?php if ($summary === null): ?>
             <p class="muted"><?= e(__('summary.empty')) ?></p>
-            <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">
+            <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary" data-ai-action>
                 <?= csrf_field() ?>
                 <input type="hidden" name="lang" value="<?= e($lang) ?>">
                 <button class="btn btn--primary">&#10024; <?= e(__('summary.generate')) ?></button>
@@ -86,7 +86,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
                 <?= e(__('summary.model')) ?>: <code><?= e((string) ($summaryRow['model_used'] ?? '')) ?></code> ·
                 <?= e((string) ($summaryRow['created_at'] ?? '')) ?>
             </p>
-            <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary" style="display:inline">
+            <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary" style="display:inline" data-ai-action>
                 <?= csrf_field() ?>
                 <input type="hidden" name="lang" value="<?= e($lang) ?>">
                 <button class="btn btn--ghost btn--sm">&#10227; <?= e(__('summary.regenerate')) ?></button>
@@ -121,6 +121,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
             var originalLabel = btn.textContent;
             btn.textContent = loading;
             if (dest) { dest.hidden = false; dest.textContent = loading; }
+            window.SysRevAI && window.SysRevAI.showAiOverlay && window.SysRevAI.showAiOverlay();
 
             var fd = new FormData();
             fd.append('_csrf', csrf);
@@ -137,7 +138,10 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
                     }
                 })
                 .catch(function () { if (dest) dest.textContent = errorMsg; })
-                .finally(function () { btn.disabled = false; btn.textContent = originalLabel; });
+                .finally(function () {
+                    btn.disabled = false; btn.textContent = originalLabel;
+                    window.SysRevAI && window.SysRevAI.hideAiOverlay && window.SysRevAI.hideAiOverlay();
+                });
         });
     });
 })();

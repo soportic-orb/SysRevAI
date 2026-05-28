@@ -131,6 +131,8 @@ if ($reviewSubnav !== null && $_copilotEnabled):
 endif;
 ?>
 
+<?php require config('paths.base') . '/views/partials/ai_loading_overlay.php'; ?>
+
 <script>
     /* Wire the sun/moon button to flip and persist the theme. */
     (function () {
