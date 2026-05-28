@@ -336,8 +336,9 @@ final class ClaudeService
             . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         $messages = [];
-        // Keep at most the last 12 turns to stay within token budget.
-        $tail = array_slice($history, -12);
+        // Keep at most the last 16 turns to stay within token budget while
+        // still giving the model meaningful continuity across the thread.
+        $tail = array_slice($history, -16);
         foreach ($tail as $h) {
             $role = ($h['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user';
             $content = (string) ($h['content'] ?? '');
@@ -348,7 +349,11 @@ final class ClaudeService
         }
         $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-        $res = $this->request($this->modelComplex, $system, $messages, 1200, 'copilot', $reviewId, false);
+        // Use the "light" model and a tighter token cap: conversational
+        // answers are typically short and the Copilot needs to feel snappy.
+        // The admin can swap the light slot to Sonnet/Opus if they want
+        // more depth at the cost of latency.
+        $res = $this->request($this->modelLight, $system, $messages, 800, 'copilot', $reviewId, false);
         return $res['ok']
             ? ['ok' => true, 'reply' => (string) $res['text']]
             : ['ok' => false, 'error' => $res['error']];

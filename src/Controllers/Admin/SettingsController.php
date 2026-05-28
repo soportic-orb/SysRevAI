@@ -9,6 +9,7 @@ use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Services\ClaudeService;
+use SysRevAI\Services\SystemDependencies;
 
 /**
  * Admin → Settings. One section per form; each saves independently.
@@ -35,9 +36,13 @@ final class SettingsController
             return;
         }
 
-        echo View::render("admin/settings/{$section}", [
+        $extra = $section === 'files'
+            ? ['dependencies' => SystemDependencies::status()]
+            : [];
+
+        echo View::render("admin/settings/{$section}", array_merge([
             'activeSection' => $section,
-        ], 'layouts/admin');
+        ], $extra), 'layouts/admin');
     }
 
     public function save(string $section): void
@@ -204,10 +209,43 @@ final class SettingsController
         Config::set('files.allowed_types', $this->multiSelect('allowed_types', ['pdf', 'doc', 'docx', 'txt']), 'json', 'files');
         $loc = in_array(($_POST['upload_location'] ?? 'docroot'), ['docroot', 'outside'], true) ? $_POST['upload_location'] : 'docroot';
         Config::set('files.upload_location', $loc, 'string', 'files');
-        Config::set('files.compress', !empty($_POST['compress']), 'bool', 'files');
-        Config::set('files.ocr', !empty($_POST['ocr']), 'bool', 'files');
+
+        // Compress / OCR can only be turned ON when the matching system
+        // binary is actually present — otherwise the setting silently
+        // does nothing in practice.
+        $deps = SystemDependencies::status();
+        $compress = !empty($_POST['compress']) && ($deps['ghostscript']['installed'] ?? false);
+        $ocr      = !empty($_POST['ocr'])      && ($deps['tesseract']['installed']   ?? false);
+        Config::set('files.compress', $compress, 'bool', 'files');
+        Config::set('files.ocr',      $ocr,      'bool', 'files');
 
         ActivityLog::record('settings.files.updated');
+    }
+
+    /** Owner-only: try to install ghostscript or tesseract-ocr via apt-get. */
+    public function installDependency(): void
+    {
+        $pkg = (string) ($_POST['package'] ?? '');
+        $result = SystemDependencies::install($pkg);
+        ActivityLog::record('settings.files.install', [
+            'package' => $pkg,
+            'ok'      => $result['ok'],
+            'reason'  => $result['message'],
+        ]);
+        $key = match ($result['message']) {
+            'installed'         => 'admin.files.dep_install_ok',
+            'already_installed' => 'admin.files.dep_already',
+            'no_apt'            => 'admin.files.dep_no_apt',
+            'install_failed'    => 'admin.files.dep_install_failed',
+            'unknown_package'   => 'admin.files.dep_unknown',
+            default             => 'admin.files.dep_install_failed',
+        };
+        $msg = __($key);
+        if ($result['output'] !== '') {
+            $msg .= ' — ' . $result['output'];
+        }
+        Session::flash($result['ok'] ? 'admin_success' : 'admin_error', $msg);
+        redirect('/admin/settings/files');
     }
 
     private function saveLanguages(): void

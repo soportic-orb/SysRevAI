@@ -118,9 +118,15 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
     ?>
 </footer>
 
-<?php if ($reviewSubnav !== null): ?>
-    <?php require config('paths.base') . '/views/partials/copilot_widget.php'; ?>
-<?php endif; ?>
+<?php
+// Copilot widget — visible whenever the user is inside a review AND the
+// admin has the `copilot` feature enabled. Hidden entirely (no floating
+// button) when disabled so we don't tease a non-working chat.
+$_copilotEnabled = (bool) (setting('claude.feature.copilot') ?? true);
+if ($reviewSubnav !== null && $_copilotEnabled):
+    require config('paths.base') . '/views/partials/copilot_widget.php';
+endif;
+?>
 
 <script>
     /* Wire the sun/moon button to flip and persist the theme. */

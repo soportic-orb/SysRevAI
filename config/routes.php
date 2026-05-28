@@ -66,6 +66,8 @@ $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'
 $router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
+$router->get('/reviews/{id}/copilot/history', [ReviewsController::class, 'copilotHistory'], ['auth']);
+$router->post('/reviews/{id}/copilot/clear', [ReviewsController::class, 'copilotClear'], ['auth']);
 $router->post('/reviews/{id}/copilot', [ReviewsController::class, 'copilot'], ['auth']);
 
 // Team / collaboration on a review.
@@ -179,6 +181,7 @@ $router->post('/admin/settings/email/test', [SettingsController::class, 'sendTes
 $router->post('/admin/settings/translate/verify', [SettingsController::class, 'verifyTranslate'], $admin);
 $router->post('/admin/settings/fulltext/verify', [SettingsController::class, 'verifyFulltextSource'], $admin);
 $router->post('/admin/settings/fulltext/test', [SettingsController::class, 'testFulltextChain'], $admin);
+$router->post('/admin/settings/files/install', [SettingsController::class, 'installDependency'], $admin);
 $router->post('/admin/settings/{section}', [SettingsController::class, 'save'], $admin);
 
 // Admin → Users (order matters: literal paths before the {id} pattern).

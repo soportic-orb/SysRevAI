@@ -8,6 +8,7 @@ use SysRevAI\Core\Auth;
 use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
+use SysRevAI\Models\CopilotMessage;
 use SysRevAI\Models\ExclusionReason;
 use SysRevAI\Models\Review;
 use SysRevAI\Models\ReviewUser;
@@ -161,8 +162,10 @@ final class ReviewsController
 
     /**
      * Scientific Copilot endpoint. Any member of the review can chat.
-     * History lives on the client (localStorage); we receive the last
-     * few turns plus the new message and reply once.
+     * History is persisted server-side in copilot_messages so the bot
+     * remembers prior turns across devices and sessions — the JS only
+     * sends the new user message; the controller pulls history from
+     * the database and writes both turns back when Claude replies.
      */
     public function copilot(string $id): void
     {
@@ -175,7 +178,6 @@ final class ReviewsController
             $body = $_POST;
         }
         $message = trim((string) ($body['message'] ?? ''));
-        $history = is_array($body['history'] ?? null) ? $body['history'] : [];
 
         if ($message === '') {
             http_response_code(400);
@@ -183,23 +185,51 @@ final class ReviewsController
             return;
         }
 
+        $rid = (int) $id;
+        $uid = (int) Auth::id();
+        $history = CopilotMessage::history($rid, $uid, 200);
+
+        // Persist the user turn BEFORE calling the AI so even an AI failure
+        // leaves a trace of what was asked.
+        CopilotMessage::add($rid, $uid, 'user', $message);
+
         $result = ClaudeService::fromSettings()->copilotChat(
             $review,
             Review::pico($review),
-            Review::metrics((int) $id),
+            Review::metrics($rid),
             $history,
             $message,
-            (int) $id,
+            $rid,
         );
 
         if (!$result['ok']) {
-            ActivityLog::record('copilot.failed', ['error' => $result['error'] ?? 'unknown'], (int) $id);
+            ActivityLog::record('copilot.failed', ['error' => $result['error'] ?? 'unknown'], $rid);
             http_response_code(502);
             echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'failed']);
             return;
         }
-        ActivityLog::record('copilot.message', [], (int) $id);
+        CopilotMessage::add($rid, $uid, 'assistant', $result['reply']);
+        ActivityLog::record('copilot.message', [], $rid);
         echo json_encode(['ok' => true, 'reply' => $result['reply']], JSON_UNESCAPED_UNICODE);
+    }
+
+    /** Return the persisted Copilot transcript so the widget can hydrate. */
+    public function copilotHistory(string $id): void
+    {
+        $review = $this->loadOrDeny((int) $id);
+        header('Content-Type: application/json; charset=utf-8');
+        $messages = CopilotMessage::history((int) $id, (int) Auth::id(), 200);
+        echo json_encode(['ok' => true, 'messages' => $messages], JSON_UNESCAPED_UNICODE);
+    }
+
+    /** Wipe the researcher's own thread for this review (used by /clear). */
+    public function copilotClear(string $id): void
+    {
+        $review = $this->loadOrDeny((int) $id);
+        header('Content-Type: application/json; charset=utf-8');
+        CopilotMessage::clear((int) $id, (int) Auth::id());
+        ActivityLog::record('copilot.cleared', [], (int) $id);
+        echo json_encode(['ok' => true]);
     }
 
     public function archive(string $id): void
