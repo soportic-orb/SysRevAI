@@ -326,6 +326,8 @@ return [
         'exclude_reason'   => 'Motiu d\'exclusió',
         'no_reason'        => '— Cap motiu —',
         'notes'            => 'Notes (opcional)',
+        'notes_label'      => 'Notes',
+        'assessment_title' => 'Valoració',
         'include'          => 'Incloure',
         'exclude'          => 'Excloure',
         'maybe'            => 'Potser',

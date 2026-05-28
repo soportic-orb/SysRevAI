@@ -74,14 +74,16 @@ final class ClaudeService
         return $this->jsonResult($res);
     }
 
-    public function suggestScreeningDecision(array $reference, array $protocol, ?int $reviewId = null): array
+    public function suggestScreeningDecision(array $reference, array $protocol, ?int $reviewId = null, string $targetLanguage = 'en'): array
     {
         if ($e = $this->guard('screening')) {
             return $e;
         }
-        $system = 'You assist with systematic-review title/abstract screening. Given the article and the '
-            . 'protocol, recommend whether to include it. You advise only; the reviewer decides. '
-            . 'Respond ONLY with JSON: {"recommendation":"include|exclude|maybe","confidence":0.0,"reason":""}.';
+        $langName = self::languageName($targetLanguage);
+        $system = "You assist with systematic-review title/abstract screening. Given the article and the "
+            . "protocol, recommend whether to include it. You advise only; the reviewer decides. "
+            . "Respond ONLY with JSON: {\"recommendation\":\"include|exclude|maybe\",\"confidence\":0.0,\"reason\":\"\"}. "
+            . "Write the \"reason\" field in {$langName} so the reviewer can read it in their own language.";
         $payload = json_encode([
             'article'  => [
                 'title'    => $reference['title'] ?? '',
@@ -92,6 +94,23 @@ final class ClaudeService
         $res = $this->request($this->modelComplex, $system,
             [['role' => 'user', 'content' => $payload]], 1024, 'screening', $reviewId, true);
         return $this->jsonResult($res);
+    }
+
+    /** Friendly English name for the platform's supported locales, used in
+     *  prompts so Claude knows which language to reply in. */
+    private static function languageName(string $code): string
+    {
+        return match (strtolower($code)) {
+            'ca' => 'Catalan',
+            'es' => 'Spanish',
+            'fr' => 'French',
+            'de' => 'German',
+            'pt' => 'Portuguese',
+            'it' => 'Italian',
+            'eu' => 'Basque',
+            'gl' => 'Galician',
+            default => 'English',
+        };
     }
 
     public function extractStructuredData(string $articleText, array $template, ?int $reviewId = null): array

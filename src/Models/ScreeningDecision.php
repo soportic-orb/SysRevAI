@@ -16,17 +16,20 @@ final class ScreeningDecision
         string $decision,
         ?string $reason,
         ?string $notes,
-        int $timeSpent = 0
+        int $timeSpent = 0,
+        ?string $aiSuggestionJson = null
     ): void {
         $table = Database::table('screening_decisions');
         Database::affecting(
             "INSERT INTO `{$table}`
-                (reference_id, reviewer_id, stage, decision, reason, notes, is_resolution, time_spent_seconds)
-             VALUES (?,?,?,?,?,?,0,?)
+                (reference_id, reviewer_id, stage, decision, reason, notes, ai_suggestion, is_resolution, time_spent_seconds)
+             VALUES (?,?,?,?,?,?,?,0,?)
              ON DUPLICATE KEY UPDATE
                 decision = VALUES(decision), reason = VALUES(reason),
-                notes = VALUES(notes), time_spent_seconds = time_spent_seconds + VALUES(time_spent_seconds)",
-            [$referenceId, $reviewerId, $stage, $decision, $reason, $notes, $timeSpent]
+                notes = VALUES(notes),
+                ai_suggestion = COALESCE(VALUES(ai_suggestion), ai_suggestion),
+                time_spent_seconds = time_spent_seconds + VALUES(time_spent_seconds)",
+            [$referenceId, $reviewerId, $stage, $decision, $reason, $notes, $aiSuggestionJson, $timeSpent]
         );
     }
 

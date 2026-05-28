@@ -325,6 +325,8 @@ return [
         'exclude_reason'   => 'Motivo de exclusión',
         'no_reason'        => '— Sin motivo —',
         'notes'            => 'Notas (opcional)',
+        'notes_label'      => 'Notas',
+        'assessment_title' => 'Valoración',
         'include'          => 'Incluir',
         'exclude'          => 'Excluir',
         'maybe'            => 'Quizás',
