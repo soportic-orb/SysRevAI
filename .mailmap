@@ -1,0 +1,11 @@
+# Map every historical commit author/email to the canonical Soportic
+# Development identity used going forward. GitHub respects this file on
+# the Insights → Contributors page and `git shortlog --summary` /
+# `git log` rewrite the displayed author on the fly — the actual commit
+# metadata is left untouched, so no SHAs change and no force-push is
+# needed.
+#
+# Format:  Proper Name <proper@email>  Commit Name <commit@email>
+
+Soportic Development <dev@soportic.dev>  Claude <noreply@anthropic.com>
+Soportic Development <dev@soportic.dev>  Soportic Development <dev@soportic.dev>
