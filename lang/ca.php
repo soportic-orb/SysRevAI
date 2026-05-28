@@ -14,9 +14,14 @@ return [
     ],
 
     'common' => [
-        'working' => 'Treballant, espera…',
-        'expand'  => 'Desplegar',
-        'collapse' => 'Plegar',
+        'working'      => 'Treballant, espera…',
+        'expand'       => 'Desplegar',
+        'collapse'     => 'Plegar',
+        'close'        => 'Tancar',
+        'info_about'   => 'Sobre: %s',
+        'info_button'  => 'Informació sobre aquesta secció',
+        'confirm_archive'   => 'Segur que vols arxivar aquesta revisió? Passarà a la llista d\'arxivades i deixarà d\'aparèixer al tauler.',
+        'confirm_unarchive' => 'Restaurar aquesta revisió a la llista activa?',
     ],
 
     'nav' => [
@@ -127,6 +132,12 @@ return [
     ],
 
     'rob' => [
+        'info_what_label'  => 'Què és l\'avaluació del risc de biaix?',
+        'info_what'        => 'És la valoració crítica de la qualitat metodològica de cada estudi inclòs. No és el mateix que la qualitat de l\'evidència (GRADE): aquí es mesura fins a quin punt el disseny, la conducció i l\'anàlisi de l\'estudi individual poden distorsionar els seus resultats. El risc de biaix s\'usa després per ponderar la confiança en la síntesi.',
+        'info_how_label'   => 'Com funciona a SysRevAI?',
+        'info_how'         => 'La plataforma ofereix les quatre eines estàndard: RoB 2 per a assaigs aleatoritzats, ROBINS-I per a estudis no aleatoritzats, Newcastle-Ottawa per a estudis observacionals (cohorts i casos-controls) i JBI per a estudis qualitatius. Per a cada estudi i cada domini (aleatorització, desviacions del protocol, dades faltants, mesura del resultat, selecció del resultat informat, etc.) emets un judici: Baix / Algunes preocupacions / Alt / Sense informació. SysRevAI genera el gràfic semàfor i el gràfic resum apilat automàticament.',
+        'info_best_label'  => 'Bones pràctiques',
+        'info_best'        => 'Dos avaluadors independents per estudi i discussió de les discrepàncies. | Justifica cada judici al camp de text — sense justificació el lector del manuscrit no podrà replicar la teva valoració. | Usa l\'eina apropiada al disseny de l\'estudi; barrejar-les invalida la comparació. | La IA pot suggerir un judici inicial, però el judici final sempre és humà i s\'ha de documentar.',
         'title'        => 'Risc de biaix',
         'tool'         => 'Eina',
         'tool_rob2'              => 'RoB 2',
@@ -171,6 +182,12 @@ return [
     ],
 
     'extraction' => [
+        'info_what_label'  => 'Què és l\'extracció de dades?',
+        'info_what'        => 'És la recollida sistemàtica i estructurada de la informació clau de cada estudi inclòs: disseny, mostra, intervenció, comparador, resultats, efectes adversos, finançament, etc. És la matèria primera a partir de la qual es redactaran les taules de resultats i, si escau, el meta-anàlisi.',
+        'info_how_label'   => 'Com funciona a SysRevAI?',
+        'info_how'         => 'Defineixes una plantilla amb els camps que la teva revisió necessita (text lliure, número, data, selecció, multi-selecció). Per a cada estudi omples els camps manualment; si vols, demanes a la IA que els pre-ompli llegint el PDF i tu valides — la IA mai desa sense la teva aprovació. L\'estat de cada estudi (esborrany / enviat / aprovat) marca el progrés de l\'equip.',
+        'info_best_label'  => 'Bones pràctiques',
+        'info_best'        => 'Fes un pilotatge de la plantilla amb 3-5 estudis abans d\'estendre a la resta, ajusta els camps i torna a començar. | Doble extracció independent quan els recursos ho permetin; comparació posterior i resolució de discrepàncies. | Mantén les unitats consistents (mmHg, kg, %…) — defineix-les al camp "ajuda" de la plantilla. | Documenta les dades que falten i si les vas buscar al suplementari o vas demanar a l\'autor.',
         'title'          => 'Extracció de dades',
         'edit_template'  => 'Editar plantilla',
         'template_name'  => 'Nom de la plantilla',
@@ -214,6 +231,12 @@ return [
     ],
 
     'fulltext' => [
+        'info_what_label'  => 'Què és el cribratge a text complet?',
+        'info_what'        => 'És el segon filtre: es llegeix el PDF sencer de les referències que han passat el cribratge de títol i resum. Aquí s\'apliquen tots els criteris d\'inclusió i exclusió del protocol i es justifica el motiu d\'exclusió dels descartats, cosa que alimenta directament el diagrama PRISMA.',
+        'info_how_label'   => 'Com funciona a SysRevAI?',
+        'info_how'         => 'La plataforma et mostra el PDF al costat del protocol de la revisió. Decideixes "Incloure", "Potser" o "Excloure" — igual que a T/R però amb la informació completa. Si la referència no té PDF, SysRevAI intenta recuperar-lo automàticament des d\'Unpaywall, PMC, OpenAlex i altres fonts obertes. Pots xatejar amb l\'article (Article chat) per resoldre dubtes concrets sobre el contingut sense haver-lo de llegir sencer.',
+        'info_best_label'  => 'Bones pràctiques',
+        'info_best'        => 'Mantén l\'esquema de doble revisor + coordinador per als conflictes. | Registra sempre un motiu d\'exclusió específic; "no compleix els criteris" no serveix per a PRISMA. | Si depens de PDFs no oberts, puja\'ls manualment amb el teu accés institucional — SysRevAI no trenca paywalls. | Documenta qualsevol canvi del protocol que sorgeixi en veure els textos complets.',
         'title'           => 'Cribratge a text complet',
         'start'           => 'Iniciar cribratge a text complet',
         'all_done'        => 'No tens articles pendents de cribar a text complet.',
@@ -273,6 +296,12 @@ return [
     ],
 
     'screening' => [
+        'info_what_label'  => 'Què és el cribratge de títol i resum?',
+        'info_what'        => 'És el primer filtre de la revisió. Cada revisor avalua el títol i el resum de cada referència per decidir si té rellevància potencial i ha de passar a la lectura del text complet. Aquí no es descarten estudis per la qualitat metodològica — només per si encaixen o no amb la pregunta de recerca.',
+        'info_how_label'   => 'Com funciona a SysRevAI?',
+        'info_how'         => 'La plataforma et mostra una referència alhora sense revelar les decisions dels altres revisors (doble cec quan està activat al protocol). Decideixes "Incloure", "Potser" o "Excloure"; si exclous pots marcar el motiu. Les decisions amb conflicte s\'acumulen a la cua de "Conflictes" i un revisor amb rol de coordinador pren la decisió final.',
+        'info_best_label'  => 'Bones pràctiques',
+        'info_best'        => 'Treballa amb dos revisors independents i un tercer per als conflictes. | Fes una prova pilot amb 50-100 referències per calibrar els criteris abans del cribratge complet. | Usa motius d\'exclusió consistents — els necessitaràs per al diagrama PRISMA. | Quan dubtis, marca "Potser": passa a text complet i allí es confirma.',
         'title'            => 'Cribratge T/R',
         'start'            => 'Iniciar el cribratge',
         'started'          => '%d referències enviades al cribratge.',

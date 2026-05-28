@@ -19,7 +19,10 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
     <div class="page__head page__head--row">
         <div>
             <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
-            <h1 class="page__title"><?= e(__('screening.title')) ?></h1>
+            <h1 class="page__title">
+                <?= e(__('screening.title')) ?>
+                <?php $phaseKey = 'screening'; require config('paths.base') . '/views/partials/phase_info.php'; ?>
+            </h1>
         </div>
         <div class="btn-row">
             <?php if ($canCoordinate && $conflicts > 0): ?>

@@ -16,7 +16,10 @@ $id = (int) $review['id'];
     <div class="page__head page__head--row">
         <div>
             <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
-            <h1 class="page__title"><?= e(__('rob.title')) ?></h1>
+            <h1 class="page__title">
+                <?= e(__('rob.title')) ?>
+                <?php $phaseKey = 'rob'; require config('paths.base') . '/views/partials/phase_info.php'; ?>
+            </h1>
         </div>
         <form method="get" action="/reviews/<?= $id ?>/risk-of-bias">
             <select class="select select--sm" name="tool" onchange="this.form.submit()">
