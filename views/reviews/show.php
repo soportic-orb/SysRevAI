@@ -181,7 +181,16 @@ $picoFields = [
                 <?php foreach ($comments as $c): ?>
                     <li class="comment">
                         <div class="comment__head">
-                            <strong><?= e((string) $c['author_name']) ?></strong>
+                            <?php
+                                $avatarUser = [
+                                    'name'        => $c['author_name'] ?? '',
+                                    'email'       => $c['author_email'] ?? '',
+                                    'avatar_path' => $c['author_avatar'] ?? null,
+                                ];
+                                $avatarSize = 30;
+                                require config('paths.base') . '/views/partials/avatar.php';
+                            ?>
+                            <strong class="comment__author"><?= e((string) $c['author_name']) ?></strong>
                             <span class="muted"><?= e((string) $c['created_at']) ?></span>
                             <?php if ((int) $c['user_id'] === (int) Auth::id() || $isOwner): ?>
                                 <form method="post" action="/reviews/<?= $id ?>/comments/delete" class="comment__del">

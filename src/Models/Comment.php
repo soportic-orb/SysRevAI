@@ -40,7 +40,7 @@ final class Comment
         $comments = Database::table('comments');
         $users = Database::table('users');
         return Database::select(
-            "SELECT c.*, u.name AS author_name
+            "SELECT c.*, u.name AS author_name, u.email AS author_email, u.avatar_path AS author_avatar
              FROM `{$comments}` c
              JOIN `{$users}` u ON u.id = c.user_id
              WHERE c.review_id = ? AND c.reference_id IS NULL AND c.deleted_at IS NULL
