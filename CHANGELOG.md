@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 13 — polish:**
+  - **Global search** at `/search` (auth-only) across every review the user
+    can access, using the existing FULLTEXT index on `references(title,
+    abstract)` for queries of 4+ characters and a `LIKE` fallback for short
+    ones; results show the matching reference and its parent review.
+  - **Public `/about` page** (no login required) with version, license, repo
+    link and the discreet donation card — the policy-approved third place
+    the donate link appears.
+  - `database/seeds/demo.sql`: a one-shot sample review with PICO, exclusion
+    reasons and five realistic-looking references; idempotent on review
+    title and documented in the README.
+  - Topbar gains a Search link; README roadmap marked complete across all
+    13 phases.
 - **Phase 12 — exports:**
   - `Services\ExportService` + `ExportController`: per-review export hub at
     `/reviews/{id}/exports` with a PRISMA preview and download buttons.

@@ -91,23 +91,36 @@ Once installed, head to the admin panel to:
 - set up **SMTP** for notifications,
 - manage **users, roles and security** policies.
 
+### Try the demo data
+
+After the installer finishes you can populate the database with a sample
+review and a handful of references:
+
+```bash
+sed 's/{prefix}/sra_/g' database/seeds/demo.sql | mysql -u <user> -p <database>
+```
+
+(Replace `sra_` with your configured table prefix if you changed it.) Log in
+as the admin user you created during installation and you'll see the demo
+review on your dashboard.
+
 ### Roadmap (build phases)
 
 | Phase | Scope | Status |
 |------:|-------|:------:|
-| 1 | Foundations + web installer | 🚧 in progress |
-| 2 | Admin panel & settings (encrypted) | ⏳ |
-| 3 | Reviews & protocol (PICO, criteria) | ⏳ |
-| 4 | Multi-user collaboration & notifications | ⏳ |
-| 5 | Import & deduplication | ⏳ |
-| 6 | Title/abstract screening (blinded) | ⏳ |
-| 7 | Claude API integration | ⏳ |
-| 8 | Full-text, PDF viewer & article chat | ⏳ |
-| 9 | Data extraction | ⏳ |
-| 10 | Risk of bias | ⏳ |
-| 11 | AI summaries & translation | ⏳ |
-| 12 | Exports (PRISMA, Excel, Word, RevMan) | ⏳ |
-| 13 | Polish, search, Docker, demo data | ⏳ |
+| 1 | Foundations + web installer | ✅ |
+| 2 | Admin panel & settings (encrypted) | ✅ |
+| 3 | Reviews & protocol (PICO, criteria) | ✅ |
+| 4 | Multi-user collaboration & notifications | ✅ |
+| 5 | Import & deduplication | ✅ |
+| 6 | Title/abstract screening (blinded) | ✅ |
+| 7 | Claude API integration | ✅ |
+| 8 | Full-text, PDF viewer & article chat | ✅ |
+| 9 | Data extraction | ✅ |
+| 10 | Risk of bias | ✅ |
+| 11 | AI summaries & translation | ✅ |
+| 12 | Exports (PRISMA, Excel, Word, RevMan) | ✅ |
+| 13 | Polish (global search, demo data, public About) | ✅ |
 
 ### Contributing
 

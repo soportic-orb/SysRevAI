@@ -16,6 +16,7 @@ return [
     'nav' => [
         'dashboard'     => 'Tauler',
         'reviews'       => 'Revisions',
+        'search'        => 'Cercar',
         'settings'      => 'Configuració',
         'notifications' => 'Notificacions',
         'profile'       => 'Perfil',
@@ -58,6 +59,23 @@ return [
         '403_title' => 'Accés denegat',
         '403_text'  => 'No tens permisos per veure aquesta pàgina.',
         'back_home' => 'Tornar a l\'inici',
+    ],
+
+    'search' => [
+        'title'       => 'Cerca global',
+        'intro'       => 'Cerca títols, resums i identificadors a totes les teves revisions.',
+        'placeholder' => 'Paraules clau, DOI, PMID…',
+        'go'          => 'Cercar',
+        'hint'        => 'Introdueix un terme per començar.',
+        'no_results'  => 'Cap resultat per "%s".',
+        'count'       => '%d resultats',
+        'review'      => 'Revisió',
+    ],
+
+    'about' => [
+        'title'      => 'Sobre SysRevAI',
+        'tagline'    => 'Plataforma de codi obert per a revisions sistemàtiques potenciades amb IA.',
+        'back_login' => 'Tornar al login',
     ],
 
     'exports' => [

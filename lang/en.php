@@ -15,6 +15,7 @@ return [
     'nav' => [
         'dashboard'     => 'Dashboard',
         'reviews'       => 'Reviews',
+        'search'        => 'Search',
         'settings'      => 'Settings',
         'notifications' => 'Notifications',
         'profile'       => 'Profile',
@@ -57,6 +58,23 @@ return [
         '403_title' => 'Access denied',
         '403_text'  => 'You do not have permission to view this page.',
         'back_home' => 'Back to home',
+    ],
+
+    'search' => [
+        'title'       => 'Global search',
+        'intro'       => 'Search titles, abstracts and identifiers across all your reviews.',
+        'placeholder' => 'Keywords, DOI, PMID…',
+        'go'          => 'Search',
+        'hint'        => 'Type a term to start.',
+        'no_results'  => 'No results for "%s".',
+        'count'       => '%d results',
+        'review'      => 'Review',
+    ],
+
+    'about' => [
+        'title'      => 'About SysRevAI',
+        'tagline'    => 'An open-source platform for AI-powered systematic reviews.',
+        'back_login' => 'Back to login',
     ],
 
     'exports' => [

@@ -14,6 +14,7 @@ declare(strict_types=1);
 use SysRevAI\Controllers\Admin\MaintenanceController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
+use SysRevAI\Controllers\AboutController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
 use SysRevAI\Controllers\DashboardController;
@@ -34,6 +35,7 @@ use SysRevAI\Controllers\TranslateController;
 use SysRevAI\Controllers\PdfController;
 use SysRevAI\Controllers\RiskOfBiasController;
 use SysRevAI\Controllers\ScreeningController;
+use SysRevAI\Controllers\SearchController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
 
@@ -44,6 +46,10 @@ $router->get('/', static fn () => redirect(Auth::check() ? '/dashboard' : '/logi
 $router->get('/login', [AuthController::class, 'showLogin'], ['guest']);
 $router->post('/login', [AuthController::class, 'login'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
+
+// Public about page (no auth) and global search (auth).
+$router->get('/about', [AboutController::class, 'show']);
+$router->get('/search', [SearchController::class, 'index'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 
