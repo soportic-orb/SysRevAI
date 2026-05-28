@@ -8,12 +8,22 @@ declare(strict_types=1);
 /** @var array $reasons */
 /** @var int $pending */
 /** @var int $completed */
+/** @var int $totalReferences */
+/** @var int $totalInStage */
 /** @var int $conflicts */
 /** @var bool $canCoordinate */
 $id = (int) $review['id'];
 $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
 $authors = $reference ? (json_decode((string) $reference['authors_json'], true) ?: []) : [];
+
+// Cards above the progress bar — all percentages are relative to the
+// review's total references (the denominator the user is most likely
+// thinking in).
+$denom = max(1, (int) ($totalReferences ?? 0));
+$pctOf = static function (int $n) use ($denom): int {
+    return (int) round(($n / $denom) * 100);
+};
 ?>
 <div class="page">
     <div class="page__head page__head--row">
@@ -34,6 +44,29 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
                     <button class="btn btn--ghost"><?= e(__('screening.coordinator_view')) ?></button>
                 </form>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="screen-stats" aria-label="<?= e(__('screening.stats_aria')) ?>">
+        <div class="screen-stat">
+            <span class="screen-stat__value"><?= (int) $pending ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_pending')) ?></span>
+            <span class="screen-stat__pct"><?= $pctOf((int) $pending) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+        </div>
+        <div class="screen-stat screen-stat--done">
+            <span class="screen-stat__value"><?= (int) $completed ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_done')) ?></span>
+            <span class="screen-stat__pct"><?= $pctOf((int) $completed) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+        </div>
+        <div class="screen-stat screen-stat--team">
+            <span class="screen-stat__value"><?= (int) $totalInStage ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_team_pending')) ?></span>
+            <span class="screen-stat__pct"><?= $pctOf((int) $totalInStage) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+        </div>
+        <div class="screen-stat screen-stat--total">
+            <span class="screen-stat__value"><?= (int) $totalReferences ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_total_review')) ?></span>
+            <span class="screen-stat__pct">100%</span>
         </div>
     </div>
 

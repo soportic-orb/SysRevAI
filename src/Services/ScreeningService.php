@@ -100,6 +100,31 @@ final class ScreeningService
         return (int) ($row['c'] ?? 0);
     }
 
+    /** All references in the review, regardless of stage / status. Used as the
+     *  denominator for the per-reviewer screening stats. */
+    public static function totalReferences(int $reviewId): int
+    {
+        $refs = Database::table('references');
+        $row = Database::selectOne(
+            "SELECT COUNT(*) AS c FROM `{$refs}` WHERE review_id = ?",
+            [$reviewId]
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    /** Total references at the screening stage (still open for any reviewer
+     *  to decide), counted from anyone's perspective — independent of who
+     *  is currently logged in. */
+    public static function totalInStage(int $reviewId, string $stage = 'ta'): int
+    {
+        $refs = Database::table('references');
+        $row = Database::selectOne(
+            "SELECT COUNT(*) AS c FROM `{$refs}` WHERE review_id = ? AND status = ?",
+            [$reviewId, self::screeningStatus($stage)]
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
     /**
      * After a decision is recorded, finalize the reference if the required
      * reviewers agree; otherwise leave it open as a conflict.
