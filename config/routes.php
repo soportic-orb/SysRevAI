@@ -29,6 +29,7 @@ use SysRevAI\Controllers\ChatController;
 use SysRevAI\Controllers\ExtractionController;
 use SysRevAI\Controllers\FullTextScreeningController;
 use SysRevAI\Controllers\PdfController;
+use SysRevAI\Controllers\RiskOfBiasController;
 use SysRevAI\Controllers\ScreeningController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
@@ -93,6 +94,12 @@ $router->get('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'ser
 $router->post('/reviews/{id}/references/{refId}/chat', [ChatController::class, 'send'], ['auth']);
 
 // Data extraction (literal /template before the {refId} pattern).
+// Risk of bias (per (reference, reviewer, tool, domain)).
+$router->get('/reviews/{id}/risk-of-bias', [RiskOfBiasController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/risk-of-bias/{refId}/ai', [RiskOfBiasController::class, 'ai'], ['auth']);
+$router->get('/reviews/{id}/risk-of-bias/{refId}', [RiskOfBiasController::class, 'edit'], ['auth']);
+$router->post('/reviews/{id}/risk-of-bias/{refId}', [RiskOfBiasController::class, 'save'], ['auth']);
+
 $router->get('/reviews/{id}/extraction', [ExtractionController::class, 'index'], ['auth']);
 $router->get('/reviews/{id}/extraction/template', [ExtractionController::class, 'templateEdit'], ['auth']);
 $router->post('/reviews/{id}/extraction/template', [ExtractionController::class, 'templateSave'], ['auth']);

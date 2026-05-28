@@ -167,6 +167,18 @@ a:hover { text-decoration: underline; }
 
 .topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
 
+/* Risk of bias */
+.rob-summary { max-width: 720px; margin: 8px 0 16px; }
+.rob-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--c-muted); }
+.rob-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+.rob-cell { display: inline-block; width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; border: 1px solid rgba(0,0,0,.08); }
+.rob-cell-td { text-align: center; }
+.rob-table th { white-space: nowrap; }
+.rob-domain { padding: 14px 0; border-bottom: 1px solid var(--c-border); }
+.rob-domain:last-child { border-bottom: 0; }
+.rob-domain__title { margin: 0 0 8px; font-size: 15px; }
+.rob-domain__actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+
 /* Extraction template editor */
 .tpl-row { border: 1px solid var(--c-border); border-radius: 8px; padding: 14px; margin-bottom: 12px; background: var(--c-surface); }
 .tpl-row__actions { margin-top: 8px; }

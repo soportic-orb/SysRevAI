@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 10 — risk of bias:**
+  - `013_risk_of_bias.sql` migration: per-(reference, reviewer, tool, domain)
+    judgements + justifications.
+  - `Services\RiskOfBiasService`: domains and judgement vocabularies for
+    **RoB 2**, **ROBINS-I**, **Newcastle-Ottawa** and **JBI** with severity
+    ordering and accessible Okabe-Ito colours for the traffic-light view.
+  - `Models\RiskOfBias` (upsert per domain, per-assessment fetch, review-wide
+    aggregate for plots) and `RiskOfBiasController` (overview with
+    **traffic-light table** and **summary stacked-bar** chart via Chart.js,
+    per-reference assessment form with per-domain **"Suggest with AI"** that
+    calls `assessBiasDomain` and fills judgement+justification client-side for
+    review before save).
 - **Phase 9 — data extraction:**
   - `012_extraction.sql` migration: `extraction_templates` (per-review,
     JSON-defined fields) and `extraction_data` (per-(reference, reviewer,
