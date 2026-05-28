@@ -231,13 +231,18 @@ a:hover { text-decoration: underline; }
 .copilot { position: fixed; right: 22px; bottom: 22px; z-index: 30; }
 .copilot__toggle {
     width: 52px; height: 52px; border-radius: 50%;
-    background: var(--c-primary); color: var(--c-on-primary);
+    background: var(--c-primary);
+    /* The GitHub-Copilot-style icon must render in solid black on top of
+       the lime accent, regardless of the active theme — the user picked
+       this combination as the platform's Copilot identity. */
+    color: #000;
     border: 1px solid var(--c-primary-d);
-    font-size: 24px; line-height: 1; cursor: pointer;
+    line-height: 1; cursor: pointer;
     box-shadow: 0 4px 12px rgba(16,35,53,.18);
     display: flex; align-items: center; justify-content: center;
 }
 .copilot__toggle:hover { background: var(--c-primary-d); }
+.copilot__toggle-icon { width: 24px; height: 24px; }
 
 .copilot__panel {
     position: absolute; right: 0; bottom: 64px;
