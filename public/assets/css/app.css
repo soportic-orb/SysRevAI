@@ -42,6 +42,7 @@ a:hover { text-decoration: underline; }
     display: flex; align-items: center; gap: 24px;
     background: var(--c-surface); border-bottom: 1px solid var(--c-border);
     padding: 0 24px; height: 60px;
+    position: sticky; top: 0; z-index: 20;
 }
 .topbar__brand { display: flex; align-items: center; gap: 10px; }
 .topbar__brand:hover { text-decoration: none; }
@@ -60,6 +61,7 @@ a:hover { text-decoration: underline; }
     background: var(--c-surface);
     border-bottom: 1px solid var(--c-border);
     box-shadow: 0 1px 2px rgba(16,35,53,.04);
+    position: sticky; top: 60px; z-index: 15;
 }
 .review-subnav__inner {
     max-width: 1080px; margin: 0 auto;
@@ -97,6 +99,20 @@ a:hover { text-decoration: underline; }
     .review-subnav__inner { padding: 10px 12px; }
     .review-subnav__name { max-width: 24ch; font-size: 15px; }
 }
+
+/* AI document upload (currently in the protocol edit page). */
+.ai-upload__row {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 8px;
+}
+.ai-upload__row input[type="file"] { flex: 1; min-width: 220px; padding: 9px 10px; }
+.ai-upload__status { margin: 8px 0 0; font-size: 13px; }
+.ai-suggested {
+    background: #fbffea;
+    border-color: #d8e88a;
+    box-shadow: 0 0 0 1px #d8e88a inset;
+}
+.ai-suggested:focus { outline-color: var(--c-primary-d); }
 
 /* Content / page */
 .content { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }

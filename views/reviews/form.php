@@ -24,7 +24,26 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
         <div class="alert alert--error"><?= e((string) $err) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="<?= e($formAction) ?>" class="form-grid section-card">
+    <?php if ($isEdit): ?>
+        <div class="section-card ai-upload" id="protocolUpload">
+            <h2 class="section__subtitle"><?= e(__('reviews.ai_upload_title')) ?></h2>
+            <p class="section__intro"><?= e(__('reviews.ai_upload_intro')) ?></p>
+            <div class="ai-upload__row">
+                <input class="input" type="file" id="protocolFile" name="document"
+                       accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <button type="button" class="btn btn--primary" id="extractBtn"
+                        data-url="/reviews/<?= (int) $review['id'] ?>/protocol/extract"
+                        data-csrf="<?= e(csrf_token()) ?>"
+                        data-loading="<?= e(__('reviews.ai_upload_running')) ?>">
+                    <?= e(__('reviews.ai_upload_analyze')) ?>
+                </button>
+            </div>
+            <p class="ai-upload__status muted" id="extractStatus" hidden></p>
+            <p class="field-help"><?= e(__('reviews.ai_upload_help')) ?></p>
+        </div>
+    <?php endif; ?>
+
+    <form method="post" action="<?= e($formAction) ?>" class="form-grid section-card" id="protocolForm">
         <?= csrf_field() ?>
 
         <div class="field">
@@ -91,3 +110,75 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
         </div>
     </form>
 </div>
+
+<?php if ($isEdit): ?>
+<script>
+(function () {
+    var btn = document.getElementById('extractBtn');
+    var input = document.getElementById('protocolFile');
+    var status = document.getElementById('extractStatus');
+    if (!btn || !input || !status) return;
+
+    var labels = {
+        ok:      <?= json_encode(__('reviews.ai_upload_ok')) ?>,
+        empty:   <?= json_encode(__('reviews.ai_upload_empty')) ?>,
+        toobig:  <?= json_encode(__('reviews.ai_upload_too_large')) ?>,
+        format:  <?= json_encode(__('reviews.ai_upload_bad_format')) ?>,
+        failed:  <?= json_encode(__('reviews.ai_upload_failed')) ?>,
+        nofile:  <?= json_encode(__('reviews.ai_upload_pick_first')) ?>
+    };
+
+    function show(msg, ok) {
+        status.hidden = false;
+        status.textContent = msg;
+        status.style.color = ok ? '#06624a' : '#9c3b00';
+    }
+    function setField(id, value) {
+        var el = document.getElementById(id);
+        if (!el || typeof value !== 'string' || value === '') return;
+        el.value = value;
+        el.classList.add('ai-suggested');
+        el.addEventListener('input', function () { el.classList.remove('ai-suggested'); }, { once: true });
+    }
+
+    btn.addEventListener('click', function () {
+        var f = input.files && input.files[0];
+        if (!f) { show(labels.nofile, false); return; }
+
+        var fd = new FormData();
+        fd.append('_csrf', btn.getAttribute('data-csrf'));
+        fd.append('document', f);
+
+        var originalLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = btn.getAttribute('data-loading');
+        show('…', true);
+
+        fetch(btn.getAttribute('data-url'), { method: 'POST', body: fd })
+            .then(function (r) { return r.json().then(function (d) { return { status: r.status, body: d }; }); })
+            .then(function (res) {
+                if (!res.body || !res.body.ok) {
+                    var err = (res.body && res.body.error) || 'failed';
+                    if (err === 'too_large') show(labels.toobig, false);
+                    else if (err === 'unsupported_format') show(labels.format, false);
+                    else if (err === 'empty_or_unreadable') show(labels.empty, false);
+                    else show(labels.failed + ' (' + err + ')', false);
+                    return;
+                }
+                var d = res.body.data || {};
+                setField('question',           d.question);
+                setField('population',         d.population);
+                setField('intervention',       d.intervention);
+                setField('comparison',         d.comparison);
+                setField('outcome',            d.outcome);
+                setField('study_design',       d.study_design);
+                setField('inclusion_criteria', d.inclusion_criteria);
+                setField('exclusion_criteria', d.exclusion_criteria);
+                show(labels.ok, true);
+            })
+            .catch(function () { show(labels.failed, false); })
+            .then(function () { btn.disabled = false; btn.textContent = originalLabel; });
+    });
+})();
+</script>
+<?php endif; ?>

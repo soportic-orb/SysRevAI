@@ -11,6 +11,8 @@ use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\ExclusionReason;
 use SysRevAI\Models\Review;
 use SysRevAI\Models\ReviewUser;
+use SysRevAI\Services\ClaudeService;
+use SysRevAI\Services\DocumentTextExtractor;
 
 final class ReviewsController
 {
@@ -93,6 +95,68 @@ final class ReviewsController
         ActivityLog::record('review.updated', ['review_id' => (int) $id], (int) $id);
         Session::flash('success', __('reviews.saved'));
         redirect('/reviews/' . (int) $id);
+    }
+
+    /**
+     * Owner-only AJAX endpoint. Accepts a PDF/DOCX upload, extracts plain
+     * text, asks Claude to fill the 8 protocol fields, and returns them
+     * as JSON for the form to pre-fill. Does NOT touch the database — the
+     * user still has to validate & submit the form to save.
+     */
+    public function extractProtocol(string $id): void
+    {
+        $review = $this->loadOrDeny((int) $id, true);
+        header('Content-Type: application/json; charset=utf-8');
+
+        $file = $_FILES['document'] ?? null;
+        if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || empty($file['tmp_name'])) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'no_file']);
+            return;
+        }
+        if (!is_uploaded_file($file['tmp_name'])) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'invalid_upload']);
+            return;
+        }
+        $maxMb = (int) (setting('files.max_pdf_mb') ?? 50);
+        if ((int) ($file['size'] ?? 0) > $maxMb * 1024 * 1024) {
+            http_response_code(413);
+            echo json_encode(['ok' => false, 'error' => 'too_large']);
+            return;
+        }
+        $name = (string) ($file['name'] ?? '');
+        $ext  = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['pdf', 'docx'], true)) {
+            http_response_code(415);
+            echo json_encode(['ok' => false, 'error' => 'unsupported_format']);
+            return;
+        }
+
+        $mime = '';
+        if (class_exists('finfo')) {
+            try {
+                $mime = (string) (new \finfo(FILEINFO_MIME_TYPE))->file((string) $file['tmp_name']);
+            } catch (\Throwable) {
+                $mime = '';
+            }
+        }
+        $text = DocumentTextExtractor::extract((string) $file['tmp_name'], $mime);
+        if (trim($text) === '') {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'empty_or_unreadable']);
+            return;
+        }
+
+        $result = ClaudeService::fromSettings()->extractProtocolFromText($text, (int) $id);
+        if (!$result['ok']) {
+            ActivityLog::record('review.protocol_extract.failed', ['error' => $result['error'] ?? 'unknown'], (int) $id);
+            http_response_code(502);
+            echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'ai_failed']);
+            return;
+        }
+        ActivityLog::record('review.protocol_extract.ok', [], (int) $id);
+        echo json_encode(['ok' => true, 'data' => $result['data']], JSON_UNESCAPED_UNICODE);
     }
 
     public function archive(string $id): void

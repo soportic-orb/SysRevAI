@@ -107,6 +107,50 @@ final class ClaudeService
         return $this->jsonResult($res);
     }
 
+    /**
+     * Extract a systematic-review protocol from a free-form document
+     * (e.g. a PDF / Word the user uploads when editing the protocol).
+     * Returns the canonical 8 fields the UI fills in. Missing / unreported
+     * fields come back as empty strings, not null, so the form can bind
+     * them directly without extra coercion.
+     *
+     * @return array{ok:bool,data?:array<string,string>,error?:string}
+     */
+    public function extractProtocolFromText(string $documentText, ?int $reviewId = null): array
+    {
+        if ($e = $this->guard('extraction')) {
+            return $e;
+        }
+        $system = "You are extracting the protocol of a systematic literature review from a free-form document "
+            . "(PDF or Word). Return EXACTLY this JSON shape, all string fields, using empty strings when a "
+            . "field is not present in the document — never null. Preserve the document's original language. "
+            . "Inclusion / exclusion criteria should be returned as plain-text bullets separated by newlines.\n\n"
+            . '{"question":"","population":"","intervention":"","comparison":"","outcome":"",'
+            . '"study_design":"","inclusion_criteria":"","exclusion_criteria":""}';
+        $res = $this->request(
+            $this->modelComplex,
+            $system,
+            [['role' => 'user', 'content' => $this->truncate($documentText, 60000)]],
+            2048,
+            'extraction',
+            $reviewId,
+            true
+        );
+        if (!$res['ok']) {
+            return ['ok' => false, 'error' => $res['error']];
+        }
+        if (!is_array($res['json'])) {
+            return ['ok' => false, 'error' => 'invalid_json'];
+        }
+        $expected = ['question', 'population', 'intervention', 'comparison', 'outcome', 'study_design', 'inclusion_criteria', 'exclusion_criteria'];
+        $data = [];
+        foreach ($expected as $k) {
+            $v = $res['json'][$k] ?? '';
+            $data[$k] = is_string($v) ? trim($v) : '';
+        }
+        return ['ok' => true, 'data' => $data];
+    }
+
     public function assessBiasDomain(string $articleText, string $tool, string $domain, ?int $reviewId = null): array
     {
         if ($e = $this->guard('bias')) {

@@ -61,6 +61,7 @@ $router->get('/reviews', [ReviewsController::class, 'index'], ['auth']);
 $router->get('/reviews/new', [ReviewsController::class, 'newForm'], ['auth']);
 $router->post('/reviews', [ReviewsController::class, 'store'], ['auth']);
 $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'], ['auth']);
+$router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
 
