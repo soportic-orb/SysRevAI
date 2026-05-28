@@ -25,6 +25,7 @@ $nav = [
     'fulltext'    => '/admin/settings/fulltext',
     'reports'     => '/admin/reports/fulltext-coverage',
     'maintenance' => '/admin/maintenance',
+    'legal'       => '/admin/settings/legal',
     'about'       => '/admin/settings/about',
 ];
 ?>
@@ -106,6 +107,8 @@ $nav = [
 
 <footer class="appfooter">
     <span><?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?> · <?= e(__('footer.author')) ?></span>
+    <a href="/privacy"><?= e(__('footer.privacy')) ?></a>
+    <a href="/terms"><?= e(__('footer.terms')) ?></a>
     <?php
         $style = 'footer';
         $donateLabel = __('footer.support');

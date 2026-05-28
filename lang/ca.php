@@ -60,6 +60,9 @@ return [
         'register_bad_domain' => 'Aquest lloc només accepta correus de @%s.',
         'register_domain_help' => 'Només s\'accepten correus @%s.',
         'register_pending'    => 'El teu compte s\'ha creat i està pendent d\'aprovació. Podràs iniciar sessió quan un administrador l\'activi.',
+        'register_must_accept_legal' => 'Has d\'acceptar la Política de Privacitat i les Condicions d\'ús per crear un compte.',
+        'accept_privacy'      => 'He llegit i accepto la %s.',
+        'accept_terms'        => 'He llegit i accepto les %s.',
     ],
 
     'dashboard' => [
@@ -82,6 +85,8 @@ return [
         'powered_by' => 'Codi obert (AGPL-3.0)',
         'author'     => 'Desenvolupat per Octavi Rodriguez Blanco',
         'support'    => 'Donar suport al projecte',
+        'privacy'    => 'Política de Privacitat',
+        'terms'      => 'Condicions d\'ús',
     ],
 
     'errors' => [
@@ -627,6 +632,7 @@ return [
             'fulltext'    => 'Text complet (APIs)',
             'reports'     => 'Informes',
             'maintenance' => 'Manteniment',
+            'legal'       => 'Pàgines legals',
             'about'       => 'Sobre / Llicència',
         ],
         'general' => [
@@ -726,6 +732,12 @@ return [
             'support_title' => 'Donar suport a l\'autor',
             'support_text'  => 'SysRevAI és un projecte de codi obert mantingut per un investigador en el seu temps lliure. Si et resulta útil, pots donar-li suport amb una donació voluntària.',
             'donate_btn'    => 'Donar',
+        ],
+        'legal' => [
+            'intro'         => 'Edita la Política de Privacitat i les Condicions d\'ús públiques que apareixen al peu de pàgina. S\'admet HTML (enllaços, llistes, títols).',
+            'privacy_label' => 'Política de Privacitat (HTML)',
+            'terms_label'   => 'Condicions d\'ús (HTML)',
+            'html_help'     => 'Pots enganxar HTML enriquit — enllaços, paràgrafs, llistes, títols. Es desa tal qual.',
         ],
         'translate' => [
             'intro'            => 'Configura Google Cloud Translation. El fitxer de credencials es desa fora del docroot amb permisos 0600.',
@@ -907,5 +919,11 @@ return [
         'budget'       => 'S\'ha esgotat el pressupost mensual de IA del lloc.',
         'disabled'     => 'El Copilot està desactivat des del panell d\'administració.',
         'no_api_key'   => 'No hi ha clau d\'API de Claude configurada. Un administrador la pot afegir a Configuració → Claude.',
+    ],
+
+    'legal' => [
+        'privacy_title'      => 'Política de Privacitat',
+        'terms_title'        => 'Condicions d\'ús',
+        'not_published_yet'  => 'Aquesta pàgina encara no s\'ha publicat. Un administrador la pot editar des d\'Admin → Pàgines legals.',
     ],
 ];

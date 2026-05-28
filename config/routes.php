@@ -16,6 +16,7 @@ use SysRevAI\Controllers\Admin\ReportsController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AboutController;
+use SysRevAI\Controllers\LegalController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
 use SysRevAI\Controllers\DashboardController;
@@ -56,6 +57,8 @@ $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 
 // Public about page (no auth) and global search (auth).
 $router->get('/about', [AboutController::class, 'show']);
+$router->get('/privacy', [LegalController::class, 'privacy']);
+$router->get('/terms', [LegalController::class, 'terms']);
 $router->get('/search', [SearchController::class, 'index'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);

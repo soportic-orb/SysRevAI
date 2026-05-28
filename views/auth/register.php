@@ -50,6 +50,15 @@ declare(strict_types=1);
                    required autocomplete="new-password" minlength="<?= $minLen ?>">
         </div>
 
+        <label class="checkbox">
+            <input type="checkbox" name="accept_privacy" value="1" required>
+            <?= __('auth.accept_privacy', '<a href="/privacy" target="_blank" rel="noopener noreferrer">' . e(__('footer.privacy')) . '</a>') ?>
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" name="accept_terms" value="1" required>
+            <?= __('auth.accept_terms', '<a href="/terms" target="_blank" rel="noopener noreferrer">' . e(__('footer.terms')) . '</a>') ?>
+        </label>
+
         <button type="submit" class="btn btn--primary btn--block"><?= e(__('auth.register_submit')) ?></button>
     </form>
 
