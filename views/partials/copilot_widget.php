@@ -5,8 +5,10 @@ declare(strict_types=1);
 /**
  * Floating Scientific Copilot — a chat bubble in the bottom-right corner,
  * rendered by layouts/app.php whenever the user is on a /reviews/{id}/...
- * page. Conversation history is kept in localStorage (one key per review)
- * so the user can pick up where they left off.
+ * page and the admin hasn't disabled the feature. The transcript lives in
+ * the `copilot_messages` table; the panel hydrates from
+ * GET /reviews/{id}/copilot/history on first open and writes every turn
+ * through POST /reviews/{id}/copilot.
  *
  * @var array $reviewSubnav  The current review row.
  */
@@ -14,11 +16,14 @@ $copilotReviewId = (int) $reviewSubnav['id'];
 ?>
 <div class="copilot" id="copilot"
      data-url="/reviews/<?= $copilotReviewId ?>/copilot"
+     data-history-url="/reviews/<?= $copilotReviewId ?>/copilot/history"
+     data-clear-url="/reviews/<?= $copilotReviewId ?>/copilot/clear"
      data-csrf="<?= e(csrf_token()) ?>"
-     data-key="sysrevai.copilot.<?= $copilotReviewId ?>">
+     data-expand-key="sysrevai.copilot.expanded">
     <button class="copilot__toggle" id="copilotToggle" type="button"
             aria-label="<?= e(__('copilot.toggle_aria')) ?>"
-            title="<?= e(__('copilot.toggle_title')) ?>">
+            title="<?= e(__('copilot.toggle_title')) ?>"
+            aria-expanded="false" aria-controls="copilotPanel">
         <span aria-hidden="true">&#x1F4AC;</span>
     </button>
     <section class="copilot__panel" id="copilotPanel" hidden aria-label="<?= e(__('copilot.title')) ?>">
@@ -29,13 +34,45 @@ $copilotReviewId = (int) $reviewSubnav['id'];
             </div>
             <div class="copilot__head-actions">
                 <button type="button" class="copilot__icon-btn" id="copilotClear"
-                        title="<?= e(__('copilot.clear')) ?>" aria-label="<?= e(__('copilot.clear')) ?>">&#x21BB;</button>
+                        title="<?= e(__('copilot.clear')) ?>" aria-label="<?= e(__('copilot.clear')) ?>">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                    </svg>
+                </button>
+                <button type="button" class="copilot__icon-btn" id="copilotExpand"
+                        title="<?= e(__('copilot.expand')) ?>" aria-label="<?= e(__('copilot.expand')) ?>"
+                        aria-pressed="false">
+                    <svg class="copilot__icon-expand" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                    <svg class="copilot__icon-collapse" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="4 14 10 14 10 20"></polyline>
+                        <polyline points="20 10 14 10 14 4"></polyline>
+                        <line x1="14" y1="10" x2="21" y2="3"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
                 <button type="button" class="copilot__icon-btn" id="copilotClose"
-                        title="<?= e(__('copilot.close')) ?>" aria-label="<?= e(__('copilot.close')) ?>">&times;</button>
+                        title="<?= e(__('copilot.close')) ?>" aria-label="<?= e(__('copilot.close')) ?>">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <line x1="6" y1="18" x2="18" y2="6"></line>
+                    </svg>
+                </button>
             </div>
         </header>
         <div class="copilot__messages" id="copilotMessages" aria-live="polite">
-            <div class="copilot__greeting">
+            <div class="copilot__greeting" id="copilotGreeting">
                 <p><?= e(__('copilot.greeting')) ?></p>
             </div>
         </div>
@@ -49,89 +86,69 @@ $copilotReviewId = (int) $reviewSubnav['id'];
 </div>
 <script>
 (function () {
+    'use strict';
     var root = document.getElementById('copilot');
     if (!root) return;
 
-    var url       = root.getAttribute('data-url');
-    var csrfToken = root.getAttribute('data-csrf');
-    var storeKey  = root.getAttribute('data-key');
-    var panel     = document.getElementById('copilotPanel');
-    var toggleBtn = document.getElementById('copilotToggle');
-    var closeBtn  = document.getElementById('copilotClose');
-    var clearBtn  = document.getElementById('copilotClear');
-    var msgs      = document.getElementById('copilotMessages');
-    var form      = document.getElementById('copilotForm');
-    var input     = document.getElementById('copilotInput');
+    var sendUrl    = root.getAttribute('data-url');
+    var historyUrl = root.getAttribute('data-history-url');
+    var clearUrl   = root.getAttribute('data-clear-url');
+    var csrfToken  = root.getAttribute('data-csrf');
+    var expandKey  = root.getAttribute('data-expand-key');
+
+    var panel    = document.getElementById('copilotPanel');
+    var toggle   = document.getElementById('copilotToggle');
+    var closeBtn = document.getElementById('copilotClose');
+    var clearBtn = document.getElementById('copilotClear');
+    var expand   = document.getElementById('copilotExpand');
+    var msgs     = document.getElementById('copilotMessages');
+    var form     = document.getElementById('copilotForm');
+    var input    = document.getElementById('copilotInput');
+    var greeting = document.getElementById('copilotGreeting');
 
     var labels = {
-        thinking: <?= json_encode(__('copilot.thinking')) ?>,
         error:    <?= json_encode(__('copilot.error')) ?>,
         budget:   <?= json_encode(__('copilot.budget')) ?>,
         disabled: <?= json_encode(__('copilot.disabled')) ?>,
-        noKey:    <?= json_encode(__('copilot.no_api_key')) ?>
+        noKey:    <?= json_encode(__('copilot.no_api_key')) ?>,
+        confirm:  <?= json_encode(__('copilot.clear_confirm')) ?>
     };
 
-    /** Restore prior transcript from localStorage. */
-    var history = [];
-    try {
-        var raw = localStorage.getItem(storeKey);
-        if (raw) history = JSON.parse(raw) || [];
-        if (!Array.isArray(history)) history = [];
-    } catch (e) { history = []; }
-    history.forEach(function (m) { append(m.role, m.content, false); });
+    var hydrated = false;
+    var sending  = false;
 
-    toggleBtn.addEventListener('click', function () { open(); });
-    closeBtn.addEventListener('click', function () { close(); });
-    clearBtn.addEventListener('click', function () {
-        if (!confirm(<?= json_encode(__('copilot.clear_confirm')) ?>)) return;
-        history = [];
-        try { localStorage.removeItem(storeKey); } catch (e) {}
-        // Restore greeting.
-        msgs.innerHTML = '<div class="copilot__greeting"><p>' +
-            <?= json_encode(__('copilot.greeting')) ?> + '</p></div>';
+    /* Restore expanded state from localStorage. */
+    try { if (localStorage.getItem(expandKey) === '1') setExpanded(true); } catch (e) {}
+
+    /* Toggle / close — keep them tiny and bullet-proof. */
+    toggle.addEventListener('click', openPanel);
+    closeBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closePanel();
+    });
+    expand.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setExpanded(!root.classList.contains('is-expanded'));
+    });
+    clearBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (!confirm(labels.confirm)) return;
+        fetch(clearUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': csrfToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ _csrf: csrfToken })
+        }).finally(function () {
+            msgs.querySelectorAll('.copilot__msg, .copilot__typing').forEach(function (n) { n.remove(); });
+            if (greeting) {
+                msgs.insertBefore(greeting, msgs.firstChild);
+                greeting.hidden = false;
+            }
+        });
     });
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !panel.hidden) close();
-    });
-
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var text = (input.value || '').trim();
-        if (!text) return;
-        input.value = '';
-        append('user', text, true);
-        var thinkingNode = appendBubble('assistant', labels.thinking);
-
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify({
-                _csrf: csrfToken,
-                message: text,
-                history: history.slice(-12)
-            })
-        })
-        .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
-        .then(function (res) {
-            thinkingNode.remove();
-            if (res.body && res.body.ok && res.body.reply) {
-                append('assistant', res.body.reply, true);
-                return;
-            }
-            var err = (res.body && res.body.error) || '';
-            var msg = labels.error;
-            if (err === 'no_api_key')      msg = labels.noKey;
-            else if (err === 'feature_disabled') msg = labels.disabled;
-            else if (err === 'budget_exceeded')  msg = labels.budget;
-            appendBubble('assistant', msg);
-        })
-        .catch(function () {
-            thinkingNode.remove();
-            appendBubble('assistant', labels.error);
-        });
+        if (e.key === 'Escape' && !panel.hidden) closePanel();
     });
 
     /* Cmd/Ctrl+Enter sends. */
@@ -142,30 +159,74 @@ $copilotReviewId = (int) $reviewSubnav['id'];
         }
     });
 
-    function open() {
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (sending) return;
+        var text = (input.value || '').trim();
+        if (!text) return;
+
+        appendBubble('user', text);
+        input.value = '';
+        sending = true;
+        var typing = appendTyping();
+
+        fetch(sendUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+            body: JSON.stringify({ _csrf: csrfToken, message: text })
+        })
+        .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
+        .then(function (res) {
+            typing.remove();
+            if (res.body && res.body.ok && res.body.reply) {
+                appendBubble('assistant', res.body.reply);
+                return;
+            }
+            appendBubble('assistant', errorMessage((res.body && res.body.error) || ''));
+        })
+        .catch(function () {
+            typing.remove();
+            appendBubble('assistant', labels.error);
+        })
+        .finally(function () {
+            sending = false;
+            input.focus();
+        });
+    });
+
+    function openPanel() {
         panel.hidden = false;
-        toggleBtn.setAttribute('aria-expanded', 'true');
-        setTimeout(function () { input.focus(); }, 0);
-        scrollToBottom();
+        toggle.setAttribute('aria-expanded', 'true');
+        hydrate();
+        setTimeout(function () { input.focus(); scrollToBottom(); }, 0);
     }
-    function close() {
+    function closePanel() {
         panel.hidden = true;
-        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-expanded', 'false');
     }
 
-    function append(role, content, persist) {
-        var greeting = msgs.querySelector('.copilot__greeting');
-        if (greeting) greeting.remove();
-        appendBubble(role, content);
-        if (persist) {
-            history.push({ role: role, content: content });
-            try { localStorage.setItem(storeKey, JSON.stringify(history.slice(-30))); } catch (e) {}
-        }
+    function setExpanded(on) {
+        root.classList.toggle('is-expanded', !!on);
+        expand.setAttribute('aria-pressed', on ? 'true' : 'false');
+        try { localStorage.setItem(expandKey, on ? '1' : '0'); } catch (e) {}
+    }
+
+    function hydrate() {
+        if (hydrated) return;
+        hydrated = true;
+        fetch(historyUrl, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.ok || !Array.isArray(d.messages) || d.messages.length === 0) return;
+                if (greeting) greeting.hidden = true;
+                d.messages.forEach(function (m) { appendBubble(m.role, m.content); });
+                scrollToBottom();
+            })
+            .catch(function () { /* offline-tolerant */ });
     }
 
     function appendBubble(role, content) {
-        var greeting = msgs.querySelector('.copilot__greeting');
-        if (greeting) greeting.remove();
+        if (greeting) greeting.hidden = true;
         var div = document.createElement('div');
         div.className = 'copilot__msg copilot__msg--' + role;
         div.textContent = content;
@@ -173,6 +234,28 @@ $copilotReviewId = (int) $reviewSubnav['id'];
         scrollToBottom();
         return div;
     }
+
+    function appendTyping() {
+        if (greeting) greeting.hidden = true;
+        var bubble = document.createElement('div');
+        bubble.className = 'copilot__msg copilot__msg--assistant copilot__typing';
+        var dots = document.createElement('span');
+        dots.className = 'copilot__dots';
+        dots.setAttribute('aria-label', <?= json_encode(__('copilot.thinking')) ?>);
+        dots.innerHTML = '<span></span><span></span><span></span>';
+        bubble.appendChild(dots);
+        msgs.appendChild(bubble);
+        scrollToBottom();
+        return bubble;
+    }
+
+    function errorMessage(err) {
+        if (err === 'no_api_key')       return labels.noKey;
+        if (err === 'feature_disabled') return labels.disabled;
+        if (err === 'budget_exceeded')  return labels.budget;
+        return labels.error;
+    }
+
     function scrollToBottom() { msgs.scrollTop = msgs.scrollHeight; }
 })();
 </script>
