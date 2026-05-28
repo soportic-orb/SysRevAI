@@ -13,9 +13,14 @@ return [
     ],
 
     'common' => [
-        'working' => 'Working, please wait…',
-        'expand'  => 'Expand',
-        'collapse' => 'Collapse',
+        'working'      => 'Working, please wait…',
+        'expand'       => 'Expand',
+        'collapse'     => 'Collapse',
+        'close'        => 'Close',
+        'info_about'   => 'About: %s',
+        'info_button'  => 'About this section',
+        'confirm_archive'   => 'Are you sure you want to archive this review? It will move to the archive list and stop appearing in the dashboard.',
+        'confirm_unarchive' => 'Restore this review to the active list?',
     ],
 
     'nav' => [
@@ -126,6 +131,12 @@ return [
     ],
 
     'rob' => [
+        'info_what_label'  => 'What is the risk-of-bias assessment?',
+        'info_what'        => 'A critical appraisal of the methodological quality of each included study. It is different from the certainty of evidence (GRADE): here you measure to what extent the design, conduct and analysis of an individual study could distort its results. The risk of bias is then used to weight confidence in the synthesis.',
+        'info_how_label'   => 'How does it work in SysRevAI?',
+        'info_how'         => 'The platform offers the four standard tools: RoB 2 for randomised trials, ROBINS-I for non-randomised studies, Newcastle-Ottawa for observational studies (cohorts and case-control), and JBI for qualitative studies. For each study and domain (randomisation, deviations, missing data, outcome measurement, selection of the reported result, etc.) you issue a judgement: Low / Some concerns / High / No information. SysRevAI generates the traffic-light plot and the stacked summary chart automatically.',
+        'info_best_label'  => 'Best practices',
+        'info_best'        => 'Two independent assessors per study and a discussion of disagreements. | Justify every judgement in the text field — without a justification the reader of the manuscript cannot replicate your appraisal. | Use the right tool for the study design; mixing them invalidates the comparison. | The AI can suggest an initial judgement, but the final call is always human and must be documented.',
         'title'        => 'Risk of bias',
         'tool'         => 'Tool',
         'tool_rob2'              => 'RoB 2',
@@ -170,6 +181,12 @@ return [
     ],
 
     'extraction' => [
+        'info_what_label'  => 'What is data extraction?',
+        'info_what'        => 'It is the systematic, structured collection of the key information from each included study: design, sample, intervention, comparator, outcomes, adverse events, funding and so on. It is the raw material the results tables — and, when applicable, the meta-analysis — are built from.',
+        'info_how_label'   => 'How does it work in SysRevAI?',
+        'info_how'         => 'You define a template with the fields your review needs (free text, number, date, select, multi-select). For each study you fill the fields manually; optionally you can ask the AI to pre-fill them by reading the PDF and you validate — the AI never saves without your approval. Each study\'s status (draft / submitted / approved) tracks the team\'s progress.',
+        'info_best_label'  => 'Best practices',
+        'info_best'        => 'Pilot the template on 3–5 studies before rolling it out, tweak the fields and restart. | Independent dual extraction whenever resources allow; reconcile discrepancies afterwards. | Keep units consistent (mmHg, kg, %…) — declare them in each field\'s help text. | Document missing data and whether you searched the supplement or contacted the author.',
         'title'          => 'Data extraction',
         'edit_template'  => 'Edit template',
         'template_name'  => 'Template name',
@@ -213,6 +230,12 @@ return [
     ],
 
     'fulltext' => [
+        'info_what_label'  => 'What is full-text screening?',
+        'info_what'        => 'It is the second filter: you read the complete PDF of references that passed title/abstract screening. All inclusion and exclusion criteria from the protocol are applied here, and an explicit reason is recorded for every exclude — these reasons feed directly into the PRISMA flow diagram.',
+        'info_how_label'   => 'How does it work in SysRevAI?',
+        'info_how'         => 'The platform shows the PDF next to the protocol. You pick "Include", "Maybe" or "Exclude" — same flow as T/A but with the full article in hand. When a reference has no PDF, SysRevAI tries to fetch it automatically from Unpaywall, PMC, OpenAlex and other open-access sources. You can also chat with the article (Article chat) to clarify specific questions without reading the whole paper.',
+        'info_best_label'  => 'Best practices',
+        'info_best'        => 'Keep the dual-reviewer + coordinator workflow. | Always record a specific exclusion reason; "fails the criteria" is not enough for PRISMA. | If you rely on non-open PDFs, upload them yourself using your institutional access — SysRevAI never bypasses paywalls. | Document any protocol change that emerges once you can see the full texts.',
         'title'           => 'Full-text screening',
         'start'           => 'Start full-text screening',
         'all_done'        => 'You have no full-text articles left to screen.',
@@ -272,6 +295,12 @@ return [
     ],
 
     'screening' => [
+        'info_what_label'  => 'What is title/abstract screening?',
+        'info_what'        => 'It is the first filter of the review. Each reviewer evaluates the title and abstract of every reference to decide whether it has potential relevance and should be promoted to full-text screening. Studies are not discarded here for methodological quality — only for fit with the research question.',
+        'info_how_label'   => 'How does it work in SysRevAI?',
+        'info_how'         => 'The platform shows one reference at a time and never reveals the other reviewers\' decisions (double-blind, when enabled in the protocol). You choose "Include", "Maybe" or "Exclude"; for excludes you can record a reason. Conflicting decisions accumulate in the "Conflicts" queue and a coordinator makes the final call.',
+        'info_best_label'  => 'Best practices',
+        'info_best'        => 'Use two independent reviewers and a third for conflicts. | Run a pilot of 50–100 references to calibrate the criteria before screening the full set. | Stick to consistent exclusion reasons — you will need them for the PRISMA diagram. | When in doubt, mark "Maybe": the full-text stage will confirm.',
         'title'            => 'Title/Abstract screening',
         'start'            => 'Start screening',
         'started'          => '%d references moved into screening.',
