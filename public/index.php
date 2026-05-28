@@ -25,7 +25,12 @@ if (PHP_SAPI === 'cli-server') {
 $base = dirname(__DIR__);
 
 if (!is_file($base . '/config/installed.lock')) {
-    header('Location: install/');
+    // Absolute path relative to the application root (handles subdirectory
+    // installs) — a bare "install/" is resolved by the browser against the
+    // current URL, which spirals into /install/install/... when the lock
+    // file is missing and any request lands on the front controller.
+    $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php')), '/');
+    header('Location: ' . $basePath . '/install/');
     exit;
 }
 

@@ -38,7 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $from   = (int) ($_POST['step'] ?? 0);
 
     $redirect = static function (int $step, bool $error = false): never {
-        header('Location: index.php?step=' . $step . ($error ? '&error=1' : ''));
+        // Use a path that anchors at the installer directory so the URL
+        // can never spiral when the request URI already contains stray
+        // segments (e.g. /install/install/...).
+        $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/install/index.php')), '/');
+        header('Location: ' . $base . '/index.php?step=' . $step . ($error ? '&error=1' : ''));
         exit;
     };
 
