@@ -20,7 +20,7 @@ final class SettingsController
 {
     private const SECTIONS = [
         'general', 'claude', 'translate', 'email', 'apis',
-        'security', 'reviews', 'files', 'languages', 'fulltext', 'about',
+        'security', 'reviews', 'files', 'languages', 'fulltext', 'legal', 'about',
     ];
 
     public function index(): void
@@ -58,6 +58,7 @@ final class SettingsController
             'files'     => $this->saveFiles(),
             'languages' => $this->saveLanguages(),
             'fulltext'  => $this->saveFulltext(),
+            'legal'     => $this->saveLegal(),
             'about'     => $this->saveAbout(),
             default     => null,
         };
@@ -126,6 +127,15 @@ final class SettingsController
     {
         // The About panel is read-only (no settings to persist).
         ActivityLog::record('settings.about.updated');
+    }
+
+    private function saveLegal(): void
+    {
+        // Stored as raw HTML — admins are trusted, but we still record the
+        // change in the audit log for traceability.
+        Config::set('legal.privacy_policy', (string) ($_POST['privacy_policy'] ?? ''), 'string', 'legal', true);
+        Config::set('legal.terms_of_use',   (string) ($_POST['terms_of_use']   ?? ''), 'string', 'legal', true);
+        ActivityLog::record('settings.legal.updated');
     }
 
     private function saveTranslate(): void

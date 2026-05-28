@@ -59,6 +59,9 @@ return [
         'register_bad_domain' => 'Este sitio solo acepta correos de @%s.',
         'register_domain_help' => 'Solo se aceptan correos @%s.',
         'register_pending'    => 'Tu cuenta se ha creado y está pendiente de aprobación. Podrás iniciar sesión cuando un administrador la active.',
+        'register_must_accept_legal' => 'Debes aceptar la Política de Privacidad y las Condiciones de uso para crear una cuenta.',
+        'accept_privacy'      => 'He leído y acepto la %s.',
+        'accept_terms'        => 'He leído y acepto las %s.',
     ],
 
     'dashboard' => [
@@ -81,6 +84,8 @@ return [
         'powered_by' => 'Código abierto (AGPL-3.0)',
         'author'     => 'Desarrollado por Octavi Rodriguez Blanco',
         'support'    => 'Apoyar el proyecto',
+        'privacy'    => 'Política de Privacidad',
+        'terms'      => 'Condiciones de uso',
     ],
 
     'errors' => [
@@ -626,6 +631,7 @@ return [
             'fulltext'    => 'Texto completo (APIs)',
             'reports'     => 'Informes',
             'maintenance' => 'Mantenimiento',
+            'legal'       => 'Páginas legales',
             'about'       => 'Acerca de / Licencia',
         ],
         'general' => [
@@ -725,6 +731,12 @@ return [
             'support_title' => 'Apoyar al autor',
             'support_text'  => 'SysRevAI es un proyecto open source mantenido por un investigador en su tiempo libre. Si te resulta útil, puedes apoyarlo con una donación voluntaria.',
             'donate_btn'    => 'Donar',
+        ],
+        'legal' => [
+            'intro'         => 'Edita la Política de Privacidad y las Condiciones de uso públicas que aparecen en el pie de página. Se admite HTML (enlaces, listas, títulos).',
+            'privacy_label' => 'Política de Privacidad (HTML)',
+            'terms_label'   => 'Condiciones de uso (HTML)',
+            'html_help'     => 'Puedes pegar HTML enriquecido — enlaces, párrafos, listas, títulos. Se guarda tal cual.',
         ],
         'translate' => [
             'intro'            => 'Configura Google Cloud Translation. El archivo de credenciales se guarda fuera del docroot con permisos 0600.',
@@ -906,5 +918,11 @@ return [
         'budget'       => 'Se ha alcanzado el presupuesto mensual de IA del sitio.',
         'disabled'     => 'El Copilot está desactivado desde el panel de administración.',
         'no_api_key'   => 'No hay clave de API de Claude configurada. Un administrador puede añadirla en Configuración → Claude.',
+    ],
+
+    'legal' => [
+        'privacy_title'      => 'Política de Privacidad',
+        'terms_title'        => 'Condiciones de uso',
+        'not_published_yet'  => 'Esta página todavía no se ha publicado. Un administrador puede editarla desde Admin → Páginas legales.',
     ],
 ];

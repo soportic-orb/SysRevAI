@@ -630,9 +630,22 @@ a:hover { text-decoration: underline; }
     display: flex; align-items: center; justify-content: center; gap: 14px;
     padding: 20px; color: var(--c-muted); font-size: 13px;
     border-top: 1px solid var(--c-border);
+    flex-wrap: wrap;
 }
+.appfooter a { color: var(--c-muted); }
+.appfooter a:hover { color: var(--c-text); }
 .donate { color: #c2487f; font-weight: 600; }
 .donate:hover { color: #a23667; }
+
+/* Admin → Legal: monospace textarea for HTML editing. */
+.legal-editor { font-family: ui-monospace, monospace; font-size: 13px; line-height: 1.5; }
+
+/* Public /privacy and /terms pages — readable HTML body styling. */
+.legal-page .legal-body { font-size: 15px; line-height: 1.65; }
+.legal-body h1, .legal-body h2, .legal-body h3 { margin-top: 1.2em; }
+.legal-body p { margin: 0 0 1em; }
+.legal-body ul, .legal-body ol { padding-left: 22px; }
+.legal-body a { font-weight: 500; }
 
 .topbar__nav a.is-active { color: var(--c-text); font-weight: 600; }
 

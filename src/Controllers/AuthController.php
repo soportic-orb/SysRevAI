@@ -124,6 +124,8 @@ final class AuthController
         $email = strtolower(trim((string) ($_POST['email'] ?? '')));
         $pw    = (string) ($_POST['password'] ?? '');
         $pw2   = (string) ($_POST['confirm'] ?? '');
+        $acceptPrivacy = !empty($_POST['accept_privacy']);
+        $acceptTerms   = !empty($_POST['accept_terms']);
 
         $back = static function (string $msg) use ($name, $email): void {
             Session::flash('register_error', $msg);
@@ -133,6 +135,9 @@ final class AuthController
 
         if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $back(__('auth.register_invalid'));
+        }
+        if (!$acceptPrivacy || !$acceptTerms) {
+            $back(__('auth.register_must_accept_legal'));
         }
         if ($pw !== $pw2) {
             $back(__('auth.register_pw_mismatch'));

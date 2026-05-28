@@ -59,6 +59,9 @@ return [
         'register_bad_domain' => 'This site only accepts emails on @%s.',
         'register_domain_help' => 'Only @%s emails are accepted.',
         'register_pending'    => 'Your account has been created and is awaiting administrator approval. You\'ll be able to sign in once it\'s active.',
+        'register_must_accept_legal' => 'You must accept the Privacy Policy and the Terms of Use to create an account.',
+        'accept_privacy'      => 'I have read and accept the %s.',
+        'accept_terms'        => 'I have read and accept the %s.',
     ],
 
     'dashboard' => [
@@ -81,6 +84,8 @@ return [
         'powered_by' => 'Open source (AGPL-3.0)',
         'author'     => 'Developed by Octavi Rodriguez Blanco',
         'support'    => 'Support the project',
+        'privacy'    => 'Privacy Policy',
+        'terms'      => 'Terms of Use',
     ],
 
     'errors' => [
@@ -626,6 +631,7 @@ return [
             'fulltext'    => 'Full-text (APIs)',
             'reports'     => 'Reports',
             'maintenance' => 'Maintenance',
+            'legal'       => 'Legal pages',
             'about'       => 'About / License',
         ],
         'general' => [
@@ -725,6 +731,12 @@ return [
             'support_title' => 'Support the author',
             'support_text'  => 'SysRevAI is an open-source project maintained by a researcher in their spare time. If you find it useful, you can support it with a voluntary donation.',
             'donate_btn'    => 'Donate',
+        ],
+        'legal' => [
+            'intro'         => 'Edit the public Privacy Policy and Terms of Use shown in the footer. HTML is accepted (links, lists, headings).',
+            'privacy_label' => 'Privacy Policy (HTML)',
+            'terms_label'   => 'Terms of Use (HTML)',
+            'html_help'     => 'You can paste rich HTML — links, paragraphs, lists, headings. Saved as-is.',
         ],
         'translate' => [
             'intro'            => 'Configure Google Cloud Translation. The credentials file is stored outside the docroot with 0600 permissions.',
@@ -906,5 +918,11 @@ return [
         'budget'       => 'The monthly AI budget has been reached for this site.',
         'disabled'     => 'The Copilot is disabled in admin settings.',
         'no_api_key'   => 'No Claude API key is configured. An admin can add it under Settings → Claude.',
+    ],
+
+    'legal' => [
+        'privacy_title'      => 'Privacy Policy',
+        'terms_title'        => 'Terms of Use',
+        'not_published_yet'  => 'This page has not been published yet. An administrator can edit it under Admin → Legal pages.',
     ],
 ];
