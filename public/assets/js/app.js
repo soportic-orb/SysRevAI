@@ -131,3 +131,50 @@
         }
     });
 })();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Centred "AI is working" overlay. Visible whenever:
+     • a form annotated with data-ai-action submits, OR
+     • code explicitly calls window.SysRevAI.showAiOverlay()
+   The overlay is rendered once in the layout (#aiOverlay). For full-page
+   POST submissions we don't need to hide it explicitly — the next page
+   replaces the DOM. For AJAX paths the caller is expected to invoke
+   hideAiOverlay() when the request finishes (success or failure).
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    var overlay = null;
+    function getOverlay() {
+        if (overlay === null) overlay = document.getElementById('aiOverlay');
+        return overlay;
+    }
+
+    window.SysRevAI = window.SysRevAI || {};
+    window.SysRevAI.showAiOverlay = function () {
+        var el = getOverlay();
+        if (!el) return;
+        el.hidden = false;
+        el.classList.add('is-visible');
+    };
+    window.SysRevAI.hideAiOverlay = function () {
+        var el = getOverlay();
+        if (!el) return;
+        el.hidden = true;
+        el.classList.remove('is-visible');
+    };
+
+    /* Show overlay on any form submission flagged with data-ai-action. */
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form || form.tagName !== 'FORM') return;
+        if (!form.hasAttribute('data-ai-action')) return;
+        window.SysRevAI.showAiOverlay();
+    }, true);
+
+    /* Auto-hide if the user navigates back to this page via bfcache so the
+       overlay never stays "stuck" from a previous submission. */
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) window.SysRevAI.hideAiOverlay();
+    });
+})();

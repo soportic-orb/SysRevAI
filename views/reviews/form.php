@@ -153,6 +153,7 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
         btn.disabled = true;
         btn.textContent = btn.getAttribute('data-loading');
         show('…', true);
+        window.SysRevAI && window.SysRevAI.showAiOverlay && window.SysRevAI.showAiOverlay();
 
         fetch(btn.getAttribute('data-url'), { method: 'POST', body: fd })
             .then(function (r) { return r.json().then(function (d) { return { status: r.status, body: d }; }); })
@@ -177,7 +178,10 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
                 show(labels.ok, true);
             })
             .catch(function () { show(labels.failed, false); })
-            .then(function () { btn.disabled = false; btn.textContent = originalLabel; });
+            .then(function () {
+                btn.disabled = false; btn.textContent = originalLabel;
+                window.SysRevAI && window.SysRevAI.hideAiOverlay && window.SysRevAI.hideAiOverlay();
+            });
     });
 })();
 </script>

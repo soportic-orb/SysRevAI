@@ -49,6 +49,22 @@ $id = (int) $review['id'];
         <div><button type="submit" class="btn btn--primary"><?= e(__('import.submit')) ?></button></div>
     </form>
 
+    <script>
+    /* Show the global "AI is working" overlay only when the user chose
+       the AI-driven free-text format. Other formats are parsed locally
+       and the regular page navigation is fast enough not to need it. */
+    (function () {
+        var form = document.querySelector('form[action$="/import"]');
+        var fmt = document.getElementById('format');
+        if (!form || !fmt) return;
+        form.addEventListener('submit', function () {
+            if (fmt.value === 'freetext' && window.SysRevAI && window.SysRevAI.showAiOverlay) {
+                window.SysRevAI.showAiOverlay();
+            }
+        });
+    })();
+    </script>
+
     <?php if ($logs !== []): ?>
         <div class="section-card">
             <h2 class="section__subtitle"><?= e(__('import.history')) ?></h2>

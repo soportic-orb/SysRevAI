@@ -124,6 +124,9 @@ $nav = [
         });
     })();
 </script>
+
+<?php require config('paths.base') . '/views/partials/ai_loading_overlay.php'; ?>
+
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
 </html>

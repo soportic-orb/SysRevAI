@@ -338,6 +338,53 @@ a:hover { text-decoration: underline; }
     .copilot__dots span { animation: none; opacity: .55; }
 }
 
+/* Global "AI is working" overlay shown over the whole viewport while
+   any AI request is in flight. Driven by SysRevAI.showAiOverlay()
+   from app.js. */
+.ai-overlay {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(7, 14, 22, 0.55);
+    backdrop-filter: blur(2px);
+    animation: ai-overlay-fade .15s ease-out;
+}
+.ai-overlay__card {
+    background: var(--c-surface); color: var(--c-text);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 48px rgba(0,0,0,.35);
+    padding: 36px 48px;
+    display: flex; flex-direction: column; align-items: center; gap: 18px;
+    text-align: center;
+    min-width: 260px; max-width: 420px;
+    border: 1px solid var(--c-border);
+}
+.ai-overlay__icon {
+    color: var(--c-text);
+    animation: ai-overlay-pulse 1.8s infinite ease-in-out;
+}
+.ai-overlay__title { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.ai-overlay__dots { display: inline-flex; gap: 6px; align-items: center; height: 12px; }
+.ai-overlay__dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--c-primary);
+    animation: copilot-bounce 1.2s infinite ease-in-out both;
+}
+.ai-overlay__dots span:nth-child(1) { animation-delay: -0.32s; }
+.ai-overlay__dots span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes ai-overlay-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes ai-overlay-pulse {
+    0%, 100% { transform: scale(1);    opacity: .9; }
+    50%      { transform: scale(1.07); opacity: 1;  }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ai-overlay { animation: none; }
+    .ai-overlay__icon { animation: none; }
+    .ai-overlay__dots span { animation: none; opacity: .55; }
+}
+
 .copilot__form {
     display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--c-border);
     background: var(--c-surface);
