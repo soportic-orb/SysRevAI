@@ -57,7 +57,7 @@ $qs = static function (array $extra) use ($status, $search): string {
         <div class="section-card" style="padding:0">
             <div class="table-wrap">
                 <table class="table">
-                    <thead><tr><th><?= e(__('references.col_study')) ?></th><th><?= e(__('references.col_ids')) ?></th><th><?= e(__('references.col_status')) ?></th></tr></thead>
+                    <thead><tr><th><?= e(__('references.col_study')) ?></th><th><?= e(__('references.col_ids')) ?></th><th><?= e(__('references.col_status')) ?></th><th></th></tr></thead>
                     <tbody>
                         <?php foreach ($rows as $r): $authors = json_decode((string) $r['authors_json'], true) ?: []; ?>
                             <tr>
@@ -74,6 +74,7 @@ $qs = static function (array $extra) use ($status, $search): string {
                                     <?php if (!empty($r['pmid'])): ?>PMID: <?= e((string) $r['pmid']) ?><?php endif; ?>
                                 </td>
                                 <td><span class="tag tag--soft"><?= e(__('references.st_' . $r['status'])) ?></span></td>
+                                <td><a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references/<?= (int) $r['id'] ?>/summary">&#10024; <?= e(__('summary.title')) ?></a></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

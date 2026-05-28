@@ -19,6 +19,8 @@ storage/credentials/*
 !storage/credentials/.gitkeep
 storage/backups/*
 !storage/backups/.gitkeep
+storage/pdfs/*
+!storage/pdfs/.gitkeep
 
 # OS / editor noise
 .DS_Store

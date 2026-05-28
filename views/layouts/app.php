@@ -25,6 +25,7 @@ $version = (string) config('app.version', '0.1.0-dev');
     <nav class="topbar__nav">
         <a href="/dashboard"><?= e(__('nav.dashboard')) ?></a>
         <a href="/reviews"><?= e(__('nav.reviews')) ?></a>
+        <a href="/search"><?= e(__('nav.search')) ?></a>
         <?php if (\SysRevAI\Core\Auth::hasRole('owner', 'admin')): ?>
             <a href="/admin/settings"><?= e(__('nav.settings')) ?></a>
         <?php endif; ?>

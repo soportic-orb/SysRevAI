@@ -8,6 +8,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 13 — polish:**
+  - **Global search** at `/search` (auth-only) across every review the user
+    can access, using the existing FULLTEXT index on `references(title,
+    abstract)` for queries of 4+ characters and a `LIKE` fallback for short
+    ones; results show the matching reference and its parent review.
+  - **Public `/about` page** (no login required) with version, license, repo
+    link and the discreet donation card — the policy-approved third place
+    the donate link appears.
+  - `database/seeds/demo.sql`: a one-shot sample review with PICO, exclusion
+    reasons and five realistic-looking references; idempotent on review
+    title and documented in the README.
+  - Topbar gains a Search link; README roadmap marked complete across all
+    13 phases.
+- **Phase 12 — exports:**
+  - `Services\ExportService` + `ExportController`: per-review export hub at
+    `/reviews/{id}/exports` with a PRISMA preview and download buttons.
+  - **PRISMA 2020 flow diagram**: native SVG generated from live counts
+    (identified → duplicates removed → screened T/A → excluded → eligibility
+    full-text → excluded → included), editable in any vector tool.
+  - **CSV** (streamed via `php://output` with UTF-8 BOM) and **Excel `.xlsx`**
+    of references plus extracted-template columns (using PhpSpreadsheet when
+    installed; graceful flash error otherwise).
+  - **Word `.docx`** review document (title, question, protocol/PICO,
+    inclusion/exclusion, included studies as a citation list) via PhpWord
+    (graceful fallback when not installed).
+  - **RevMan 5 (`.rm5`)** Cochrane XML skeleton with the cover sheet and
+    included-studies metadata (title, year, source, DOI, PMID) via native
+    DOMDocument.
+- **Phase 11 — AI summaries & translation:**
+  - `014_summaries_translations.sql` migration: `ai_summaries` (one row per
+    `(reference, language)`, structured JSON with background/methods/results/
+    conclusions/relevance) and `translations` (cache keyed by
+    SHA-256(source) + langs).
+  - `Models\AiSummary` and `Models\Translation`.
+  - `Services\TranslateService` upgraded to a real Google Cloud Translation v3
+    client: signs an RS256 JWT from the configured service-account JSON,
+    exchanges it for an OAuth2 access token (cached on disk for ~50 minutes),
+    splits long text into ≤4500-character chunks at paragraph boundaries, and
+    persists every chunk via the cache so repeated passages never hit the API.
+  - `SummariesController`: per-reference summary page in ca/es/en with
+    **"Generate with AI"** (uses extracted PDF text, falling back to the
+    abstract) and **regenerate**; cached results are shown instantly.
+  - `TranslateController`: generic JSON endpoint scoped to a review used by
+    the **"Translate" button** on the summary page (works for the abstract and
+    each summary section).
+- **Phase 10 — risk of bias:**
+  - `013_risk_of_bias.sql` migration: per-(reference, reviewer, tool, domain)
+    judgements + justifications.
+  - `Services\RiskOfBiasService`: domains and judgement vocabularies for
+    **RoB 2**, **ROBINS-I**, **Newcastle-Ottawa** and **JBI** with severity
+    ordering and accessible Okabe-Ito colours for the traffic-light view.
+  - `Models\RiskOfBias` (upsert per domain, per-assessment fetch, review-wide
+    aggregate for plots) and `RiskOfBiasController` (overview with
+    **traffic-light table** and **summary stacked-bar** chart via Chart.js,
+    per-reference assessment form with per-domain **"Suggest with AI"** that
+    calls `assessBiasDomain` and fills judgement+justification client-side for
+    review before save).
+- **Phase 9 — data extraction:**
+  - `012_extraction.sql` migration: `extraction_templates` (per-review,
+    JSON-defined fields) and `extraction_data` (per-(reference, reviewer,
+    template) submission with draft/submitted/approved status).
+  - `Models\ExtractionTemplate` (typical predefined fields seeded the first
+    time the page is opened) and `Models\ExtractionData` (upsert, approve,
+    side-by-side data for the compare view).
+  - `Services\ExtractionService`: per-field-type sanitization (text/textarea/
+    number/date/select/multi-select) and a compact AI payload shape.
+  - `ExtractionController`: template editor (owner) with add/remove fields,
+    per-reference extraction form rendered from the template, draft/submit
+    actions, **"Fill with AI"** (Claude reads the PDF text — or abstract as
+    fallback — and proposes values for the form, persisted as draft for
+    review), owner approval that marks the reference as `extracted`, and an
+    embedded **side-by-side compare** panel showing other reviewers'
+    submissions.
+- **Phase 8 — full text, PDF viewer & article chat:**
+  - `011_full_text.sql` migration: `reference_full_text` (FULLTEXT on
+    extracted_text) and `ai_chat_history` tables.
+  - `Services\FileStorage`: secure PDF upload — **real MIME via `finfo`** (never
+    trust the extension), size limit from the admin Files settings, UUID-style
+    filenames, stored **outside the document root** with 0600 permissions and a
+    path-traversal-safe serve check.
+  - `Services\PdfService`: text extraction via `smalot/pdfparser` when present,
+    graceful no-op otherwise.
+  - `PdfController` (upload + auth-gated streaming serve) and `ChatController`
+    (per-user/per-article chat with Claude, persisted history).
+  - `FullTextScreeningController extends ScreeningController` — full-text
+    screening reuses every mechanic of the T/A flow (blinding, conflict queue,
+    coordinator view) with `stage = 'ft'`. ScreeningController refactored to
+    parametrize the stage; TA routes moved under `/reviews/{id}/screen/`
+    consistently with `/full-text/`.
+  - `views/full_text/screen.php`: embedded PDF iframe viewer, upload form
+    when the PDF is missing, decision form with shortcuts, and a chat panel
+    that streams replies via fetch into the conversation history.
 - **Phase 7 — Claude API integration:**
   - Full `Services\ClaudeService`: `summarize`, `suggestScreeningDecision`,
     `extractStructuredData`, `assessBiasDomain`, `chatWithArticle` and

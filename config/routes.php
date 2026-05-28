@@ -14,6 +14,7 @@ declare(strict_types=1);
 use SysRevAI\Controllers\Admin\MaintenanceController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
+use SysRevAI\Controllers\AboutController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
 use SysRevAI\Controllers\DashboardController;
@@ -25,7 +26,16 @@ use SysRevAI\Controllers\NotificationsController;
 use SysRevAI\Controllers\ProfileController;
 use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
+use SysRevAI\Controllers\ChatController;
+use SysRevAI\Controllers\ExportController;
+use SysRevAI\Controllers\ExtractionController;
+use SysRevAI\Controllers\FullTextScreeningController;
+use SysRevAI\Controllers\SummariesController;
+use SysRevAI\Controllers\TranslateController;
+use SysRevAI\Controllers\PdfController;
+use SysRevAI\Controllers\RiskOfBiasController;
 use SysRevAI\Controllers\ScreeningController;
+use SysRevAI\Controllers\SearchController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
 
@@ -36,6 +46,10 @@ $router->get('/', static fn () => redirect(Auth::check() ? '/dashboard' : '/logi
 $router->get('/login', [AuthController::class, 'showLogin'], ['guest']);
 $router->post('/login', [AuthController::class, 'login'], ['guest']);
 $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
+
+// Public about page (no auth) and global search (auth).
+$router->get('/about', [AboutController::class, 'show']);
+$router->get('/search', [SearchController::class, 'index'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 
@@ -68,12 +82,53 @@ $router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 
 
 // Title/abstract screening.
 $router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'suggest'], ['auth']);
-$router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
+$router->get('/reviews/{id}/screen/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
+$router->post('/reviews/{id}/screen/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/screen/coordinator', [ScreeningController::class, 'toggleCoordinator'], ['auth']);
-$router->get('/reviews/{id}/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
-$router->post('/reviews/{id}/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
+$router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
+
+// Full-text screening (stage='ft') reuses the screening machinery.
+$router->get('/reviews/{id}/full-text/conflicts', [FullTextScreeningController::class, 'conflicts'], ['auth']);
+$router->post('/reviews/{id}/full-text/conflicts/resolve', [FullTextScreeningController::class, 'resolveConflict'], ['auth']);
+$router->post('/reviews/{id}/full-text/decide', [FullTextScreeningController::class, 'decide'], ['auth']);
+$router->post('/reviews/{id}/full-text/start', [FullTextScreeningController::class, 'start'], ['auth']);
+$router->post('/reviews/{id}/full-text/coordinator', [FullTextScreeningController::class, 'toggleCoordinator'], ['auth']);
+$router->get('/reviews/{id}/full-text', [FullTextScreeningController::class, 'screen'], ['auth']);
+
+// PDFs and per-article chat (nested under a reference).
+$router->post('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'upload'], ['auth']);
+$router->get('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'serve'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/chat', [ChatController::class, 'send'], ['auth']);
+$router->get('/reviews/{id}/references/{refId}/summary', [SummariesController::class, 'show'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/summary', [SummariesController::class, 'generate'], ['auth']);
+
+// Generic translation endpoint (member access). Returns JSON.
+$router->post('/reviews/{id}/translate', [TranslateController::class, 'translate'], ['auth']);
+
+// Exports.
+$router->get('/reviews/{id}/exports', [ExportController::class, 'index'], ['auth']);
+$router->get('/reviews/{id}/exports/prisma', [ExportController::class, 'prisma'], ['auth']);
+$router->get('/reviews/{id}/exports/csv', [ExportController::class, 'csv'], ['auth']);
+$router->get('/reviews/{id}/exports/excel', [ExportController::class, 'excel'], ['auth']);
+$router->get('/reviews/{id}/exports/word', [ExportController::class, 'word'], ['auth']);
+$router->get('/reviews/{id}/exports/revman', [ExportController::class, 'revman'], ['auth']);
+
+// Data extraction (literal /template before the {refId} pattern).
+// Risk of bias (per (reference, reviewer, tool, domain)).
+$router->get('/reviews/{id}/risk-of-bias', [RiskOfBiasController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/risk-of-bias/{refId}/ai', [RiskOfBiasController::class, 'ai'], ['auth']);
+$router->get('/reviews/{id}/risk-of-bias/{refId}', [RiskOfBiasController::class, 'edit'], ['auth']);
+$router->post('/reviews/{id}/risk-of-bias/{refId}', [RiskOfBiasController::class, 'save'], ['auth']);
+
+$router->get('/reviews/{id}/extraction', [ExtractionController::class, 'index'], ['auth']);
+$router->get('/reviews/{id}/extraction/template', [ExtractionController::class, 'templateEdit'], ['auth']);
+$router->post('/reviews/{id}/extraction/template', [ExtractionController::class, 'templateSave'], ['auth']);
+$router->post('/reviews/{id}/extraction/{refId}/ai', [ExtractionController::class, 'ai'], ['auth']);
+$router->post('/reviews/{id}/extraction/{refId}/approve', [ExtractionController::class, 'approve'], ['auth']);
+$router->get('/reviews/{id}/extraction/{refId}', [ExtractionController::class, 'edit'], ['auth']);
+$router->post('/reviews/{id}/extraction/{refId}', [ExtractionController::class, 'save'], ['auth']);
 
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 

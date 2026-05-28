@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 /** @var array $review */
 /** @var array $rows */
+/** @var string $basePath */
 $id = (int) $review['id'];
+$basePath = $basePath ?? '/reviews/' . $id . '/screen';
 ?>
 <div class="page">
     <div class="alert alert--warn coord-banner">
         &#9888; <?= e(__('screening.coord_banner')) ?>
-        <form method="post" action="/reviews/<?= $id ?>/screen/coordinator" style="display:inline">
+        <form method="post" action="<?= e($basePath) ?>/coordinator" style="display:inline">
             <?= csrf_field() ?>
             <button class="btn btn--ghost btn--sm"><?= e(__('screening.coord_exit')) ?></button>
         </form>
