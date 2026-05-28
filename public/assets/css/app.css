@@ -490,6 +490,63 @@ a:hover { text-decoration: underline; }
 /* Alerts */
 .alert { border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
 .alert--error { background: var(--c-alert-error-bg); border: 1px solid var(--c-alert-error-bd); color: var(--c-alert-error-fg); }
+
+/* Top-center toast stack. Inline .alert--success / .alert--error /
+   .alert--warn elements are automatically promoted into this stack by
+   app.js (unless they carry data-no-toast). The toast auto-dismisses
+   after 5 s, can be closed with X, and inverts to a solid coloured
+   background per type (green / amber / red). */
+.toast-stack {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+    z-index: 70;
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+    pointer-events: none;
+    max-width: calc(100vw - 32px);
+}
+.toast {
+    pointer-events: auto;
+    display: flex; align-items: flex-start; gap: 12px;
+    min-width: 280px; max-width: 480px;
+    padding: 12px 14px 12px 14px;
+    border-radius: 10px;
+    color: #ffffff;
+    background: var(--c-text);
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    font-size: 14px; line-height: 1.45;
+    animation: toast-in .18s ease-out;
+}
+.toast--success { background: var(--c-ok);   }
+.toast--warn    { background: var(--c-warn); }
+.toast--error   { background: var(--c-fail); }
+.toast__icon {
+    flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    color: #fff;
+}
+.toast__body  { flex: 1; word-break: break-word; }
+.toast__close {
+    flex: 0 0 auto;
+    background: transparent; border: 0; color: inherit;
+    cursor: pointer; opacity: .82; padding: 0;
+    width: 22px; height: 22px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+}
+.toast__close:hover { background: rgba(255,255,255,.18); opacity: 1; }
+.toast.is-leaving { animation: toast-out .2s ease-in forwards; }
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .toast, .toast.is-leaving { animation: none; }
+}
 .alert--success { background: var(--c-alert-success-bg); border: 1px solid var(--c-alert-success-bd); color: var(--c-alert-success-fg); }
 
 .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .3px; }

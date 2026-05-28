@@ -227,3 +227,108 @@
         }
     });
 })();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Toast notifications.
+
+   Promotes any inline .alert--success / .alert--error / .alert--warn
+   element on the page to a top-center toast (auto-dismiss after 5 s,
+   close button, slide-in / slide-out animation). The original inline
+   element is removed so the message appears in only one place.
+
+   Opt-out: structural / persistent alerts can keep their inline
+   placement with `data-no-toast` on the .alert element.
+
+   Direct API: window.SysRevAI.toast(message, type, options).
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    var TYPE_FROM_CLASS = {
+        'alert--success': 'success',
+        'alert--error':   'error',
+        'alert--warn':    'warn'
+    };
+    var ICONS = {
+        success: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+        warn:    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><circle cx="12" cy="17" r=".6" fill="currentColor"></circle><path d="M10.3 2.7 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.7a2 2 0 0 0-3.4 0z"></path></svg>',
+        error:   '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="9" y1="15" x2="15" y2="9"></line></svg>'
+    };
+
+    function stack() {
+        var el = document.getElementById('toastStack');
+        if (!el) {
+            // Fallback: build the stack on demand if the layout didn't include it.
+            el = document.createElement('div');
+            el.id = 'toastStack';
+            el.className = 'toast-stack';
+            el.setAttribute('aria-live', 'polite');
+            document.body.appendChild(el);
+        }
+        return el;
+    }
+
+    function dismiss(node) {
+        if (!node || node.classList.contains('is-leaving')) return;
+        node.classList.add('is-leaving');
+        setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 220);
+    }
+
+    function show(message, type, options) {
+        type = type === 'success' || type === 'warn' || type === 'error' ? type : 'success';
+        options = options || {};
+        var ttl = options.ttl != null ? options.ttl : 5000;
+
+        var box = document.createElement('div');
+        box.className = 'toast toast--' + type;
+        box.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+        var icon = document.createElement('span');
+        icon.className = 'toast__icon';
+        icon.innerHTML = ICONS[type] || '';
+        box.appendChild(icon);
+
+        var body = document.createElement('div');
+        body.className = 'toast__body';
+        body.textContent = String(message);
+        box.appendChild(body);
+
+        var close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'toast__close';
+        close.setAttribute('aria-label', 'Close');
+        close.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>';
+        close.addEventListener('click', function () { dismiss(box); });
+        box.appendChild(close);
+
+        stack().appendChild(box);
+        if (ttl > 0) setTimeout(function () { dismiss(box); }, ttl);
+        return box;
+    }
+
+    /* Auto-migrate any inline .alert--* into a toast. */
+    function promoteInline() {
+        document.querySelectorAll('.alert--success, .alert--error, .alert--warn').forEach(function (el) {
+            if (el.hasAttribute('data-no-toast')) return;
+            // Find the matching alert--* class to detect the type.
+            var type = null;
+            el.classList.forEach(function (c) {
+                if (TYPE_FROM_CLASS[c]) type = TYPE_FROM_CLASS[c];
+            });
+            if (!type) return;
+            var text = (el.textContent || '').trim();
+            if (text === '') return;
+            show(text, type);
+            el.parentNode && el.parentNode.removeChild(el);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', promoteInline);
+    } else {
+        promoteInline();
+    }
+
+    window.SysRevAI = window.SysRevAI || {};
+    window.SysRevAI.toast = show;
+})();

@@ -9,7 +9,7 @@ $id = (int) $review['id'];
 $basePath = $basePath ?? '/reviews/' . $id . '/screen';
 ?>
 <div class="page">
-    <div class="alert alert--warn coord-banner">
+    <div class="alert alert--warn coord-banner" data-no-toast>
         &#9888; <?= e(__('screening.coord_banner')) ?>
         <form method="post" action="<?= e($basePath) ?>/coordinator" style="display:inline">
             <?= csrf_field() ?>
