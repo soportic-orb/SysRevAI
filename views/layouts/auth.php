@@ -13,6 +13,17 @@ $appName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($appName) ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/sysrevai-icon.svg')) ?>">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('sysrevai.theme');
+                if (t !== 'light' && t !== 'dark') {
+                    t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body class="auth-body">

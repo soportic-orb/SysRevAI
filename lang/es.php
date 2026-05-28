@@ -20,6 +20,7 @@ return [
         'notifications' => 'Notificaciones',
         'profile'       => 'Perfil',
         'logout'        => 'Cerrar sesión',
+        'theme_toggle'  => 'Cambiar entre modo claro y oscuro',
     ],
 
     'auth' => [
@@ -300,18 +301,21 @@ return [
 
     'import' => [
         'title'         => 'Importar referencias',
-        'intro'         => 'Sube un archivo o pega el contenido. Formatos: RIS, EndNote XML, PubMed XML, CSV, BibTeX.',
+        'intro'         => 'Sube un archivo o pega el contenido. Formatos: RIS, EndNote XML, PubMed XML, CSV, BibTeX, o texto libre interpretado por IA.',
         'format'        => 'Formato',
+        'format_help'   => 'Elige "Texto libre (IA)" para pegar una bibliografía de Word o una lista numerada en cualquier estilo — la IA detectará cada referencia.',
         'auto_detect'   => 'Detección automática',
         'fmt_ris'       => 'RIS',
         'fmt_bibtex'    => 'BibTeX',
         'fmt_csv'       => 'CSV',
         'fmt_pubmed'    => 'PubMed XML',
         'fmt_endnote'   => 'EndNote XML',
+        'fmt_freetext'  => 'Texto libre (IA)',
         'file'          => 'Archivo',
         'file_help'     => 'Máximo 20 MB. Extensiones: .ris .nbib .bib .csv .xml .enw .txt',
         'paste'         => 'O pega el contenido',
         'paste_help'    => 'Pega aquí el texto RIS/BibTeX/CSV si no tienes archivo.',
+        'paste_freetext_hint' => 'Para "Texto libre (IA)" puedes pegar cualquier estilo de citación — APA, Vancouver, Harvard, lista numerada… la IA analiza cada entrada.',
         'submit'        => 'Importar',
         'history'       => 'Historial de importaciones',
         'imported'      => 'Importadas',
@@ -320,6 +324,10 @@ return [
         'unknown_format' => 'No se pudo detectar el formato. Selecciónalo manualmente.',
         'too_large'     => 'El archivo es demasiado grande (máx. 20 MB).',
         'result'        => 'Importadas %d referencias — %d duplicados exactos marcados, %d candidatos difusos.',
+        'ai_no_key'     => 'La importación con IA requiere una clave de API de Claude. Pídela a un administrador en Configuración → Claude.',
+        'ai_disabled'   => 'La extracción con IA está desactivada en la configuración.',
+        'ai_budget'     => 'Se ha alcanzado el presupuesto mensual de IA del sitio.',
+        'ai_failed'     => 'El análisis con IA ha fallado (%s). Prueba con menos referencias o pega un bloque más limpio.',
     ],
 
     'references' => [

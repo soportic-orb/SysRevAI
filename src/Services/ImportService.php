@@ -12,7 +12,7 @@ namespace SysRevAI\Services;
  */
 final class ImportService
 {
-    public const FORMATS = ['ris', 'bibtex', 'csv', 'pubmed', 'endnote'];
+    public const FORMATS = ['ris', 'bibtex', 'csv', 'pubmed', 'endnote', 'freetext'];
 
     /** Guess the format from filename + content; null if unknown. */
     public static function detectFormat(string $filename, string $content): ?string

@@ -31,6 +31,7 @@ $id = (int) $review['id'];
                     <option value="<?= e($f) ?>"><?= e(__('import.fmt_' . $f)) ?></option>
                 <?php endforeach; ?>
             </select>
+            <span class="field-help"><?= e(__('import.format_help')) ?></span>
         </div>
 
         <div class="field">
@@ -41,7 +42,8 @@ $id = (int) $review['id'];
 
         <div class="field">
             <label class="field-label" for="paste"><?= e(__('import.paste')) ?></label>
-            <textarea class="input" id="paste" name="paste" rows="6" placeholder="<?= e(__('import.paste_help')) ?>"></textarea>
+            <textarea class="input" id="paste" name="paste" rows="8" placeholder="<?= e(__('import.paste_help')) ?>"></textarea>
+            <span class="field-help"><?= e(__('import.paste_freetext_hint')) ?></span>
         </div>
 
         <div><button type="submit" class="btn btn--primary"><?= e(__('import.submit')) ?></button></div>

@@ -185,6 +185,109 @@ final class ClaudeService
     }
 
     /**
+     * Parse a free-form text block of references (any format — APA,
+     * Vancouver, numbered list, Harvard, plain copy-paste from Word…) and
+     * return a normalised array suitable for direct import. Sites can
+     * paste a Word bibliography or a list of MLA citations and the model
+     * extracts each reference into our canonical schema.
+     *
+     * @return array{ok:bool,refs?:array<int,array<string,mixed>>,error?:string}
+     */
+    public function extractReferencesFromText(string $text, ?int $reviewId = null): array
+    {
+        if ($e = $this->guard('extraction')) {
+            return $e;
+        }
+        $system = "You parse a free-form bibliography pasted by a researcher. The text may use APA, "
+            . "Vancouver, Harvard, MLA, Chicago, numbered lists, or no consistent style at all. "
+            . "Identify every distinct bibliographic reference (article, book, report, web page, "
+            . "preprint, conference paper) and return a JSON OBJECT with this exact shape — never "
+            . "wrap in markdown fences, never include commentary:\n\n"
+            . '{"references":[{"title":"","authors":["Last, First M.","Other, A."],"year":2024,'
+            . '"journal":"","volume":"","issue":"","pages":"","doi":"","pmid":"","url":"",'
+            . '"publication_type":"journal-article|book|preprint|report|conference|webpage|other",'
+            . '"abstract":"","keywords":[]}]}'
+            . "\n\nRules:\n"
+            . " • Strings default to empty (\"\"), arrays default to []. Use null only for year when "
+            . "you really cannot tell.\n"
+            . " • Authors must be split into individual strings, family name first (\"Smith, J. A.\"). "
+            . "Trim trailing periods. Expand \"et al.\" into a trailing \"et al.\" entry.\n"
+            . " • For DOIs, return just the bare identifier (\"10.xxxx/yyyy\"), never the URL.\n"
+            . " • If the text contains numbered or bulleted items, treat each item as one reference.\n"
+            . " • If a fragment is clearly not a reference, skip it silently.";
+
+        $res = $this->request(
+            $this->modelComplex,
+            $system,
+            [['role' => 'user', 'content' => $this->truncate($text, 50000)]],
+            4096,
+            'extraction',
+            $reviewId,
+            true
+        );
+        if (!$res['ok']) {
+            return ['ok' => false, 'error' => $res['error']];
+        }
+        $json = $res['json'];
+        if (!is_array($json) || !isset($json['references']) || !is_array($json['references'])) {
+            return ['ok' => false, 'error' => 'invalid_json'];
+        }
+
+        $refs = [];
+        foreach ($json['references'] as $r) {
+            if (!is_array($r)) {
+                continue;
+            }
+            $title = trim((string) ($r['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $authors = [];
+            foreach ((array) ($r['authors'] ?? []) as $a) {
+                $a = trim((string) $a);
+                if ($a !== '') {
+                    $authors[] = $a;
+                }
+            }
+            $keywords = [];
+            foreach ((array) ($r['keywords'] ?? []) as $k) {
+                $k = trim((string) $k);
+                if ($k !== '') {
+                    $keywords[] = $k;
+                }
+            }
+            $year = $r['year'] ?? null;
+            if (is_string($year)) {
+                $year = preg_match('/\d{4}/', $year, $m) ? (int) $m[0] : null;
+            } elseif (is_int($year)) {
+                $year = $year >= 1500 && $year <= (int) date('Y') + 1 ? $year : null;
+            } else {
+                $year = null;
+            }
+            $doi = trim((string) ($r['doi'] ?? ''));
+            if ($doi !== '') {
+                $doi = preg_replace('#^https?://(dx\.)?doi\.org/#i', '', $doi) ?? $doi;
+            }
+
+            $refs[] = [
+                'title'     => $title,
+                'authors'   => $authors,
+                'year'      => $year,
+                'journal'   => trim((string) ($r['journal'] ?? '')),
+                'volume'    => trim((string) ($r['volume'] ?? '')),
+                'issue'     => trim((string) ($r['issue'] ?? '')),
+                'pages'     => trim((string) ($r['pages'] ?? '')),
+                'doi'       => $doi,
+                'pmid'      => trim((string) ($r['pmid'] ?? '')),
+                'url'       => trim((string) ($r['url'] ?? '')),
+                'abstract'  => trim((string) ($r['abstract'] ?? '')),
+                'keywords'  => $keywords,
+            ];
+        }
+        return ['ok' => true, 'refs' => $refs];
+    }
+
+    /**
      * Scientific Copilot — conversational assistant for researchers inside
      * a specific review. Takes the review's protocol context so the model
      * can answer methodology questions, summarise the team's progress and

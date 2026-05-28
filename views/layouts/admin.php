@@ -35,6 +35,17 @@ $nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($appName) ?> — <?= e(__('admin.title')) ?></title>
     <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/sysrevai-icon.svg')) ?>">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('sysrevai.theme');
+                if (t !== 'light' && t !== 'dark') {
+                    t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body>
@@ -50,6 +61,7 @@ $nav = [
         <a href="/admin/settings" class="is-active"><?= e(__('nav.settings')) ?></a>
     </nav>
     <div class="topbar__user">
+        <?php require config('paths.base') . '/views/partials/theme_toggle.php'; ?>
         <?php if ($user !== null): ?>
             <?php
                 try { $unread = \SysRevAI\Models\Notification::unreadCount((int) $user['id']); }
@@ -97,6 +109,18 @@ $nav = [
         require config('paths.base') . '/views/partials/donate_link.php';
     ?>
 </footer>
+<script>
+    (function () {
+        var btn = document.getElementById('themeToggle');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            var html = document.documentElement;
+            var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            try { localStorage.setItem('sysrevai.theme', next); } catch (e) {}
+        });
+    })();
+</script>
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
 </html>

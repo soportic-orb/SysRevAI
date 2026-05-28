@@ -11,6 +11,7 @@ use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\ImportLog;
 use SysRevAI\Models\Reference;
 use SysRevAI\Models\Review;
+use SysRevAI\Services\ClaudeService;
 use SysRevAI\Services\DeduplicationService;
 use SysRevAI\Services\ImportService;
 
@@ -49,7 +50,22 @@ final class ImportController
             redirect('/reviews/' . $rid . '/import');
         }
 
-        $result = ImportService::parse($content, $format);
+        if ($format === 'freetext') {
+            $ai = ClaudeService::fromSettings()->extractReferencesFromText($content, $rid);
+            if (!$ai['ok']) {
+                $msg = match ($ai['error'] ?? '') {
+                    'no_api_key'       => __('import.ai_no_key'),
+                    'feature_disabled' => __('import.ai_disabled'),
+                    'budget_exceeded'  => __('import.ai_budget'),
+                    default            => __('import.ai_failed', (string) ($ai['error'] ?? '')),
+                };
+                Session::flash('error', $msg);
+                redirect('/reviews/' . $rid . '/import');
+            }
+            $result = ['refs' => $ai['refs'] ?? [], 'errors' => []];
+        } else {
+            $result = ImportService::parse($content, $format);
+        }
         $imported = 0;
         foreach ($result['refs'] as $ref) {
             Reference::create($rid, $ref, $filename, DeduplicationService::dedupKey($ref));
