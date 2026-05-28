@@ -60,6 +60,27 @@ return [
         'back_home' => 'Tornar a l\'inici',
     ],
 
+    'summary' => [
+        'title'           => 'Resum',
+        'abstract'        => 'Resum (abstract)',
+        'ai_summary'      => 'Resum amb IA',
+        'empty'           => 'Encara no s\'ha generat cap resum en aquest idioma.',
+        'generate'        => 'Generar amb IA',
+        'regenerate'      => 'Regenerar',
+        'generated'       => 'Resum generat.',
+        'failed'          => 'La IA no ha pogut generar el resum.',
+        'no_text'         => 'No hi ha text disponible (cal pujar un PDF o que l\'article tingui abstract).',
+        'translate'       => 'Traduir',
+        'translating'     => 'Traduint…',
+        'translate_failed' => 'No s\'ha pogut traduir.',
+        'model'           => 'Model',
+        'section_background'  => 'Background',
+        'section_methods'     => 'Mètodes',
+        'section_results'     => 'Resultats',
+        'section_conclusions' => 'Conclusions',
+        'section_relevance'   => 'Rellevància per a aquesta revisió',
+    ],
+
     'rob' => [
         'title'        => 'Risc de biaix',
         'tool'         => 'Eina',

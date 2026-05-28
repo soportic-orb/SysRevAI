@@ -59,6 +59,27 @@ return [
         'back_home' => 'Volver al inicio',
     ],
 
+    'summary' => [
+        'title'           => 'Resumen',
+        'abstract'        => 'Resumen (abstract)',
+        'ai_summary'      => 'Resumen con IA',
+        'empty'           => 'Todavía no se ha generado ningún resumen en este idioma.',
+        'generate'        => 'Generar con IA',
+        'regenerate'      => 'Regenerar',
+        'generated'       => 'Resumen generado.',
+        'failed'          => 'La IA no pudo generar el resumen.',
+        'no_text'         => 'No hay texto disponible (sube un PDF o que el artículo tenga abstract).',
+        'translate'       => 'Traducir',
+        'translating'     => 'Traduciendo…',
+        'translate_failed' => 'No se pudo traducir.',
+        'model'           => 'Modelo',
+        'section_background'  => 'Background',
+        'section_methods'     => 'Métodos',
+        'section_results'     => 'Resultados',
+        'section_conclusions' => 'Conclusiones',
+        'section_relevance'   => 'Relevancia para esta revisión',
+    ],
+
     'rob' => [
         'title'        => 'Riesgo de sesgo',
         'tool'         => 'Herramienta',

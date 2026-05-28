@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 11 — AI summaries & translation:**
+  - `014_summaries_translations.sql` migration: `ai_summaries` (one row per
+    `(reference, language)`, structured JSON with background/methods/results/
+    conclusions/relevance) and `translations` (cache keyed by
+    SHA-256(source) + langs).
+  - `Models\AiSummary` and `Models\Translation`.
+  - `Services\TranslateService` upgraded to a real Google Cloud Translation v3
+    client: signs an RS256 JWT from the configured service-account JSON,
+    exchanges it for an OAuth2 access token (cached on disk for ~50 minutes),
+    splits long text into ≤4500-character chunks at paragraph boundaries, and
+    persists every chunk via the cache so repeated passages never hit the API.
+  - `SummariesController`: per-reference summary page in ca/es/en with
+    **"Generate with AI"** (uses extracted PDF text, falling back to the
+    abstract) and **regenerate**; cached results are shown instantly.
+  - `TranslateController`: generic JSON endpoint scoped to a review used by
+    the **"Translate" button** on the summary page (works for the abstract and
+    each summary section).
 - **Phase 10 — risk of bias:**
   - `013_risk_of_bias.sql` migration: per-(reference, reviewer, tool, domain)
     judgements + justifications.

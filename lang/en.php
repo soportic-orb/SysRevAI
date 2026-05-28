@@ -59,6 +59,27 @@ return [
         'back_home' => 'Back to home',
     ],
 
+    'summary' => [
+        'title'           => 'Summary',
+        'abstract'        => 'Abstract',
+        'ai_summary'      => 'AI summary',
+        'empty'           => 'No summary has been generated in this language yet.',
+        'generate'        => 'Generate with AI',
+        'regenerate'      => 'Regenerate',
+        'generated'       => 'Summary generated.',
+        'failed'          => 'The AI could not generate the summary.',
+        'no_text'         => 'No text available (upload a PDF or the article needs an abstract).',
+        'translate'       => 'Translate',
+        'translating'     => 'Translating…',
+        'translate_failed' => 'Translation failed.',
+        'model'           => 'Model',
+        'section_background'  => 'Background',
+        'section_methods'     => 'Methods',
+        'section_results'     => 'Results',
+        'section_conclusions' => 'Conclusions',
+        'section_relevance'   => 'Relevance for this review',
+    ],
+
     'rob' => [
         'title'        => 'Risk of bias',
         'tool'         => 'Tool',

@@ -28,6 +28,8 @@ use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Controllers\ChatController;
 use SysRevAI\Controllers\ExtractionController;
 use SysRevAI\Controllers\FullTextScreeningController;
+use SysRevAI\Controllers\SummariesController;
+use SysRevAI\Controllers\TranslateController;
 use SysRevAI\Controllers\PdfController;
 use SysRevAI\Controllers\RiskOfBiasController;
 use SysRevAI\Controllers\ScreeningController;
@@ -92,6 +94,11 @@ $router->get('/reviews/{id}/full-text', [FullTextScreeningController::class, 'sc
 $router->post('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'upload'], ['auth']);
 $router->get('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'serve'], ['auth']);
 $router->post('/reviews/{id}/references/{refId}/chat', [ChatController::class, 'send'], ['auth']);
+$router->get('/reviews/{id}/references/{refId}/summary', [SummariesController::class, 'show'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/summary', [SummariesController::class, 'generate'], ['auth']);
+
+// Generic translation endpoint (member access). Returns JSON.
+$router->post('/reviews/{id}/translate', [TranslateController::class, 'translate'], ['auth']);
 
 // Data extraction (literal /template before the {refId} pattern).
 // Risk of bias (per (reference, reviewer, tool, domain)).
