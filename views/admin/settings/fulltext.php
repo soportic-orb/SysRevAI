@@ -14,6 +14,7 @@ $concurrency   = (int) (setting('fulltext.concurrency') ?? 3);
 $timeout       = (int) (setting('fulltext.timeout_seconds') ?? 60);
 $retryDays     = (int) (setting('fulltext.retry_after_days') ?? 30);
 $exhaustive    = (bool) (setting('fulltext.exhaustive') ?? false);
+$downloadNow   = (bool) (setting('fulltext.download_immediately') ?? true);
 $politeEmail   = (string) (setting('fulltext.polite_email') ?? '');
 
 $sourceLabel = [
@@ -74,6 +75,11 @@ $sourceLabel = [
     <label class="checkbox">
         <input type="checkbox" name="exhaustive" value="1" <?= $exhaustive ? 'checked' : '' ?>>
         <?= e(__('admin.fulltext.exhaustive')) ?>
+    </label>
+
+    <label class="checkbox">
+        <input type="checkbox" name="download_immediately" value="1" <?= $downloadNow ? 'checked' : '' ?>>
+        <?= e(__('admin.fulltext.download_immediately')) ?>
     </label>
 
     <div class="field">

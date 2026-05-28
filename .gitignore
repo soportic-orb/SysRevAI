@@ -21,6 +21,8 @@ storage/backups/*
 !storage/backups/.gitkeep
 storage/pdfs/*
 !storage/pdfs/.gitkeep
+storage/xml/*
+!storage/xml/.gitkeep
 storage/worker.lock
 
 # OS / editor noise

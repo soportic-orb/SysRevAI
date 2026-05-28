@@ -236,6 +236,7 @@ final class SettingsController
         Config::set('fulltext.timeout_seconds', max(5, (int) ($_POST['timeout_seconds'] ?? 60)), 'int', 'fulltext');
         Config::set('fulltext.retry_after_days', max(1, (int) ($_POST['retry_after_days'] ?? 30)), 'int', 'fulltext');
         Config::set('fulltext.exhaustive', !empty($_POST['exhaustive']), 'bool', 'fulltext');
+        Config::set('fulltext.download_immediately', !empty($_POST['download_immediately']), 'bool', 'fulltext');
         Config::set('fulltext.polite_email', trim((string) ($_POST['polite_email'] ?? '')), 'string', 'fulltext');
 
         // Priority order — accept either an ordered text field (one source per line) or a hidden CSV.

@@ -553,6 +553,7 @@ return [
             'polite_email'     => 'Email para el "polite pool"',
             'polite_email_help' => 'Se usa por defecto en todas las fuentes (CrossRef, Unpaywall, OpenAlex, PMC).',
             'exhaustive'       => 'Modo exhaustivo (consultar todas las fuentes aunque una haya encontrado resultado)',
+            'download_immediately' => 'Descargar PDF/XML automáticamente al encontrar resultado (recomendado)',
             'priority'         => 'Orden de prioridad (una fuente por línea)',
             'priority_help'    => 'Valores válidos: pmc, europepmc, unpaywall, openalex, semantic_scholar, biorxiv, arxiv, crossref, doaj.',
             'sources'          => 'Fuentes',

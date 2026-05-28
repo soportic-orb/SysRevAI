@@ -69,6 +69,21 @@ final class ReferenceFullTextStatus
         );
     }
 
+    /** Update both the PDF and XML local paths after the downloader runs. */
+    public static function markStored(int $referenceId, ?string $pdfPath, ?string $xmlPath): void
+    {
+        $table = Database::table('reference_fulltext_status');
+        Database::affecting(
+            "UPDATE `{$table}` SET
+                pdf_downloaded = CASE WHEN ? IS NULL THEN pdf_downloaded ELSE 1 END,
+                pdf_local_path = COALESCE(?, pdf_local_path),
+                xml_available  = CASE WHEN ? IS NULL THEN xml_available ELSE 1 END,
+                xml_local_path = COALESCE(?, xml_local_path)
+             WHERE reference_id = ?",
+            [$pdfPath, $pdfPath, $xmlPath, $xmlPath, $referenceId]
+        );
+    }
+
     /** Status rows for every reference in a review, keyed by reference_id. */
     public static function mapForReview(int $reviewId): array
     {

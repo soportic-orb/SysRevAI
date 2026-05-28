@@ -554,6 +554,7 @@ return [
             'polite_email'     => 'Email per al "polite pool"',
             'polite_email_help' => 'S\'usa per defecte a totes les fonts (CrossRef, Unpaywall, OpenAlex, PMC).',
             'exhaustive'       => 'Mode exhaustiu (consultar totes les fonts encara que una hagi trobat resultat)',
+            'download_immediately' => 'Descarregar PDF/XML automàticament al trobar resultat (recomanat)',
             'priority'         => 'Ordre de prioritat (una font per línia)',
             'priority_help'    => 'Valors vàlids: pmc, europepmc, unpaywall, openalex, semantic_scholar, biorxiv, arxiv, crossref, doaj.',
             'sources'          => 'Fonts',

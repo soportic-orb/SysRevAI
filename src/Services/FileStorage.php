@@ -91,6 +91,34 @@ final class FileStorage
         return @unlink($absolutePath);
     }
 
+    /**
+     * Write arbitrary bytes under storage/{subdir}/ with a random UUID name.
+     * Used by the full-text retrieval downloader for PDFs and JATS XML.
+     */
+    public static function storeBytes(string $bytes, string $extension, string $subdir): ?string
+    {
+        $subdir = preg_replace('/[^a-z0-9_-]+/i', '', $subdir) ?: 'misc';
+        $extension = preg_replace('/[^a-z0-9]+/i', '', $extension) ?: 'bin';
+        $dir = (string) config('paths.storage') . '/' . $subdir;
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0700, true);
+        }
+        $path = $dir . '/' . self::uuid() . '.' . strtolower($extension);
+        if (@file_put_contents($path, $bytes) === false) {
+            return null;
+        }
+        @chmod($path, 0600);
+        return $path;
+    }
+
+    /** True if $absolutePath lives under storage/{subdir}/ (no path traversal). */
+    public static function isStoredIn(string $absolutePath, string $subdir): bool
+    {
+        $real = realpath($absolutePath);
+        $dir = realpath((string) config('paths.storage') . '/' . $subdir);
+        return $real !== false && $dir !== false && str_starts_with($real, $dir . DIRECTORY_SEPARATOR);
+    }
+
     private static function uuid(): string
     {
         $b = random_bytes(16);

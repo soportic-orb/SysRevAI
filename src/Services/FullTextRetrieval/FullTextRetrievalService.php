@@ -145,6 +145,22 @@ final class FullTextRetrievalService
                 $this->retryWindowDays(),
                 attemptDelta: count($attempts)
             );
+
+            // After a successful chain, materialise the PDF / JATS XML to disk
+            // and into reference_full_text so Claude chat, AI summaries and
+            // search treat retrieved content like a manual upload.
+            if ($best instanceof FullTextResult
+                && (bool) (setting('fulltext.download_immediately') ?? true)) {
+                try {
+                    FullTextDownloader::process(
+                        (int) $reference['id'],
+                        $best,
+                        \SysRevAI\Core\Auth::id()
+                    );
+                } catch (\Throwable) {
+                    // Download failures are non-fatal; the URL stays available.
+                }
+            }
         }
 
         return [
