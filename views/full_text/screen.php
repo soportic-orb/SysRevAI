@@ -76,7 +76,7 @@ $basePath = '/reviews/' . $id . '/full-text';
                     </p>
 
                     <?php if ($fullText === null): ?>
-                        <div class="alert alert--warn"><?= e(__('fulltext.no_pdf')) ?></div>
+                        <div class="alert alert--warn" data-no-toast><?= e(__('fulltext.no_pdf')) ?></div>
                         <form method="post" action="/reviews/<?= $id ?>/references/<?= (int) $reference['id'] ?>/pdf" enctype="multipart/form-data" class="form-grid">
                             <?= csrf_field() ?>
                             <div class="field">

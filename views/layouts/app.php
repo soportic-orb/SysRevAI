@@ -133,6 +133,8 @@ endif;
 
 <?php require config('paths.base') . '/views/partials/ai_loading_overlay.php'; ?>
 
+<?php require config('paths.base') . '/views/partials/toast_stack.php'; ?>
+
 <script>
     /* Wire the sun/moon button to flip and persist the theme. */
     (function () {

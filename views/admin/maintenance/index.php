@@ -73,7 +73,7 @@ declare(strict_types=1);
                 <?php endif; ?>
             </dl>
             <?php if (empty($updateInfo['is_git'])): ?>
-                <p class="alert alert--warn"><?= e(__('admin.maintenance.update_not_git')) ?></p>
+                <p class="alert alert--warn" data-no-toast><?= e(__('admin.maintenance.update_not_git')) ?></p>
             <?php endif; ?>
         <?php endif; ?>
     <?php endif; ?>
