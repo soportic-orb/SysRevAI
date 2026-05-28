@@ -22,15 +22,23 @@ use SysRevAI\Services\ScreeningService;
  */
 final class ScreeningController
 {
-    private const STAGE = 'ta';
+    protected string $stage = 'ta';
 
     public function start(string $id): void
     {
         $review = $this->ownerOrDeny((int) $id);
-        $moved = ScreeningService::startScreening((int) $id);
-        ActivityLog::record('screening.started', ['moved' => $moved], (int) $id);
+        $moved = ScreeningService::startScreening((int) $id, $this->stage);
+        ActivityLog::record('screening.started', ['stage' => $this->stage, 'moved' => $moved], (int) $id);
         Session::flash('success', __('screening.started', $moved));
-        redirect('/reviews/' . (int) $id . '/screen');
+        redirect($this->basePath((int) $id));
+    }
+
+    /** URL prefix for screen redirects, depending on stage. */
+    protected function basePath(int $reviewId): string
+    {
+        return $this->stage === 'ft'
+            ? '/reviews/' . $reviewId . '/full-text'
+            : '/reviews/' . $reviewId . '/screen';
     }
 
     public function screen(string $id): void
@@ -44,20 +52,35 @@ final class ScreeningController
         }
 
         $uid = (int) Auth::id();
-        $reference = ScreeningService::nextReference($rid, $uid, $review, self::STAGE);
-        $pending = ScreeningService::pendingForReviewer($rid, $uid, $review, self::STAGE);
+        $reference = ScreeningService::nextReference($rid, $uid, $review, $this->stage);
+        $pending = ScreeningService::pendingForReviewer($rid, $uid, $review, $this->stage);
         $canCoordinate = $this->canCoordinate($review);
 
-        echo View::render('screening/screen', [
+        $data = array_merge([
             'review'        => $review,
             'reference'     => $reference,
             'pico'          => $reference ? Review::pico($review) : [],
             'reasons'       => ExclusionReason::forReview($rid),
             'pending'       => $pending,
-            'completed'     => ScreeningDecision::reviewerCompleted($rid, $uid, self::STAGE),
-            'conflicts'     => $canCoordinate ? ScreeningService::conflictCount($rid, $review, self::STAGE) : 0,
+            'completed'     => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
+            'conflicts'     => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
             'canCoordinate' => $canCoordinate,
-        ]);
+            'stage'         => $this->stage,
+        ], $this->extraScreenData($review, $reference));
+
+        echo View::render($this->screenView(), $data);
+    }
+
+    /** Subclasses override to add stage-specific data (e.g. PDF + chat for FT). */
+    protected function extraScreenData(array $review, ?array $reference): array
+    {
+        return [];
+    }
+
+    /** Subclasses override to render a different view per stage. */
+    protected function screenView(): string
+    {
+        return 'screening/screen';
     }
 
     public function decide(string $id): void
@@ -67,17 +90,17 @@ final class ScreeningController
 
         if ($this->coordinatorActive($rid)) {
             Session::flash('error', __('screening.coord_no_screen'));
-            redirect('/reviews/' . $rid . '/screen');
+            redirect($this->basePath($rid));
         }
 
         $referenceId = (int) ($_POST['reference_id'] ?? 0);
         $decision = (string) ($_POST['decision'] ?? '');
         if (!in_array($decision, ['include', 'exclude', 'maybe'], true)) {
-            redirect('/reviews/' . $rid . '/screen');
+            redirect($this->basePath($rid));
         }
         $reference = Reference::find($referenceId);
         if ($reference === null || (int) $reference['review_id'] !== $rid) {
-            redirect('/reviews/' . $rid . '/screen');
+            redirect($this->basePath($rid));
         }
 
         $reason = $decision === 'exclude' ? trim((string) ($_POST['reason'] ?? '')) : null;
@@ -85,21 +108,21 @@ final class ScreeningController
         $time = max(0, min(3600, (int) ($_POST['time_spent'] ?? 0)));
 
         $required = ScreeningService::requiredReviewers($review);
-        $before = ScreeningDecision::decidedCount($referenceId, self::STAGE);
+        $before = ScreeningDecision::decidedCount($referenceId, $this->stage);
 
-        ScreeningDecision::record($referenceId, (int) Auth::id(), self::STAGE, $decision, $reason, $notes, $time);
-        ScreeningService::evaluate($referenceId, $review, self::STAGE);
+        ScreeningDecision::record($referenceId, (int) Auth::id(), $this->stage, $decision, $reason, $notes, $time);
+        ScreeningService::evaluate($referenceId, $review, $this->stage);
 
         // If this decision completed the required set without finalizing, it is
         // now a conflict — notify the resolvers once.
-        $after = ScreeningDecision::decidedCount($referenceId, self::STAGE);
+        $after = ScreeningDecision::decidedCount($referenceId, $this->stage);
         $fresh = Reference::find($referenceId);
         if ($before < $required && $after >= $required
             && $fresh !== null && $fresh['status'] === 'ta_screening') {
             $this->notifyResolvers($review, $rid, (int) Auth::id());
         }
 
-        redirect('/reviews/' . $rid . '/screen');
+        redirect($this->basePath($rid));
     }
 
     /** AI screening suggestion (advisory). Returns JSON. */
@@ -132,7 +155,8 @@ final class ScreeningController
         $review = $this->resolverOrDeny((int) $id);
         echo View::render('screening/conflicts', [
             'review'    => $review,
-            'conflicts' => ScreeningService::conflicts((int) $id, $review, self::STAGE),
+            'conflicts' => ScreeningService::conflicts((int) $id, $review, $this->stage),
+            'basePath'  => $this->basePath((int) $id),
         ]);
     }
 
@@ -143,15 +167,15 @@ final class ScreeningController
         $referenceId = (int) ($_POST['reference_id'] ?? 0);
         $decision = (string) ($_POST['decision'] ?? '');
         if (!in_array($decision, ['include', 'exclude'], true)) {
-            redirect('/reviews/' . $rid . '/conflicts');
+            redirect($this->basePath($rid) . '/conflicts');
         }
         $reference = Reference::find($referenceId);
         if ($reference !== null && (int) $reference['review_id'] === $rid) {
-            ScreeningService::resolveConflict($referenceId, (int) Auth::id(), self::STAGE, $decision);
+            ScreeningService::resolveConflict($referenceId, (int) Auth::id(), $this->stage, $decision);
             ActivityLog::record('screening.conflict_resolved', ['reference_id' => $referenceId, 'decision' => $decision], $rid);
             Session::flash('success', __('screening.conflict_resolved'));
         }
-        redirect('/reviews/' . $rid . '/conflicts');
+        redirect($this->basePath($rid) . '/conflicts');
     }
 
     public function toggleCoordinator(string $id): void
@@ -159,12 +183,12 @@ final class ScreeningController
         $review = $this->memberOrDeny((int) $id);
         $rid = (int) $id;
         if (!$this->canCoordinate($review)) {
-            redirect('/reviews/' . $rid . '/screen');
+            redirect($this->basePath($rid));
         }
         $active = !$this->coordinatorActive($rid);
         $_SESSION['coordinator'][$rid] = $active;
         ActivityLog::record($active ? 'screening.coordinator_on' : 'screening.coordinator_off', [], $rid);
-        redirect('/reviews/' . $rid . '/screen');
+        redirect($this->basePath($rid));
     }
 
     /* ── Helpers ───────────────────────────────────────────────────────── */
@@ -172,16 +196,17 @@ final class ScreeningController
     private function renderCoordinator(array $review): void
     {
         $rid = (int) $review['id'];
-        // All references that have entered screening, with every reviewer's row.
-        $refs = Reference::forReview($rid, 'ta_screening', '', 1, 100);
+        $status = $this->stage === 'ft' ? 'ft_screening' : 'ta_screening';
+        $refs = Reference::forReview($rid, $status, '', 1, 100);
         $rows = [];
         foreach ($refs['rows'] as $r) {
-            $r['decisions'] = ScreeningDecision::forReference((int) $r['id'], self::STAGE);
+            $r['decisions'] = ScreeningDecision::forReference((int) $r['id'], $this->stage);
             $rows[] = $r;
         }
         echo View::render('screening/coordinator', [
-            'review' => $review,
-            'rows'   => $rows,
+            'review'   => $review,
+            'rows'     => $rows,
+            'basePath' => $this->basePath($rid),
         ]);
     }
 
@@ -196,7 +221,7 @@ final class ScreeningController
                 'conflict',
                 __('screening.notif_conflict', $review['title']),
                 null,
-                '/reviews/' . $reviewId . '/conflicts',
+                $this->basePath($reviewId) . '/conflicts',
                 $reviewId
             );
         }

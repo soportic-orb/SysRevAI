@@ -60,6 +60,27 @@ return [
         'back_home' => 'Tornar a l\'inici',
     ],
 
+    'fulltext' => [
+        'title'           => 'Cribratge a text complet',
+        'start'           => 'Iniciar cribratge a text complet',
+        'all_done'        => 'No tens articles pendents de cribar a text complet.',
+        'no_pdf'          => 'Encara no s\'ha pujat cap PDF per a aquest article. Puja\'l per continuar.',
+        'upload_label'    => 'Fitxer PDF',
+        'upload_help'     => 'Màxim segons la configuració d\'arxius (per defecte 50 MB).',
+        'upload_btn'      => 'Pujar PDF',
+        'upload_ok'       => 'PDF pujat correctament.',
+        'upload_no_file'  => 'No s\'ha seleccionat cap fitxer.',
+        'upload_not_uploaded' => 'Pujada no vàlida.',
+        'upload_too_large' => 'El PDF supera la mida màxima permesa.',
+        'upload_not_pdf'  => 'El fitxer no és un PDF vàlid.',
+        'upload_failed'   => 'No s\'ha pogut desar el PDF al servidor.',
+        'pages'           => '%d pàgines',
+        'chat_title'      => 'Xat amb l\'article (IA)',
+        'chat_empty'      => 'Pregunta el que vulguis sobre aquest article.',
+        'chat_placeholder' => 'Escriu una pregunta…',
+        'chat_send'       => 'Enviar',
+    ],
+
     'screening' => [
         'title'            => 'Cribratge T/R',
         'start'            => 'Iniciar el cribratge',

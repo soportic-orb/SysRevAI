@@ -25,6 +25,9 @@ use SysRevAI\Controllers\NotificationsController;
 use SysRevAI\Controllers\ProfileController;
 use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
+use SysRevAI\Controllers\ChatController;
+use SysRevAI\Controllers\FullTextScreeningController;
+use SysRevAI\Controllers\PdfController;
 use SysRevAI\Controllers\ScreeningController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
@@ -68,12 +71,25 @@ $router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 
 
 // Title/abstract screening.
 $router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'suggest'], ['auth']);
-$router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
+$router->get('/reviews/{id}/screen/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
+$router->post('/reviews/{id}/screen/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/screen/coordinator', [ScreeningController::class, 'toggleCoordinator'], ['auth']);
-$router->get('/reviews/{id}/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
-$router->post('/reviews/{id}/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
+$router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
+
+// Full-text screening (stage='ft') reuses the screening machinery.
+$router->get('/reviews/{id}/full-text/conflicts', [FullTextScreeningController::class, 'conflicts'], ['auth']);
+$router->post('/reviews/{id}/full-text/conflicts/resolve', [FullTextScreeningController::class, 'resolveConflict'], ['auth']);
+$router->post('/reviews/{id}/full-text/decide', [FullTextScreeningController::class, 'decide'], ['auth']);
+$router->post('/reviews/{id}/full-text/start', [FullTextScreeningController::class, 'start'], ['auth']);
+$router->post('/reviews/{id}/full-text/coordinator', [FullTextScreeningController::class, 'toggleCoordinator'], ['auth']);
+$router->get('/reviews/{id}/full-text', [FullTextScreeningController::class, 'screen'], ['auth']);
+
+// PDFs and per-article chat (nested under a reference).
+$router->post('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'upload'], ['auth']);
+$router->get('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'serve'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/chat', [ChatController::class, 'send'], ['auth']);
 
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 

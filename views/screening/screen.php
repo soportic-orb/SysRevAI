@@ -23,7 +23,7 @@ $authors = $reference ? (json_decode((string) $reference['authors_json'], true) 
         </div>
         <div class="btn-row">
             <?php if ($canCoordinate && $conflicts > 0): ?>
-                <a class="btn btn--ghost" href="/reviews/<?= $id ?>/conflicts"><?= e(__('screening.conflicts', $conflicts)) ?></a>
+                <a class="btn btn--ghost" href="/reviews/<?= $id ?>/screen/conflicts"><?= e(__('screening.conflicts', $conflicts)) ?></a>
             <?php endif; ?>
             <?php if ($canCoordinate): ?>
                 <form method="post" action="/reviews/<?= $id ?>/screen/coordinator">

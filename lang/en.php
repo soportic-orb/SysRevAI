@@ -59,6 +59,27 @@ return [
         'back_home' => 'Back to home',
     ],
 
+    'fulltext' => [
+        'title'           => 'Full-text screening',
+        'start'           => 'Start full-text screening',
+        'all_done'        => 'You have no full-text articles left to screen.',
+        'no_pdf'          => 'No PDF has been uploaded for this article yet. Upload one to continue.',
+        'upload_label'    => 'PDF file',
+        'upload_help'     => 'Up to the limit configured in the files settings (default 50 MB).',
+        'upload_btn'      => 'Upload PDF',
+        'upload_ok'       => 'PDF uploaded.',
+        'upload_no_file'  => 'No file selected.',
+        'upload_not_uploaded' => 'Invalid upload.',
+        'upload_too_large' => 'The PDF exceeds the maximum allowed size.',
+        'upload_not_pdf'  => 'The file is not a valid PDF.',
+        'upload_failed'   => 'Could not save the PDF on the server.',
+        'pages'           => '%d pages',
+        'chat_title'      => 'Chat with article (AI)',
+        'chat_empty'      => 'Ask anything about this article.',
+        'chat_placeholder' => 'Type a question…',
+        'chat_send'       => 'Send',
+    ],
+
     'screening' => [
         'title'            => 'Title/Abstract screening',
         'start'            => 'Start screening',

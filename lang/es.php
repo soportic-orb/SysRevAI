@@ -59,6 +59,27 @@ return [
         'back_home' => 'Volver al inicio',
     ],
 
+    'fulltext' => [
+        'title'           => 'Cribado a texto completo',
+        'start'           => 'Iniciar cribado a texto completo',
+        'all_done'        => 'No tienes artículos pendientes de cribar a texto completo.',
+        'no_pdf'          => 'Todavía no se ha subido ningún PDF para este artículo. Súbelo para continuar.',
+        'upload_label'    => 'Archivo PDF',
+        'upload_help'     => 'Máximo según la configuración de archivos (por defecto 50 MB).',
+        'upload_btn'      => 'Subir PDF',
+        'upload_ok'       => 'PDF subido correctamente.',
+        'upload_no_file'  => 'No se seleccionó ningún archivo.',
+        'upload_not_uploaded' => 'Subida no válida.',
+        'upload_too_large' => 'El PDF supera el tamaño máximo permitido.',
+        'upload_not_pdf'  => 'El archivo no es un PDF válido.',
+        'upload_failed'   => 'No se pudo guardar el PDF en el servidor.',
+        'pages'           => '%d páginas',
+        'chat_title'      => 'Chat con el artículo (IA)',
+        'chat_empty'      => 'Pregunta lo que quieras sobre este artículo.',
+        'chat_placeholder' => 'Escribe una pregunta…',
+        'chat_send'       => 'Enviar',
+    ],
+
     'screening' => [
         'title'            => 'Cribado T/R',
         'start'            => 'Iniciar el cribado',

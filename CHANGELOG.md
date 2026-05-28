@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 8 — full text, PDF viewer & article chat:**
+  - `011_full_text.sql` migration: `reference_full_text` (FULLTEXT on
+    extracted_text) and `ai_chat_history` tables.
+  - `Services\FileStorage`: secure PDF upload — **real MIME via `finfo`** (never
+    trust the extension), size limit from the admin Files settings, UUID-style
+    filenames, stored **outside the document root** with 0600 permissions and a
+    path-traversal-safe serve check.
+  - `Services\PdfService`: text extraction via `smalot/pdfparser` when present,
+    graceful no-op otherwise.
+  - `PdfController` (upload + auth-gated streaming serve) and `ChatController`
+    (per-user/per-article chat with Claude, persisted history).
+  - `FullTextScreeningController extends ScreeningController` — full-text
+    screening reuses every mechanic of the T/A flow (blinding, conflict queue,
+    coordinator view) with `stage = 'ft'`. ScreeningController refactored to
+    parametrize the stage; TA routes moved under `/reviews/{id}/screen/`
+    consistently with `/full-text/`.
+  - `views/full_text/screen.php`: embedded PDF iframe viewer, upload form
+    when the PDF is missing, decision form with shortcuts, and a chat panel
+    that streams replies via fetch into the conversation history.
 - **Phase 7 — Claude API integration:**
   - Full `Services\ClaudeService`: `summarize`, `suggestScreeningDecision`,
     `extractStructuredData`, `assessBiasDomain`, `chatWithArticle` and

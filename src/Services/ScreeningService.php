@@ -38,10 +38,20 @@ final class ScreeningService
         return $stage === 'ft' ? 'ft_excluded' : 'ta_excluded';
     }
 
-    /** Move non-duplicate 'imported' references into the T/A screening queue. */
-    public static function startScreening(int $reviewId): int
+    /**
+     * Promote references into a screening queue:
+     *   stage = 'ta' → 'imported' becomes 'ta_screening'
+     *   stage = 'ft' → 'ta_included' becomes 'ft_screening'
+     */
+    public static function startScreening(int $reviewId, string $stage = 'ta'): int
     {
         $table = Database::table('references');
+        if ($stage === 'ft') {
+            return Database::affecting(
+                "UPDATE `{$table}` SET status = 'ft_screening' WHERE review_id = ? AND status = 'ta_included'",
+                [$reviewId]
+            );
+        }
         return Database::affecting(
             "UPDATE `{$table}` SET status = 'ta_screening' WHERE review_id = ? AND status = 'imported'",
             [$reviewId]
