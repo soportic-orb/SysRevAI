@@ -75,9 +75,7 @@ final class SettingsController
         $locale = in_array(($_POST['default_locale'] ?? 'ca'), ['ca', 'es', 'en'], true) ? $_POST['default_locale'] : 'ca';
         Config::set('app.locale', $locale, 'string', 'general', true);
         Config::set('app.timezone', trim((string) ($_POST['timezone'] ?? 'Europe/Madrid')) ?: 'Europe/Madrid', 'string', 'general');
-        Config::set('ui.accent_color', $this->sanitizeHex((string) ($_POST['accent_color'] ?? '#c9f24c')), 'string', 'general', true);
         Config::set('ui.theme', in_array(($_POST['theme'] ?? 'light'), ['light', 'dark', 'auto'], true) ? $_POST['theme'] : 'light', 'string', 'general', true);
-        Config::set('site.footer_text', trim((string) ($_POST['footer_text'] ?? '')), 'string', 'general', true);
 
         ActivityLog::record('settings.general.updated');
     }
@@ -367,8 +365,4 @@ final class SettingsController
         return $path;
     }
 
-    private function sanitizeHex(string $value): string
-    {
-        return preg_match('/^#[0-9a-fA-F]{6}$/', $value) ? strtolower($value) : '#c9f24c';
-    }
 }

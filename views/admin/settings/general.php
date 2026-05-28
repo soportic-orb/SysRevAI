@@ -5,9 +5,7 @@ declare(strict_types=1);
 $siteName = (string) (setting('site.name') ?? 'SysRevAI');
 $locale   = (string) (setting('app.locale') ?? config('app.locale', 'ca'));
 $timezone = (string) (setting('app.timezone') ?? config('app.timezone', 'Europe/Madrid'));
-$accent   = (string) (setting('ui.accent_color') ?? '#c9f24c');
 $theme    = (string) (setting('ui.theme') ?? 'light');
-$footer   = (string) (setting('site.footer_text') ?? '');
 ?>
 <h1 class="section__title"><?= e(__('admin.sections.general')) ?></h1>
 
@@ -34,24 +32,13 @@ $footer   = (string) (setting('site.footer_text') ?? '');
         </div>
     </div>
 
-    <div class="form-row form-row--split">
-        <div class="field">
-            <label class="field-label" for="accent_color"><?= e(__('admin.general.accent_color')) ?></label>
-            <input class="input input--color" id="accent_color" name="accent_color" type="color" value="<?= e($accent) ?>">
-        </div>
-        <div class="field">
-            <label class="field-label" for="theme"><?= e(__('admin.general.theme')) ?></label>
-            <select class="select" id="theme" name="theme">
-                <?php foreach (['light', 'dark', 'auto'] as $t): ?>
-                    <option value="<?= $t ?>" <?= $theme === $t ? 'selected' : '' ?>><?= e(__('admin.general.theme_' . $t)) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-    </div>
-
     <div class="field">
-        <label class="field-label" for="footer_text"><?= e(__('admin.general.footer_text')) ?></label>
-        <input class="input" id="footer_text" name="footer_text" value="<?= e($footer) ?>">
+        <label class="field-label" for="theme"><?= e(__('admin.general.theme')) ?></label>
+        <select class="select" id="theme" name="theme">
+            <?php foreach (['light', 'dark', 'auto'] as $t): ?>
+                <option value="<?= $t ?>" <?= $theme === $t ? 'selected' : '' ?>><?= e(__('admin.general.theme_' . $t)) ?></option>
+            <?php endforeach; ?>
+        </select>
     </div>
 
     <div><button type="submit" class="btn btn--primary"><?= e(__('admin.save')) ?></button></div>
