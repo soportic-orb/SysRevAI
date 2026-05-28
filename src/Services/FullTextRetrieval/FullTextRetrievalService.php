@@ -17,16 +17,24 @@ use SysRevAI\Models\RetrievalAttempt;
  */
 final class FullTextRetrievalService
 {
-    /** Built-in source classes that ship with this PR. */
+    /** Built-in source classes (used by the orchestrator and the admin panel). */
     public const SOURCE_MAP = [
-        'unpaywall' => UnpaywallSource::class,
-        'europepmc' => EuropePmcSource::class,
-        'pmc'       => PmcSource::class,
-        'openalex'  => OpenAlexSource::class,
+        'unpaywall'        => UnpaywallSource::class,
+        'europepmc'        => EuropePmcSource::class,
+        'pmc'              => PmcSource::class,
+        'openalex'         => OpenAlexSource::class,
+        'semantic_scholar' => SemanticScholarSource::class,
+        'crossref'         => CrossrefSource::class,
+        'doaj'             => DoajSource::class,
+        'biorxiv'          => BiorxivSource::class,
+        'arxiv'            => ArxivSource::class,
     ];
 
     /** Fallback priority order when the admin hasn't customised it. */
-    public const DEFAULT_PRIORITY = ['pmc', 'europepmc', 'unpaywall', 'openalex'];
+    public const DEFAULT_PRIORITY = [
+        'pmc', 'europepmc', 'unpaywall', 'openalex',
+        'semantic_scholar', 'biorxiv', 'arxiv', 'crossref', 'doaj',
+    ];
 
     /** @var array<int,FullTextSourceInterface> */
     private array $sources;
