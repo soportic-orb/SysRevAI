@@ -256,10 +256,12 @@ final class SettingsController
             }
         }
 
-        // PMC NCBI API key — only overwrite when the field is non-empty (encrypted).
-        $pmcKey = trim((string) ($_POST['sources']['pmc']['api_key'] ?? ''));
-        if ($pmcKey !== '') {
-            Config::set('fulltext.pmc.api_key', $pmcKey, 'encrypted', 'fulltext');
+        // Optional API keys — only overwrite when the field is non-empty.
+        foreach (['pmc', 'semantic_scholar'] as $keySource) {
+            $key = trim((string) ($_POST['sources'][$keySource]['api_key'] ?? ''));
+            if ($key !== '') {
+                Config::set('fulltext.' . $keySource . '.api_key', $key, 'encrypted', 'fulltext');
+            }
         }
 
         ActivityLog::record('settings.fulltext.updated');

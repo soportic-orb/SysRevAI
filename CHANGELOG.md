@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Full-text retrieval — 5 additional sources (catalog now at 9):**
+  - **`SemanticScholarSource`** — DOI/PMID → `openAccessPdf.url` via the graph
+    API; optional encrypted API key (admin field).
+  - **`CrossrefSource`** — DOI → `link[]` PDF URL when the publisher exposes
+    one; useful as a fallback and validates the canonical DOI metadata.
+  - **`DoajSource`** — DOI → Open Access journal article URL from the DOAJ
+    article index (fulltext PDF preferred, landing-page URL as backup).
+  - **`ArxivSource`** — preprints detected from arXiv DOIs (`10.48550/arXiv.*`)
+    or `arxiv.org` URLs; honours the strict 1 req/3 s rate limit.
+  - **`BiorxivSource`** — bioRxiv/medRxiv preprints from DOIs in the
+    `10.1101/` namespace; tries both servers and picks the newest version.
+  - `FullTextRetrievalService::SOURCE_MAP` and `DEFAULT_PRIORITY` updated; the
+    admin "Full-text (APIs)" section now lists nine cards with verify
+    buttons, the priority help text and the Semantic Scholar key field.
 - **Full-text retrieval — UI in review + queue worker:**
   - **References list** now shows a coloured **status dot** per row (available
     via X / not found yet / queued / not attempted) with a tooltip, plus a

@@ -17,10 +17,15 @@ $exhaustive    = (bool) (setting('fulltext.exhaustive') ?? false);
 $politeEmail   = (string) (setting('fulltext.polite_email') ?? '');
 
 $sourceLabel = [
-    'unpaywall' => 'Unpaywall',
-    'europepmc' => 'Europe PMC',
-    'pmc'       => 'PMC (NCBI)',
-    'openalex'  => 'OpenAlex',
+    'unpaywall'        => 'Unpaywall',
+    'europepmc'        => 'Europe PMC',
+    'pmc'              => 'PMC (NCBI)',
+    'openalex'         => 'OpenAlex',
+    'semantic_scholar' => 'Semantic Scholar',
+    'crossref'         => 'CrossRef',
+    'doaj'             => 'DOAJ',
+    'arxiv'            => 'arXiv',
+    'biorxiv'          => 'bioRxiv / medRxiv',
 ];
 ?>
 <h1 class="section__title"><?= e(__('admin.sections.fulltext')) ?></h1>
@@ -97,11 +102,17 @@ $sourceLabel = [
                     <label class="field-label"><?= e(__('admin.fulltext.source_email')) ?></label>
                     <input class="input" name="sources[<?= e($name) ?>][email]" type="email" value="<?= e($sEmail) ?>">
                 </div>
-                <?php if ($name === 'pmc'): ?>
+                <?php if (in_array($name, ['pmc', 'semantic_scholar'], true)): ?>
+                    <?php
+                        $keyLabel = $name === 'pmc' ? __('admin.fulltext.pmc_key') : __('admin.fulltext.s2_key');
+                        $hasKeyHere = Config::hasEncrypted('fulltext.' . $name . '.api_key')
+                            || ($name === 'pmc' && Config::hasEncrypted('pubmed.api_key'))
+                            || ($name === 'semantic_scholar' && Config::hasEncrypted('semantic_scholar.api_key'));
+                    ?>
                     <div class="field">
-                        <label class="field-label"><?= e(__('admin.fulltext.pmc_key')) ?></label>
-                        <input class="input" name="sources[pmc][api_key]" type="password" autocomplete="off"
-                               placeholder="<?= $hasKey ? '••••••  (' . e(__('admin.claude.key_set')) . ')' : '' ?>">
+                        <label class="field-label"><?= e($keyLabel) ?></label>
+                        <input class="input" name="sources[<?= e($name) ?>][api_key]" type="password" autocomplete="off"
+                               placeholder="<?= $hasKeyHere ? '••••••  (' . e(__('admin.claude.key_set')) . ')' : '' ?>">
                     </div>
                 <?php endif; ?>
             </div>
