@@ -66,8 +66,86 @@ final class ImportController
         } else {
             $result = ImportService::parse($content, $format);
         }
+
+        if (($result['refs'] ?? []) === []) {
+            Session::flash('error', __('import.preview_no_refs'));
+            redirect('/reviews/' . $rid . '/import');
+        }
+
+        // Stash the parsed refs and hand off to the preview step. Session
+        // storage is intentional: the references never reach the database
+        // until the reviewer reviews the list and clicks "Import".
+        $_SESSION['import_preview'][$rid] = [
+            'refs'     => $this->normaliseRefs($result['refs']),
+            'filename' => $filename,
+            'format'   => $format,
+            'errors'   => $result['errors'] ?? [],
+        ];
+
+        redirect('/reviews/' . $rid . '/import/preview');
+    }
+
+    /**
+     * Step 2 of the import flow — show the reviewer the parsed references
+     * so they can untick anything they don't want before persisting. The
+     * stashed preview state lives in the session under
+     * `import_preview[{reviewId}]` and is dropped on confirm / discard.
+     */
+    public function preview(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+
+        $state = $_SESSION['import_preview'][$rid] ?? null;
+        if (!is_array($state) || !is_array($state['refs'] ?? null) || $state['refs'] === []) {
+            Session::flash('error', __('import.preview_no_refs'));
+            redirect('/reviews/' . $rid . '/import');
+        }
+
+        echo View::render('import/preview', [
+            'review'   => $review,
+            'refs'     => $state['refs'],
+            'filename' => (string) ($state['filename'] ?? ''),
+            'format'   => (string) ($state['format'] ?? ''),
+            'errors'   => (array) ($state['errors'] ?? []),
+        ]);
+    }
+
+    /**
+     * Step 3 — persist only the refs the reviewer ticked. Indices map
+     * back into the stashed array so we never have to re-validate the
+     * payload coming from the browser as a reference.
+     */
+    public function confirm(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+
+        $state = $_SESSION['import_preview'][$rid] ?? null;
+        if (!is_array($state) || !is_array($state['refs'] ?? null)) {
+            Session::flash('error', __('import.preview_expired'));
+            redirect('/reviews/' . $rid . '/import');
+        }
+
+        $selected = (array) ($_POST['selected'] ?? []);
+        $picked   = [];
+        foreach ($selected as $idx) {
+            $i = (int) $idx;
+            if (isset($state['refs'][$i])) {
+                $picked[] = $state['refs'][$i];
+            }
+        }
+
+        if ($picked === []) {
+            Session::flash('error', __('import.preview_select_at_least_one'));
+            redirect('/reviews/' . $rid . '/import/preview');
+        }
+
+        $filename = (string) ($state['filename'] ?? 'imported');
+        $format   = (string) ($state['format'] ?? 'unknown');
+
         $imported = 0;
-        foreach ($result['refs'] as $ref) {
+        foreach ($picked as $ref) {
             Reference::create($rid, $ref, $filename, DeduplicationService::dedupKey($ref));
             $imported++;
         }
@@ -79,17 +157,28 @@ final class ImportController
             (int) Auth::id(),
             $filename,
             $format,
-            count($result['refs']),
+            count($state['refs']),
             $imported,
             $dedup['exact'],
-            $result['errors']
+            (array) ($state['errors'] ?? [])
         );
         ActivityLog::record('references.imported', [
             'format' => $format, 'imported' => $imported, 'duplicates' => $dedup['exact'],
         ], $rid);
 
+        unset($_SESSION['import_preview'][$rid]);
+
         Session::flash('success', __('import.result', $imported, $dedup['exact'], $dedup['fuzzy']));
         redirect('/reviews/' . $rid . '/references');
+    }
+
+    /** Drop the stashed preview without importing anything. */
+    public function discardPreview(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        unset($_SESSION['import_preview'][$rid]);
+        redirect('/reviews/' . $rid . '/import');
     }
 
     /**
@@ -112,6 +201,64 @@ final class ImportController
         ActivityLog::record('imports.logs_cleared', ['deleted' => $deleted], $rid);
         Session::flash('success', __('import.clear_done', $deleted));
         redirect('/reviews/' . $rid . '/import');
+    }
+
+    /**
+     * Coerce every parsed reference into the shape the rest of the
+     * pipeline expects. Trims strings, drops empty author / keyword
+     * entries, and caps the total so a hostile or accidental 10k-row
+     * paste can't blow up the session blob.
+     *
+     * @param  array<int,mixed> $refs
+     * @return array<int,array<string,mixed>>
+     */
+    private function normaliseRefs(array $refs): array
+    {
+        $out = [];
+        foreach ($refs as $r) {
+            if (!is_array($r)) {
+                continue;
+            }
+            $title = trim((string) ($r['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $authors = [];
+            foreach ((array) ($r['authors'] ?? []) as $a) {
+                $a = trim((string) $a);
+                if ($a !== '') {
+                    $authors[] = $a;
+                }
+            }
+            $keywords = [];
+            foreach ((array) ($r['keywords'] ?? []) as $k) {
+                $k = trim((string) $k);
+                if ($k !== '') {
+                    $keywords[] = $k;
+                }
+            }
+            $year = $r['year'] ?? null;
+            if (is_numeric($year)) {
+                $year = (int) $year;
+            } elseif (!is_int($year)) {
+                $year = null;
+            }
+            $out[] = [
+                'title'    => $title,
+                'authors'  => $authors,
+                'year'     => $year,
+                'journal'  => trim((string) ($r['journal']  ?? '')),
+                'abstract' => trim((string) ($r['abstract'] ?? '')),
+                'doi'      => trim((string) ($r['doi']      ?? '')),
+                'pmid'     => trim((string) ($r['pmid']     ?? '')),
+                'url'      => trim((string) ($r['url']      ?? '')),
+                'keywords' => $keywords,
+            ];
+            if (count($out) >= 5000) {
+                break;
+            }
+        }
+        return $out;
     }
 
     /** @return array{0:string,1:string} [content, filename] */

@@ -20,7 +20,12 @@ $id = (int) $review['id'];
         <div class="alert alert--error"><?= e((string) $err) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="/reviews/<?= $id ?>/import" class="form-grid section-card" enctype="multipart/form-data">
+    <!-- data-ai-action raises the global "working" overlay on submit so
+         the user knows we're parsing / calling Claude before bouncing
+         them to the preview screen. -->
+    <form method="post" action="/reviews/<?= $id ?>/import"
+          class="form-grid section-card" enctype="multipart/form-data"
+          data-ai-action>
         <?= csrf_field() ?>
 
         <div class="field">
