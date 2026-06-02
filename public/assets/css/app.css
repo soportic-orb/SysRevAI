@@ -1270,3 +1270,24 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .import-preview-table__unverified .icon {
     width: 12px; height: 12px;
 }
+
+/* External-search relevance indicator: 5-dot strip per result row.
+   The dots are stroke="currentColor"-style filled circles, sized to
+   match the .nav-icon family so they sit naturally next to the small
+   buttons. Filled dots use the platform's primary accent. */
+.search-external-table__relevance { width: 92px; }
+.relevance-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.relevance-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c-border);
+    flex-shrink: 0;
+}
+.relevance-dot.is-filled {
+    background: var(--c-primary-d);
+}
