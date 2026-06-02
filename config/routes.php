@@ -77,6 +77,7 @@ $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 // Reviews (literal paths before the {id} pattern).
 $router->get('/reviews', [ReviewsController::class, 'index'], ['auth']);
 $router->get('/reviews/new', [ReviewsController::class, 'newForm'], ['auth']);
+$router->post('/reviews/extract-protocol-draft', [ReviewsController::class, 'extractProtocolDraft'], ['auth']);
 $router->post('/reviews', [ReviewsController::class, 'store'], ['auth']);
 $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
