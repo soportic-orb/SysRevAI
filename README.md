@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4.svg">
   <img alt="MySQL 8.0+" src="https://img.shields.io/badge/MySQL-8.0%2B-00758f.svg">
-  <img alt="Status: in development" src="https://img.shields.io/badge/status-in%20development-orange.svg">
+  <img alt="Status: active" src="https://img.shields.io/badge/status-active-brightgreen.svg">
   <a href="https://donate.stripe.com/28EaEY6ML1FI7HH1El7wA02"><img alt="Sponsor" src="https://img.shields.io/badge/%E2%9D%A4-Sponsor-ff69b4"></a>
 </p>
 
@@ -19,10 +19,10 @@
   <a href="#español">Español</a>
 </p>
 
-> ⚠️ **Early development.** SysRevAI is being built phase by phase. The web
-> installer (welcome + system requirements) and the project foundations are in
-> place; the application features are landing incrementally. See
-> [CHANGELOG.md](CHANGELOG.md) and the roadmap below.
+> ⚠️ **Active development.** SysRevAI has been built phase by phase and the
+> end-to-end review workflow is functional. New features land continuously —
+> see [CHANGELOG.md](CHANGELOG.md) and the roadmap below for what's already
+> in and what's coming next.
 
 ---
 
@@ -42,17 +42,36 @@ installed entirely from the browser, with no command-line steps required.
 
 ### Key features
 
-- 📥 **Import** RIS, EndNote XML, PubMed XML, CSV and BibTeX.
-- 🧹 **Deduplication** — exact (DOI/PMID/normalized), fuzzy (Levenshtein/Jaro-Winkler) and AI-assisted semantic checks.
-- 🔍 **Screening** title/abstract and full-text with **double-blind** reviewer support and conflict resolution.
-- 👥 **Collaboration** — multiple reviewers, workload assignment, in-app notifications, comments, invitations.
-- 📝 **Data extraction** with customizable templates and AI assistance.
-- ⚖️ **Risk of bias** — RoB 2, ROBINS-I, Newcastle-Ottawa, JBI, with traffic-light plots.
-- 🤖 **AI** summaries, screening suggestions and per-article chat (Claude).
+#### Reviews & collaboration
+- 📋 **Protocol editor** with PICO, inclusion / exclusion criteria, screening mode and exclusion-reason lists.
+- 🤖 **AI-assisted protocol drafting** — upload a PDF / Word draft and Claude pre-fills the form. Multi-protocol documents (umbrella reviews, parent + sub-studies) propose extra reviews you can create with one click.
+- 👥 **Multi-user collaboration** — reviewers, workload assignment, in-app notifications, comments, email invitations.
+- 🔐 **Per-review token / cost badge** in the sub-nav links to a full **AI usage breakdown** (per-call cost in EUR, model used, feature).
+
+#### References — in, out and around
+- 📥 **Import** from RIS, EndNote XML, PubMed XML, CSV, BibTeX **or free-text** (Claude parses any bibliography style, chunked so 100+ references work).
+- ✅ **Preview before import** — every parsed reference shows up in a checkbox table with identifier validation (DOI / PMID detected → green, missing → red flag) before any row touches the database.
+- 🔍 **Global search across databases** — fan-out queries to **CrossRef, OpenAlex and Europe PMC**, with a per-row 5-dot **relevance** indicator and a "Send to citation converter" hand-off.
+- 🧹 **Deduplication** — exact (DOI / PMID / normalised), fuzzy (Jaro-Winkler) and AI-assisted semantic checks.
+- 📚 **Citation normaliser** — paste any bibliography (or feed it from search / a review's references) and Claude restyles every entry to **APA, Vancouver, NLM, Chicago, MLA, Harvard, AMA or IEEE**. Bulk-import selected citations into a review.
+
+#### Screening, full text & extraction
+- 🔍 **Title / abstract screening** with **double-blind** reviewer support, conflict resolution and AI screening suggestions (Claude).
+- 📄 **Full-text screening** with side-by-side PDF viewer, collapsible **per-article AI chat** (Markdown-rendered), and a "no PDF" escape hatch that records the exclusion correctly in PRISMA.
+- 🌐 **Full-text retrieval** from Unpaywall, Europe PMC, CrossRef, OpenAlex, DOAJ, arXiv, bioRxiv, Semantic Scholar and PMC — open-access only, no paywall bypass.
+- 🔬 **Scientific Copilot** — a floating, per-review chatbot that knows your protocol and the article you're currently looking at.
+- 📝 **Structured data extraction** with customisable templates and AI assistance.
+- ⚖️ **Risk of bias** — RoB 2, ROBINS-I, Newcastle-Ottawa, JBI with traffic-light plots.
+
+#### Outputs & translation
+- 📤 **Exports** — PRISMA 2020 flow diagram (SVG), CSV, Excel, Word, RevMan 5.
 - 🌐 **Translation** of abstracts, summaries and full PDFs (Google Translate), with caching.
-- 📤 **Exports** — PRISMA 2020 flow diagram, CSV, Excel, Word, RevMan 5.
-- 🛠️ **Admin panel** for all configuration (API keys stored encrypted), plus a guided **web installer**.
-- 🌍 **Multilingual UI** (Catalan, Spanish, English to start) with community-editable strings.
+
+#### Platform
+- 🛠️ **Web installer** + **admin panel** with encrypted (AES-256-GCM) API keys, granular feature toggles, monthly AI budget caps.
+- ⚖️ **Legal documents system** — built-in Privacy Policy and Terms of Use templates with placeholders ({{ADMIN}}, {{SITE}}…) and a per-language editor. Consent is recorded on every signup (incl. the installer).
+- 🌍 **Multilingual UI** (Catalan, Spanish, English) with community-editable strings.
+- 🌙 **Light / dark mode**, toast notifications, info modals, busy-state buttons and an "AI is working" overlay wired into every Claude call.
 
 ### Server requirements
 
@@ -124,19 +143,26 @@ see [`docs/full-text-retrieval.md`](docs/full-text-retrieval.md).
 
 | Phase | Scope | Status |
 |------:|-------|:------:|
-| 1 | Foundations + web installer | ✅ |
-| 2 | Admin panel & settings (encrypted) | ✅ |
-| 3 | Reviews & protocol (PICO, criteria) | ✅ |
-| 4 | Multi-user collaboration & notifications | ✅ |
-| 5 | Import & deduplication | ✅ |
-| 6 | Title/abstract screening (blinded) | ✅ |
-| 7 | Claude API integration | ✅ |
-| 8 | Full-text, PDF viewer & article chat | ✅ |
-| 9 | Data extraction | ✅ |
+| 1  | Foundations + web installer | ✅ |
+| 2  | Admin panel & settings (encrypted) | ✅ |
+| 3  | Reviews & protocol (PICO, criteria) | ✅ |
+| 4  | Multi-user collaboration & notifications | ✅ |
+| 5  | Import & deduplication | ✅ |
+| 6  | Title/abstract screening (blinded) | ✅ |
+| 7  | Claude API integration | ✅ |
+| 8  | Full-text, PDF viewer & article chat | ✅ |
+| 9  | Data extraction | ✅ |
 | 10 | Risk of bias | ✅ |
 | 11 | AI summaries & translation | ✅ |
 | 12 | Exports (PRISMA, Excel, Word, RevMan) | ✅ |
 | 13 | Polish (global search, demo data, public About) | ✅ |
+| 14 | Scientific Copilot + per-article AI chat | ✅ |
+| 15 | Legal docs system + consent audit | ✅ |
+| 16 | External bibliographic search (CrossRef / OpenAlex / Europe PMC) + relevance ranking | ✅ |
+| 17 | Citation normaliser (APA / Vancouver / NLM / Chicago / MLA / Harvard / AMA / IEEE) | ✅ |
+| 18 | AI-assisted protocol drafting + sub-study detection | ✅ |
+| 19 | AI usage page + per-review token / EUR cost badge | ✅ |
+| 20 | Import preview with per-row checkboxes + identifier validation | ✅ |
 
 ### Contributing
 
@@ -168,8 +194,16 @@ for one.
 sistemàtiques de literatura científica** de principi a fi: importació de
 referències, deduplicació, cribratge de títol/resum i text complet amb
 cegament entre revisors, extracció de dades, avaluació del risc de biaix,
-diagrames de flux PRISMA i exportacions. Incorpora **IA (API de Claude)** i
-**traducció automàtica (Google Translate)**.
+diagrames de flux PRISMA i exportacions.
+
+Incorpora **IA (API de Claude)** a totes les fases — esborrany del protocol
+a partir d'un PDF (amb detecció de subestudis), suggeriments de cribratge,
+resums, xat per article, Copilot científic per revisió i mètriques d'ús de
+tokens i cost en €. La **cerca global** consulta CrossRef, OpenAlex i Europe
+PMC amb un indicador de rellevància de 5 punts, i el **normalitzador de
+citacions** reformata qualsevol bibliografia a APA, Vancouver, NLM, Chicago,
+MLA, Harvard, AMA o IEEE. **Traducció automàtica** d'abstracts i PDFs
+amb Google Translate.
 
 - **Requisits**: PHP 8.2+, MySQL 8.0+, Apache/Nginx amb PHP-FPM. Funciona en un VPS modest.
 - **Instal·lació en 3 passos**: puja els fitxers → obre el navegador → segueix l'assistent (`/install/`).
@@ -188,8 +222,16 @@ diagrames de flux PRISMA i exportacions. Incorpora **IA (API de Claude)** i
 sistemáticas de literatura científica** de principio a fin: importación de
 referencias, deduplicación, cribado de título/resumen y texto completo con
 cegamiento entre revisores, extracción de datos, evaluación del riesgo de
-sesgo, diagramas de flujo PRISMA y exportaciones. Incorpora **IA (API de
-Claude)** y **traducción automática (Google Translate)**.
+sesgo, diagramas de flujo PRISMA y exportaciones.
+
+Incorpora **IA (API de Claude)** en todas las fases — borrador del protocolo
+a partir de un PDF (con detección de subestudios), sugerencias de cribado,
+resúmenes, chat por artículo, Copilot científico por revisión y métricas de
+uso de tokens y coste en €. La **búsqueda global** consulta CrossRef,
+OpenAlex y Europe PMC con un indicador de relevancia de 5 puntos, y el
+**normalizador de citas** reformatea cualquier bibliografía a APA,
+Vancouver, NLM, Chicago, MLA, Harvard, AMA o IEEE. **Traducción automática**
+de abstracts y PDFs con Google Translate.
 
 - **Requisitos**: PHP 8.2+, MySQL 8.0+, Apache/Nginx con PHP-FPM. Funciona en un VPS modesto.
 - **Instalación en 3 pasos**: sube los archivos → abre el navegador → sigue el asistente (`/install/`).
