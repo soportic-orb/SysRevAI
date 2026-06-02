@@ -420,7 +420,7 @@ return [
         'ai_no_key'     => 'La importació amb IA necessita una clau d\'API de Claude. Demana-la a un administrador a Configuració → Claude.',
         'ai_disabled'   => 'L\'extracció amb IA està desactivada a la configuració.',
         'ai_budget'     => 'S\'ha esgotat el pressupost mensual de IA del lloc.',
-        'ai_failed'     => 'L\'anàlisi amb IA ha fallat (%s). Prova amb menys referències o enganxa un bloc més net.',
+        'ai_failed'     => 'L\'anàlisi amb IA ha fallat (%s). Torna-ho a provar d\'aquí a una estona.',
     ],
 
     'references' => [

@@ -419,7 +419,7 @@ return [
         'ai_no_key'     => 'AI import needs a Claude API key. Ask an admin to set it under Settings → Claude.',
         'ai_disabled'   => 'AI extraction is disabled in admin settings.',
         'ai_budget'     => 'The monthly AI budget has been reached for this site.',
-        'ai_failed'     => 'AI parsing failed (%s). Try with fewer references or paste a cleaner block.',
+        'ai_failed'     => 'AI parsing failed (%s). Please try again in a moment.',
     ],
 
     'references' => [
