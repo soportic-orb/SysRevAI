@@ -136,13 +136,16 @@ a:hover { text-decoration: underline; }
 /* Theme toggle (sun / moon) in the topbar. Only one of the two SVG icons
    is visible at a time, depending on <html data-theme>. */
 .theme-toggle {
-    width: 34px; height: 34px; border-radius: 999px;
-    border: 1px solid var(--c-border); background: var(--c-surface);
+    /* Bare glyph: no pill, no border. The hit area stays comfortably
+       clickable thanks to the icon's intrinsic 18-20px size + padding,
+       but the visual is just the sun / moon. */
+    border: 0; background: transparent;
+    padding: 4px;
     color: var(--c-muted); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
-    transition: color .12s ease, border-color .12s ease, background .12s ease;
+    transition: color .12s ease;
 }
-.theme-toggle:hover { color: var(--c-text); border-color: var(--c-muted); }
+.theme-toggle:hover { color: var(--c-text); }
 .theme-toggle__icon--sun  { display: none; }
 .theme-toggle__icon--moon { display: block; }
 :root[data-theme="dark"] .theme-toggle__icon--sun  { display: block; }
