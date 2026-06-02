@@ -17,6 +17,7 @@ use SysRevAI\Controllers\Admin\ReportsController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AboutController;
+use SysRevAI\Controllers\CitationsController;
 use SysRevAI\Controllers\AiUsageController;
 use SysRevAI\Controllers\LegalController;
 use SysRevAI\Controllers\AuthController;
@@ -63,6 +64,13 @@ $router->get('/privacy', [LegalController::class, 'privacy']);
 $router->get('/terms', [LegalController::class, 'terms']);
 $router->get('/search', [SearchController::class, 'index'], ['auth']);
 $router->post('/search/import', [SearchController::class, 'importToReview'], ['auth']);
+
+// Citation normaliser — paste, search-results hand-off, and per-review hand-off.
+$router->get('/citations', [CitationsController::class, 'form'], ['auth']);
+$router->post('/citations/convert', [CitationsController::class, 'convert'], ['auth']);
+$router->post('/citations/import', [CitationsController::class, 'import'], ['auth']);
+$router->post('/citations/from-search', [CitationsController::class, 'fromSearch'], ['auth']);
+$router->post('/reviews/{id}/references/convert', [CitationsController::class, 'fromReview'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 

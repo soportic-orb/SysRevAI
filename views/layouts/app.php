@@ -84,6 +84,10 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
             <?php $iconName = 'search'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.search')) ?>
         </a>
+        <a href="/citations">
+            <?php $iconName = 'references'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.citations')) ?>
+        </a>
         <?php if (\SysRevAI\Core\Auth::hasRole('owner', 'admin')): ?>
             <a href="/admin/settings">
                 <?php $iconName = 'settings'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
