@@ -88,6 +88,7 @@ $router->post('/reviews/{id}/comments', [CommentsController::class, 'store'], ['
 
 // Import & references & duplicates.
 $router->get('/reviews/{id}/references', [ReferencesController::class, 'index'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/delete', [ReferencesController::class, 'delete'], ['auth']);
 $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
 $router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);

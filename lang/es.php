@@ -420,6 +420,12 @@ return [
         'st_ft_included'  => 'Incluida TC',
         'st_ft_excluded'  => 'Excluida TC',
         'st_extracted'    => 'Extraída',
+        'delete'            => 'Eliminar la referencia',
+        'delete_confirm'    => '¿Eliminar esta referencia? Esta acción no se puede deshacer.',
+        'delete_ok'         => 'Referencia eliminada.',
+        'delete_blocked'    => 'Esta referencia ya tiene decisiones de revisores y no se puede eliminar.',
+        'delete_forbidden'  => 'Solo el propietario de la revisión puede eliminar referencias.',
+        'delete_not_found'  => 'Referencia no encontrada en esta revisión.',
     ],
 
     'duplicates' => [
