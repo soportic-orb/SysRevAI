@@ -61,7 +61,19 @@ final class ReviewsController
         $id = Review::create($uid, $data);
         ReviewUser::add($id, $uid, 'owner', false, true);
 
-        foreach ($this->splitLines((string) ($_POST['exclusion_reasons'] ?? '')) as $i => $label) {
+        // Persist exclusion reasons. When the caller didn't send any (the
+        // AJAX-submitted sub-study cards only carry the 9 protocol fields,
+        // and the AI-extract flow doesn't seed the exclusion-reasons
+        // textarea), fall back to the platform defaults so every new
+        // review starts with a usable PRISMA-friendly set.
+        $reasons = $this->splitLines((string) ($_POST['exclusion_reasons'] ?? ''));
+        if ($reasons === []) {
+            $reasons = array_values(array_filter(
+                array_map('strval', $this->defaultReasons()),
+                static fn (string $s): bool => trim($s) !== ''
+            ));
+        }
+        foreach ($reasons as $i => $label) {
             ExclusionReason::add($id, $label, 'both', $i);
         }
 
