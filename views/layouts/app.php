@@ -6,7 +6,6 @@ declare(strict_types=1);
 /** @var string $content */
 $appName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
 $user    = auth_user();
-$version = (string) config('app.version', '0.1.0-dev');
 
 /* ── Review subnav context ──────────────────────────────────────────────────
  * Whenever the request path matches /reviews/{numeric-id}[/...], expose a
@@ -129,7 +128,7 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
 
 <footer class="appfooter">
     <span>
-        <?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?>
+        <?= e($appName) ?> · <?= e(__('footer.powered_by')) ?>
         <a class="appfooter__github"
            href="https://github.com/soportic-orb/SysRevAI"
            target="_blank" rel="noopener noreferrer">
