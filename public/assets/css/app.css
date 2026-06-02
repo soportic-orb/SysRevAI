@@ -1270,3 +1270,60 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .import-preview-table__unverified .icon {
     width: 12px; height: 12px;
 }
+
+/* Protocol form layout — wide grid with the form on the left and the
+   AI-extract helper card on the right. Collapses to a single column on
+   narrower screens. */
+.protocol-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 18px;
+    align-items: start;
+}
+.protocol-form-grid__form { min-width: 0; }
+.protocol-form-grid__ai   { position: sticky; top: 80px; }
+
+@media (max-width: 900px) {
+    .protocol-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .protocol-form-grid__ai { position: static; }
+}
+
+/* AI-extract: list of detected sub-study cards under the AI helper. */
+.ai-upload__secondaries {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--c-border);
+}
+.ai-upload__secondaries-title {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.ai-upload__secondaries-intro {
+    margin: 0 0 10px;
+    font-size: 12.5px;
+}
+.secondary-card {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    background: var(--c-bg);
+}
+.secondary-card:last-child { margin-bottom: 0; }
+.secondary-card__title {
+    margin: 0 0 4px;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+.secondary-card__question { margin: 0 0 8px; font-size: 12.5px; }
+.secondary-card__pico {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 12px;
+}
+.secondary-card__pico li { margin-bottom: 2px; }
+.secondary-card__actions { display: flex; justify-content: flex-end; }
