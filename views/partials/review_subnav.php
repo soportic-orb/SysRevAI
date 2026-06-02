@@ -81,7 +81,7 @@ $links = [
             <a class="review-subnav__ai-badge"
                href="/reviews/<?= $id ?>/ai-usage"
                title="<?= e(__('ai_usage.badge_tooltip', $aiTokensLabel, $aiEurLabel)) ?>">
-                <?php $iconName = 'euro'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                <?php $iconName = 'usage'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
                 <span class="review-subnav__ai-tokens"><?= e($aiTokensLabel) ?></span>
                 <span class="review-subnav__ai-cost">(<?= e($aiEurLabel) ?>)</span>
             </a>

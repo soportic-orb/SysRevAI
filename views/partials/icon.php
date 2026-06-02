@@ -55,10 +55,15 @@ $path = match ($iconName ?? '') {
     'x'         => '<line x1="6" y1="6" x2="18" y2="18"></line>'
                  . '<line x1="6" y1="18" x2="18" y2="6"></line>',
 
-    // Euro currency symbol for the AI-cost badge in the review sub-nav.
-    'euro'      => '<path d="M18.5 6.5A6 6 0 0 0 8 11h7"></path>'
-                 . '<path d="M15 14H8a6 6 0 0 0 10.5 4.5"></path>'
-                 . '<path d="M4 11h12"></path><path d="M4 14h12"></path>',
+    // Tabler "chart-infographic" — used for the AI-usage badge in the
+    // review sub-nav. Three trend bars next to a pie wedge: reads as
+    // "usage breakdown" at a glance and stays legible at 16px.
+    'usage'     => '<path d="M3 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path>'
+                 . '<path d="M7 3v4h4"></path>'
+                 . '<path d="M9 17l0 4"></path>'
+                 . '<path d="M17 14l0 7"></path>'
+                 . '<path d="M13 13l0 8"></path>'
+                 . '<path d="M21 12l0 9"></path>',
 
     default     => '',
 };
