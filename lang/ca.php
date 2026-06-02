@@ -85,7 +85,7 @@ return [
     'footer' => [
         'powered_by' => 'Codi obert (AGPL-3.0)',
         'github'     => 'Ves al projecte',
-        'author'     => 'Desenvolupat per Octavi Rodriguez Blanco',
+        'author'     => 'Desenvolupat per Octavi Rodríguez',
         'support'    => 'Donar suport al projecte',
         'privacy'    => 'Política de Privacitat',
         'terms'      => 'Condicions d\'ús',

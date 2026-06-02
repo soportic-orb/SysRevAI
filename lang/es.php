@@ -84,7 +84,7 @@ return [
     'footer' => [
         'powered_by' => 'Código abierto (AGPL-3.0)',
         'github'     => 'Ves al proyecto',
-        'author'     => 'Desarrollado por Octavi Rodriguez Blanco',
+        'author'     => 'Desarrollado por Octavi Rodríguez',
         'support'    => 'Apoyar el proyecto',
         'privacy'    => 'Política de Privacidad',
         'terms'      => 'Condiciones de uso',
