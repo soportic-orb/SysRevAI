@@ -26,9 +26,15 @@ Session::forget('_last_invite_link');
     <?php endif; ?>
 
     <?php if ($inviteLink): ?>
-        <div class="alert alert--success">
-            <?= e(__('team.invite_link')) ?>:<br>
+        <div class="alert alert--success invite-link-banner">
+            <strong><?= e(__('team.invite_link')) ?>:</strong>
             <code class="invite-link"><?= e((string) $inviteLink) ?></code>
+            <button type="button"
+                    class="btn btn--ghost btn--sm copy-to-clipboard"
+                    data-copy="<?= e((string) $inviteLink) ?>"
+                    data-copy-ok="<?= e(__('team.invite_link_copied')) ?>">
+                <?= e(__('team.invite_link_copy')) ?>
+            </button>
         </div>
     <?php endif; ?>
 
@@ -96,12 +102,24 @@ Session::forget('_last_invite_link');
             <div class="table-wrap">
                 <table class="table">
                     <tbody>
-                        <?php foreach ($invitations as $inv): ?>
+                        <?php foreach ($invitations as $inv):
+                            $url = \SysRevAI\Models\Invitation::inviteUrl((string) $inv['token']);
+                        ?>
                             <tr>
-                                <td><?= e((string) $inv['email']) ?> <span class="tag tag--soft"><?= e((string) $inv['role']) ?></span></td>
-                                <td class="muted"><?= e(__('team.expires')) ?>: <?= e((string) $inv['expires_at']) ?></td>
                                 <td>
-                                    <form method="post" action="/reviews/<?= $id ?>/team/revoke">
+                                    <?= e((string) $inv['email']) ?>
+                                    <span class="tag tag--soft"><?= e((string) $inv['role']) ?></span><br>
+                                    <code class="invite-link invite-link--inline"><?= e($url) ?></code>
+                                </td>
+                                <td class="muted"><?= e(__('team.expires')) ?>: <?= e((string) $inv['expires_at']) ?></td>
+                                <td class="invite-row__actions">
+                                    <button type="button"
+                                            class="btn btn--ghost btn--sm copy-to-clipboard"
+                                            data-copy="<?= e($url) ?>"
+                                            data-copy-ok="<?= e(__('team.invite_link_copied')) ?>">
+                                        <?= e(__('team.invite_link_copy')) ?>
+                                    </button>
+                                    <form method="post" action="/reviews/<?= $id ?>/team/revoke" style="display:inline">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="invitation_id" value="<?= (int) $inv['id'] ?>">
                                         <button class="btn btn--ghost btn--sm"><?= e(__('team.revoke')) ?></button>

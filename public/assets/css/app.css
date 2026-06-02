@@ -1017,6 +1017,16 @@ kbd { background: rgba(255,255,255,.25); border-radius: 4px; padding: 1px 5px; f
 .link-del:hover { color: var(--c-fail); }
 .comment__body { font-size: 14px; }
 .invite-link { display: inline-block; word-break: break-all; background: var(--c-bg); padding: 4px 8px; border-radius: 6px; font-size: 13px; }
+.invite-link--inline { max-width: 100%; }
+/* Banner row that surfaces the just-created invitation link so the
+   admin can grab it before navigating away. */
+.invite-link-banner {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.invite-link-banner code { flex: 1 1 320px; min-width: 0; }
+/* Copy-to-clipboard feedback: a brief tint so the click registers. */
+.copy-to-clipboard.is-copied { background: var(--c-ok); color: #fff; border-color: var(--c-ok); }
+.invite-row__actions { white-space: nowrap; display: flex; gap: 6px; }
 
 /* Admin layout */
 .admin { display: flex; max-width: 1080px; margin: 0 auto; gap: 28px; padding: 28px 24px 64px; }

@@ -474,3 +474,51 @@
     window.SysRevAI = window.SysRevAI || {};
     window.SysRevAI.mdRender = mdRender;
 })();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Copy-to-clipboard. Any element with [data-copy="…"] copies its
+   attribute value to the system clipboard on click and briefly swaps
+   its label to [data-copy-ok] (defaults to "Copied!") so the user
+   sees the action took. Falls back to a hidden textarea+execCommand
+   on browsers without the async clipboard API. Used by the
+   invitation-link badges on /reviews/{id}/team and /admin/users.
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+    document.addEventListener('click', function (ev) {
+        var trigger = ev.target.closest('[data-copy]');
+        if (!trigger) return;
+        ev.preventDefault();
+        var text = trigger.getAttribute('data-copy') || '';
+        if (text === '') return;
+
+        var done = function () {
+            var ok = trigger.getAttribute('data-copy-ok') || 'Copied!';
+            var orig = trigger.textContent;
+            trigger.textContent = ok;
+            trigger.classList.add('is-copied');
+            setTimeout(function () {
+                trigger.textContent = orig;
+                trigger.classList.remove('is-copied');
+            }, 1500);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
+        } else {
+            fallback();
+        }
+        function fallback() {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+            done();
+        }
+    });
+})();
