@@ -1,0 +1,146 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Public legal pages (Privacy Policy / Terms of Use).
+
+   The standalone layout drops the app chrome and presents a centered
+   reading column so the document is comfortable to read and easy to
+   print. Comes after app.css, inheriting tokens (--c-bg, --c-border, …).
+   ───────────────────────────────────────────────────────────────────────── */
+
+.legal-body {
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+}
+
+.legal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--c-border);
+    background: var(--c-surface);
+}
+
+.legal-header__home {
+    color: var(--c-text);
+    text-decoration: none;
+    font-size: 14px;
+}
+.legal-header__home:hover { color: var(--c-primary); }
+
+.legal-header__langs {
+    display: inline-flex;
+    gap: 4px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.legal-header__lang {
+    padding: 4px 10px;
+    font-size: 13px;
+    color: var(--c-muted);
+    text-decoration: none;
+    border-right: 1px solid var(--c-border);
+}
+.legal-header__lang:last-child { border-right: 0; }
+.legal-header__lang.is-active {
+    background: var(--c-primary);
+    color: var(--c-on-primary);
+}
+
+.legal-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+}
+
+.legal-title {
+    font-size: 28px;
+    margin: 0 0 24px;
+}
+
+.legal-article {
+    font-size: 15.5px;
+    line-height: 1.65;
+}
+.legal-article h2 {
+    font-size: 19px;
+    margin: 28px 0 10px;
+    color: var(--c-text);
+}
+.legal-article p,
+.legal-article li { margin: 0 0 10px; }
+.legal-article ul,
+.legal-article ol { padding-left: 22px; margin: 8px 0 14px; }
+.legal-article a { color: var(--c-primary); }
+
+/* ─── Admin editor (inside the admin layout) ───────────────────────── */
+
+.legal-admin__placeholders {
+    margin: 8px 0 16px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+}
+.legal-admin__placeholders ul {
+    margin: 6px 0 0;
+    padding-left: 20px;
+    columns: 2;
+}
+.legal-admin__placeholders code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+}
+
+.legal-admin__switch {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.legal-admin__tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--c-border);
+}
+.legal-admin__tab {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: var(--c-muted);
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+}
+.legal-admin__tab:hover { color: var(--c-text); }
+.legal-admin__tab.is-active {
+    background: var(--c-surface);
+    border-color: var(--c-border);
+    color: var(--c-text);
+    margin-bottom: -1px;
+}
+
+.legal-admin__panel { display: none; }
+.legal-admin__panel.is-active { display: block; }
+
+.legal-admin__badge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 14px;
+    font-size: 13px;
+}
+.legal-admin__badge--custom {
+    background: var(--c-alert-warn-bg, #fff4d6);
+    color: #8a5a00;
+}
+
+.legal-admin__restore { margin-top: 10px; }
+
+.legal-editor {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}

@@ -69,6 +69,19 @@ $locale = (string) ($old['locale'] ?? current_locale());
                 <?php endforeach; ?>
             </select>
         </div>
+
+        <!-- Acceptance of legal documents. We open the live preview routes
+             that the installer wires up in installer.php (see step6_preview)
+             so the admin-to-be can read the rendered templates with a
+             generic placeholder substitution before agreeing. -->
+        <label class="checkbox">
+            <input type="checkbox" name="accept_legal" value="1" required
+                   <?= !empty($old['accept_legal']) ? 'checked' : '' ?>>
+            <?= h(t('step6.accept_legal_prefix')) ?>
+            <a href="?action=preview_legal&doc=privacy" target="_blank" rel="noopener noreferrer"><?= h(t('step6.privacy_link')) ?></a>
+            <?= h(t('step6.and')) ?>
+            <a href="?action=preview_legal&doc=terms" target="_blank" rel="noopener noreferrer"><?= h(t('step6.terms_link')) ?></a>.
+        </label>
     </form>
 
     <div class="actions">

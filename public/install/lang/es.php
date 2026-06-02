@@ -150,6 +150,11 @@ return [
         'strength_weak'  => 'Débil',
         'strength_fair'  => 'Aceptable',
         'strength_strong' => 'Fuerte',
+        'accept_legal_prefix' => 'He leído y acepto la',
+        'privacy_link'   => 'Política de Privacidad',
+        'terms_link'     => 'Condiciones de Uso',
+        'and'            => 'y las',
+        'must_accept_legal' => 'Debes aceptar la Política de Privacidad y las Condiciones de Uso para continuar.',
     ],
 
     'step7' => [

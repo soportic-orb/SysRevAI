@@ -152,6 +152,11 @@ return [
         'strength_weak'  => 'Feble',
         'strength_fair'  => 'Acceptable',
         'strength_strong' => 'Forta',
+        'accept_legal_prefix' => 'He llegit i accepto la',
+        'privacy_link'   => 'Política de Privacitat',
+        'terms_link'     => 'Condicions d\'ús',
+        'and'            => 'i les',
+        'must_accept_legal' => 'Has d\'acceptar la Política de Privacitat i les Condicions d\'ús per continuar.',
     ],
 
     'step7' => [

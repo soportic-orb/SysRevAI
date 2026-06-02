@@ -24,6 +24,60 @@ if (is_locked()) {
 
 installer_session_start();
 
+/* ── Step 6 inline preview of legal documents ─────────────────────────────
+   The admin-to-be must accept Privacy + Terms before the installer lets
+   them past step 6. We can't render the public /privacy or /terms routes
+   yet (no application bootstrap, no DB), so we read the template file
+   directly and substitute the placeholders with whatever the wizard has
+   already gathered. */
+
+if (($_GET['action'] ?? '') === 'preview_legal') {
+    $doc  = (string) ($_GET['doc'] ?? 'privacy');
+    if (!in_array($doc, ['privacy', 'terms'], true)) {
+        $doc = 'privacy';
+    }
+    $loc = current_locale();
+    $tplDir = dirname(__DIR__, 2) . '/views/legal/templates';
+    $raw = is_readable("{$tplDir}/{$doc}.html") ? (string) file_get_contents("{$tplDir}/{$doc}.html") : '';
+
+    // Pull the section for the current locale; fall back to English.
+    $section = null;
+    foreach ([$loc, 'en'] as $lang) {
+        if (preg_match(
+            '#<section[^>]*data-lang="' . preg_quote($lang, '#') . '"[^>]*>(.*?)</section>#si',
+            $raw,
+            $m
+        )) {
+            $section = $m[1];
+            break;
+        }
+    }
+    $section ??= '<p>(template missing)</p>';
+
+    $admin   = $_SESSION['install']['admin'] ?? [];
+    $general = $_SESSION['install']['general'] ?? [];
+    $values = [
+        '{{ADMIN_FULL_NAME}}' => htmlspecialchars((string) ($admin['name']  ?? '—'), ENT_QUOTES, 'UTF-8'),
+        '{{ADMIN_EMAIL}}'     => htmlspecialchars((string) ($admin['email'] ?? '—'), ENT_QUOTES, 'UTF-8'),
+        '{{SITE_NAME}}'       => htmlspecialchars((string) ($general['site_name'] ?? 'SysRevAI'), ENT_QUOTES, 'UTF-8'),
+        '{{SITE_URL}}'        => htmlspecialchars((string) ($general['app_url']   ?? ''), ENT_QUOTES, 'UTF-8'),
+        '{{LAST_UPDATED}}'    => (new \DateTimeImmutable('now'))->format('Y-m-d'),
+    ];
+    $section = strtr($section, $values);
+
+    header('Content-Type: text/html; charset=utf-8');
+    $title = $doc === 'privacy' ? t('step6.privacy_link') : t('step6.terms_link');
+    echo '<!DOCTYPE html><html lang="' . h($loc) . '"><head>'
+        . '<meta charset="utf-8"><title>' . h($title) . '</title>'
+        . '<link rel="stylesheet" href="assets/installer.css">'
+        . '<style>body{padding:24px;max-width:760px;margin:0 auto;line-height:1.6;font-family:-apple-system,Segoe UI,sans-serif}'
+        . 'h1{font-size:24px}h2{font-size:18px;margin-top:24px}</style>'
+        . '</head><body><h1>' . h($title) . '</h1>'
+        . $section
+        . '</body></html>';
+    exit;
+}
+
 /* ── Handle POST actions (navigation, locale) ──────────────────────────── */
 
 $flash_error = null;
@@ -144,6 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pw    = (string) ($_POST['password'] ?? '');
                     $pw2   = (string) ($_POST['confirm'] ?? '');
                     $loc   = in_array(($_POST['preferred_lang'] ?? 'ca'), ['ca', 'es', 'en'], true) ? $_POST['preferred_lang'] : 'ca';
+                    $acceptLegal = !empty($_POST['accept_legal']);
 
                     if ($name === '') {
                         $errors[] = t('step6.name_required');
@@ -157,6 +212,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($pw !== $pw2) {
                         $errors[] = t('step6.pw_mismatch');
                     }
+                    if (!$acceptLegal) {
+                        $errors[] = t('step6.must_accept_legal');
+                    }
 
                     if ($errors === []) {
                         $_SESSION['install']['admin'] = [
@@ -168,7 +226,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         unset($_SESSION['install']['step6_errors']);
                     } else {
                         $_SESSION['install']['step6_errors'] = $errors;
-                        $_SESSION['install']['step6_old'] = ['name' => $name, 'email' => $email, 'locale' => $loc];
+                        $_SESSION['install']['step6_old'] = [
+                            'name' => $name,
+                            'email' => $email,
+                            'locale' => $loc,
+                            'accept_legal' => $acceptLegal,
+                        ];
                         $valid = false;
                     }
                     break;

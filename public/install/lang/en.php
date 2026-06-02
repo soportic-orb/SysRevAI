@@ -150,6 +150,11 @@ return [
         'strength_weak'  => 'Weak',
         'strength_fair'  => 'Fair',
         'strength_strong' => 'Strong',
+        'accept_legal_prefix' => 'I have read and accept the',
+        'privacy_link'   => 'Privacy Policy',
+        'terms_link'     => 'Terms of Use',
+        'and'            => 'and the',
+        'must_accept_legal' => 'You must accept the Privacy Policy and the Terms of Use to continue.',
     ],
 
     'step7' => [

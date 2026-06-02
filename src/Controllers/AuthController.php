@@ -171,6 +171,7 @@ final class AuthController
             'status'        => $status,
             'locale'        => (string) (setting('app.locale') ?? 'ca'),
             'is_active'     => $isActive,
+            'legal_accepted' => true,
         ]);
         ActivityLog::record('users.self_registered', ['user_id' => $id, 'manual_approval' => $manualApprove]);
 
