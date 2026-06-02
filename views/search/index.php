@@ -233,8 +233,6 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
                     <thead><tr>
                         <th class="search-external-table__check"></th>
                         <th><?= e(__('references.col_study')) ?></th>
-                        <th><?= e(__('search.col_relevance')) ?></th>
-                        <th><?= e(__('references.col_ids')) ?></th>
                         <th><?= e(__('search.sources')) ?></th>
                         <th></th>
                     </tr></thead>
@@ -281,22 +279,39 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
                                                aria-label="<?= e(__('search.select_row')) ?>">
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td class="search-external-table__study">
                                     <strong><?= e((string) ($r['title'] ?: '—')) ?></strong><br>
                                     <span class="muted">
                                         <?= e(implode('; ', array_slice($authors, 0, 3))) ?><?= count($authors) > 3 ? ' et al.' : '' ?>
                                         <?php if (!empty($r['year'])): ?> · <?= (int) $r['year'] ?><?php endif; ?>
                                         <?php if (!empty($r['journal'])): ?> · <em><?= e((string) $r['journal']) ?></em><?php endif; ?>
                                     </span>
-                                </td>
-                                <td class="search-external-table__relevance">
+                                    <?php if (!empty($r['doi']) || !empty($r['pmid'])): ?>
+                                        <div class="muted search-external-table__ids">
+                                            <?php if (!empty($r['doi'])): ?>
+                                                DOI:
+                                                <a href="https://doi.org/<?= e(rawurlencode((string) $r['doi'])) ?>"
+                                                   target="_blank" rel="noopener noreferrer"
+                                                   class="link-ext"><?= e((string) $r['doi']) ?></a>
+                                            <?php endif; ?>
+                                            <?php if (!empty($r['doi']) && !empty($r['pmid'])): ?> · <?php endif; ?>
+                                            <?php if (!empty($r['pmid'])): ?>
+                                                PMID:
+                                                <a href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode((string) $r['pmid'])) ?>/"
+                                                   target="_blank" rel="noopener noreferrer"
+                                                   class="link-ext"><?= e((string) $r['pmid']) ?></a>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
                                     <?php
-                                    // BiblioSearchService attaches both the raw
-                                    // score and the precomputed 1..5 bucket so
-                                    // the view stays free of scoring rules.
+                                    // Relevance dots — moved under the study so
+                                    // the score sits next to the article it
+                                    // grades instead of taking its own column.
+                                    // BiblioSearchService precomputes the 1..5
+                                    // bucket so the view stays scoring-rule free.
                                     $dots = max(1, min(5, (int) ($r['_relevance_dots'] ?? 1)));
                                     ?>
-                                    <span class="relevance-dots"
+                                    <span class="relevance-dots search-external-table__relevance"
                                           role="img"
                                           aria-label="<?= e(__('search.relevance_aria', $dots)) ?>"
                                           title="<?= e(__('search.relevance_aria', $dots)) ?>">
@@ -304,21 +319,6 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
                                             <span class="relevance-dot <?= $d <= $dots ? 'is-filled' : '' ?>" aria-hidden="true"></span>
                                         <?php endfor; ?>
                                     </span>
-                                </td>
-                                <td class="muted search-external-table__ids">
-                                    <?php if (!empty($r['doi'])): ?>
-                                        DOI:
-                                        <a href="https://doi.org/<?= e(rawurlencode((string) $r['doi'])) ?>"
-                                           target="_blank" rel="noopener noreferrer"
-                                           class="link-ext"><?= e((string) $r['doi']) ?></a>
-                                        <br>
-                                    <?php endif; ?>
-                                    <?php if (!empty($r['pmid'])): ?>
-                                        PMID:
-                                        <a href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode((string) $r['pmid'])) ?>/"
-                                           target="_blank" rel="noopener noreferrer"
-                                           class="link-ext"><?= e((string) $r['pmid']) ?></a>
-                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php foreach ($srcs as $src): ?>
