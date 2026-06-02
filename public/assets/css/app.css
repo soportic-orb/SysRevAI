@@ -679,6 +679,11 @@ a:hover { text-decoration: underline; }
 }
 .appfooter a { color: var(--c-muted); }
 .appfooter a:hover { color: var(--c-text); }
+.appfooter__github {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin: 0 2px;
+}
+.appfooter__github:hover { text-decoration: none; }
 .donate { color: #c2487f; font-weight: 600; }
 .donate:hover { color: #a23667; }
 
@@ -1295,20 +1300,20 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     background: var(--c-primary-d);
 }
 
-/* Citation normaliser — result rows. The normalised column wraps and
-   stays readable while the original column shrinks to a muted aside. */
+/* Citation normaliser — result rows. The two text columns share the
+   available width equally so longer originals don't get clipped to a
+   thin "muted aside" gutter. */
 .citations-results-title { margin: 18px 0 8px; }
-.citations-normalized {
-    font-size: 14px;
+.citations-normalized,
+.citations-original {
+    width: 50%;
+    font-size: 13.5px;
     line-height: 1.45;
     white-space: pre-wrap;
-}
-.citations-original {
-    font-size: 12.5px;
-    line-height: 1.4;
-    max-width: 320px;
     word-break: break-word;
+    vertical-align: top;
 }
+.citations-original { font-size: 12.5px; }
 
 /* Protocol form layout — wide grid with the form on the left and the
    AI-extract helper card on the right. Collapses to a single column on

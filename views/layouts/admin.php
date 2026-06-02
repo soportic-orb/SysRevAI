@@ -122,7 +122,16 @@ $nav = [
 </div>
 
 <footer class="appfooter">
-    <span><?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?> · <?= e(__('footer.author')) ?></span>
+    <span>
+        <?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?>
+        <a class="appfooter__github"
+           href="https://github.com/soportic-orb/SysRevAI"
+           target="_blank" rel="noopener noreferrer">
+            <?php $iconName = 'github'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('footer.github')) ?>
+        </a>
+        · <?= e(__('footer.author')) ?>
+    </span>
     <a href="/privacy"><?= e(__('footer.privacy')) ?></a>
     <a href="/terms"><?= e(__('footer.terms')) ?></a>
     <?php
