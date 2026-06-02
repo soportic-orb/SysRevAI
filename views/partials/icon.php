@@ -24,9 +24,13 @@ $path = match ($iconName ?? '') {
                  . '<rect x="14" y="3" width="7" height="7" rx="1"></rect>'
                  . '<rect x="3" y="14" width="7" height="7" rx="1"></rect>'
                  . '<rect x="14" y="14" width="7" height="7" rx="1"></rect>',
-    'reviews'   => '<path d="M9 5h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"></path>'
-                 . '<path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"></path>'
-                 . '<path d="M10 11h4"></path><path d="M10 15h4"></path>',
+    // Tabler "vocabulary" — open notebook spread, reads as a stack of
+    // reviews at a glance and keeps the same trace weight as the rest
+    // of the topbar icons.
+    'reviews'   => '<path d="M10 19h-6a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1h6a2 2 0 0 1 2 2a2 2 0 0 1 2 -2h6a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-6a2 2 0 0 0 -2 2a2 2 0 0 0 -2 -2"></path>'
+                 . '<path d="M12 5v16"></path>'
+                 . '<path d="M7 7h1"></path><path d="M7 11h1"></path>'
+                 . '<path d="M16 7h1"></path><path d="M16 11h1"></path><path d="M16 15h1"></path>',
     'search'    => '<circle cx="11" cy="11" r="6"></circle>'
                  . '<path d="m20 20-3.5-3.5"></path>',
     'settings'  => '<circle cx="12" cy="12" r="2.6"></circle>'
