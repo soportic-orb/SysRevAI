@@ -1166,6 +1166,28 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 
 .search-databases { margin: -4px 0 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
+/* Echo of the exact text the user searched for, shown above the per-source
+   breakdown so the page makes sense even when the query box scrolls out
+   of view. */
+.search-results-for {
+    margin: 8px 0 6px;
+    font-size: 14px;
+    color: var(--c-muted);
+}
+.search-results-for strong { color: var(--c-text); }
+
+/* Per-row import outcome — replaces the row's selection checkbox after a
+   submit so the user sees at a glance which references landed in the
+   review and which were rejected as duplicates. */
+.search-outcome {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+}
+.search-outcome--ok  { color: #fff; background: var(--c-ok); }
+.search-outcome--bad { color: #fff; background: var(--c-fail); }
+.search-external-table tr.is-imported  { background: color-mix(in srgb, var(--c-ok)   12%, transparent); }
+.search-external-table tr.is-duplicate { background: color-mix(in srgb, var(--c-fail) 10%, transparent); }
+
 .search-bulk-toolbar {
     display: flex;
     align-items: center;

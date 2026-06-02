@@ -217,6 +217,59 @@ final class ClaudeService
         if ($e = $this->guard('extraction')) {
             return $e;
         }
+
+        // Bibliographies pasted from Word, Zotero, journal sites, etc. often
+        // contain 20-100+ references. A single Claude call capped at 4096
+        // output tokens silently truncates the JSON array mid-way once we
+        // cross ~15 refs, and the partial array fails to parse — which is
+        // exactly the "nothing imported" symptom users reported.
+        //
+        // Strategy: split the input on reference boundaries (numbered list
+        // markers, blank-line gaps) into chunks of ~3500 chars, run each
+        // chunk through Claude with a roomy 8192 max_tokens, and merge the
+        // results. Hard infrastructure errors (no key / disabled / budget)
+        // short-circuit the loop; transient per-chunk errors only drop the
+        // failed slice so the rest of the bibliography still imports.
+        $chunks = $this->splitBibliographyIntoChunks($text);
+        if ($chunks === []) {
+            return ['ok' => false, 'error' => 'invalid_json'];
+        }
+
+        $allRefs = [];
+        $lastError = null;
+        $okChunks = 0;
+        foreach ($chunks as $chunk) {
+            $r = $this->extractReferencesChunk($chunk, $reviewId);
+            if ($r['ok']) {
+                $okChunks++;
+                foreach ($r['refs'] as $ref) {
+                    $allRefs[] = $ref;
+                }
+                continue;
+            }
+            $lastError = $r['error'];
+            // Hard config errors apply to every chunk — abort early.
+            if (in_array($lastError, ['no_api_key', 'feature_disabled', 'budget_exceeded'], true)) {
+                return ['ok' => false, 'error' => $lastError];
+            }
+        }
+
+        if ($okChunks === 0) {
+            return ['ok' => false, 'error' => $lastError ?? 'invalid_json'];
+        }
+
+        return ['ok' => true, 'refs' => $allRefs];
+    }
+
+    /**
+     * Single-chunk extraction. Shares the schema prompt with the chunked
+     * top-level entry point; the output cap is bumped to 8192 so a chunk
+     * of ~15 references comfortably fits inside a single response.
+     *
+     * @return array{ok:bool,refs?:array<int,array<string,mixed>>,error?:string}
+     */
+    private function extractReferencesChunk(string $text, ?int $reviewId): array
+    {
         $system = "You parse a free-form bibliography pasted by a researcher. The text may use APA, "
             . "Vancouver, Harvard, MLA, Chicago, numbered lists, or no consistent style at all. "
             . "Identify every distinct bibliographic reference (article, book, report, web page, "
@@ -239,7 +292,7 @@ final class ClaudeService
             $this->modelComplex,
             $system,
             [['role' => 'user', 'content' => $this->truncate($text, 50000)]],
-            4096,
+            8192,
             'extraction',
             $reviewId,
             true
@@ -548,7 +601,72 @@ final class ClaudeService
         } elseif (preg_match('/(\{.*\}|\[.*\])/s', $text, $m)) {
             $text = $m[1];
         }
-        return json_decode($text, true);
+        $decoded = json_decode($text, true);
+        if ($decoded !== null) {
+            return $decoded;
+        }
+        // Recovery: the model may have hit max_tokens mid-array, leaving
+        // either an unclosed `"references": [ {...}, {...` tail or a
+        // dangling object after the last well-formed one. Walk the string
+        // until we have a balanced run, drop everything after the last
+        // top-level "}" inside the references array, then re-close the
+        // wrapping `]}` so the partial-but-still-useful set decodes.
+        return $this->repairTruncatedJson($text);
+    }
+
+    /**
+     * Best-effort repair for a JSON payload that was cut off by max_tokens.
+     * Designed for the "references": [ {…}, {…}, {…  shape — we cannot
+     * undo arbitrary truncation, but we can recover every complete object
+     * before the cut, which is exactly what the import flow needs.
+     */
+    private function repairTruncatedJson(string $text): mixed
+    {
+        $len = strlen($text);
+        if ($len < 2) {
+            return null;
+        }
+        // Scan for the last balanced "}" inside a top-level array. We
+        // track quote / escape state so braces inside strings don't fool
+        // us. Anything after the last balanced close gets trimmed.
+        $depth = 0;
+        $inString = false;
+        $escape = false;
+        $lastSafe = -1;
+        for ($i = 0; $i < $len; $i++) {
+            $ch = $text[$i];
+            if ($escape) {
+                $escape = false;
+                continue;
+            }
+            if ($ch === '\\') {
+                $escape = true;
+                continue;
+            }
+            if ($ch === '"') {
+                $inString = !$inString;
+                continue;
+            }
+            if ($inString) {
+                continue;
+            }
+            if ($ch === '{' || $ch === '[') {
+                $depth++;
+            } elseif ($ch === '}' || $ch === ']') {
+                $depth--;
+                if ($ch === '}' && $depth === 2) {
+                    // We just closed an object that lives inside the
+                    // wrapping {"references":[ … ]} array. Anything past
+                    // this point is unsafe to keep.
+                    $lastSafe = $i;
+                }
+            }
+        }
+        if ($lastSafe < 0) {
+            return null;
+        }
+        $trimmed = substr($text, 0, $lastSafe + 1) . "]}";
+        return json_decode($trimmed, true);
     }
 
     /** @param array{ok:bool,json:mixed,error:?string} $res */
@@ -566,5 +684,75 @@ final class ClaudeService
     private function truncate(string $text, int $max): string
     {
         return mb_strlen($text) > $max ? mb_substr($text, 0, $max) : $text;
+    }
+
+    /**
+     * Cut a pasted bibliography into chunks small enough to fit comfortably
+     * inside one extraction call. We split on the boundaries that a typed
+     * or pasted bibliography is most likely to expose — numbered list
+     * markers ("1.", "[1]", "(1)") at the start of a line, then on
+     * paragraph gaps. Pieces are reassembled into chunks under
+     * $targetChars; pieces that already exceed that size on their own
+     * (one giant unstructured blob) are hard-cut as a last resort.
+     *
+     * @return list<string>
+     */
+    private function splitBibliographyIntoChunks(string $text, int $targetChars = 3500): array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return [];
+        }
+        if (mb_strlen($text) <= $targetChars) {
+            return [$text];
+        }
+
+        // Split before each numbered marker that follows a newline, OR on
+        // any run of 2+ blank lines. Both look-behinds keep the boundary
+        // marker attached to the following reference, never the previous.
+        $pieces = preg_split(
+            '/(?<=\n)(?=\s*(?:\d{1,3}[\.\)\]]\s|\[\d{1,3}\]\s))|\n{2,}/u',
+            $text
+        );
+        $pieces = is_array($pieces) ? $pieces : [$text];
+
+        $chunks = [];
+        $buf    = '';
+        foreach ($pieces as $piece) {
+            $piece = trim($piece);
+            if ($piece === '') {
+                continue;
+            }
+            if ($buf === '') {
+                $buf = $piece;
+                continue;
+            }
+            if (mb_strlen($buf) + mb_strlen($piece) + 2 <= $targetChars) {
+                $buf .= "\n\n" . $piece;
+            } else {
+                $chunks[] = $buf;
+                $buf = $piece;
+            }
+        }
+        if ($buf !== '') {
+            $chunks[] = $buf;
+        }
+
+        // Hard-cut anything that's still oversized — a wall of text with no
+        // recognisable boundaries. Each slice still goes through Claude,
+        // which is tolerant of mid-paragraph splits as long as we don't
+        // chop a single reference in the middle.
+        $hardCap = $targetChars * 2;
+        $final = [];
+        foreach ($chunks as $c) {
+            while (mb_strlen($c) > $hardCap) {
+                $final[] = mb_substr($c, 0, $hardCap);
+                $c = mb_substr($c, $hardCap);
+            }
+            if ($c !== '') {
+                $final[] = $c;
+            }
+        }
+        return $final;
     }
 }
