@@ -140,17 +140,32 @@ final class ClaudeService
         if ($e = $this->guard('extraction')) {
             return $e;
         }
-        $system = "You are extracting the protocol of a systematic literature review from a free-form document "
-            . "(PDF or Word). Return EXACTLY this JSON shape, all string fields, using empty strings when a "
-            . "field is not present in the document — never null. Preserve the document's original language. "
-            . "Inclusion / exclusion criteria should be returned as plain-text bullets separated by newlines.\n\n"
-            . '{"question":"","population":"","intervention":"","comparison":"","outcome":"",'
-            . '"study_design":"","inclusion_criteria":"","exclusion_criteria":""}';
+
+        // Documents may carry a single protocol OR a main + sub-studies
+        // (umbrella reviews, parent protocols with branches, etc.). We ask
+        // for one "primary" protocol the form pre-fills, plus an optional
+        // list of "secondaries" the UI can offer to create as separate
+        // reviews. Each entry adds a `title` so a secondary can be saved
+        // on its own without the reviewer typing one.
+        $system = "You are extracting systematic-review protocols from a free-form document (PDF or Word). "
+            . "Most documents contain ONE protocol — return it as `primary` and leave `secondaries` empty. "
+            . "When the document clearly describes additional distinct sub-studies (an umbrella review with "
+            . "branches, a parent protocol with two or more sub-reviews, etc.), return the main one as "
+            . "`primary` and each sub-study as its own entry in `secondaries`. Do NOT invent secondaries — "
+            . "if you are unsure whether something is a separate review, leave `secondaries` empty.\n\n"
+            . "Return EXACTLY this JSON shape, all string fields, using empty strings when a field is not "
+            . "present in the document — never null. Preserve the document's original language. Inclusion / "
+            . "exclusion criteria should be returned as plain-text bullets separated by newlines. The `title` "
+            . "field is a short descriptive name for the review (e.g. 'Sub-study 1: Pediatric population').\n\n"
+            . '{"primary":{"title":"","question":"","population":"","intervention":"","comparison":"",'
+            . '"outcome":"","study_design":"","inclusion_criteria":"","exclusion_criteria":""},'
+            . '"secondaries":[{"title":"","question":"","population":"","intervention":"","comparison":"",'
+            . '"outcome":"","study_design":"","inclusion_criteria":"","exclusion_criteria":""}]}';
         $res = $this->request(
             $this->modelComplex,
             $system,
             [['role' => 'user', 'content' => $this->truncate($documentText, 60000)]],
-            2048,
+            4096,
             'extraction',
             $reviewId,
             true
@@ -161,13 +176,49 @@ final class ClaudeService
         if (!is_array($res['json'])) {
             return ['ok' => false, 'error' => 'invalid_json'];
         }
-        $expected = ['question', 'population', 'intervention', 'comparison', 'outcome', 'study_design', 'inclusion_criteria', 'exclusion_criteria'];
-        $data = [];
-        foreach ($expected as $k) {
-            $v = $res['json'][$k] ?? '';
-            $data[$k] = is_string($v) ? trim($v) : '';
+
+        $expected = ['title', 'question', 'population', 'intervention', 'comparison', 'outcome', 'study_design', 'inclusion_criteria', 'exclusion_criteria'];
+        $normalise = static function (mixed $raw) use ($expected): array {
+            if (!is_array($raw)) {
+                $raw = [];
+            }
+            $out = [];
+            foreach ($expected as $k) {
+                $v = $raw[$k] ?? '';
+                $out[$k] = is_string($v) ? trim($v) : '';
+            }
+            return $out;
+        };
+
+        // Backward-compat: accept the previous flat shape ({"question":...})
+        // in case the model regresses, so the UI never gets a broken payload.
+        $primary = isset($res['json']['primary']) && is_array($res['json']['primary'])
+            ? $normalise($res['json']['primary'])
+            : $normalise($res['json']);
+
+        $secondaries = [];
+        foreach ((array) ($res['json']['secondaries'] ?? []) as $s) {
+            if (!is_array($s)) {
+                continue;
+            }
+            $row = $normalise($s);
+            // Drop noise: skip rows the model padded in but never filled.
+            if ($row['title'] === '' && $row['question'] === '' && $row['population'] === '') {
+                continue;
+            }
+            $secondaries[] = $row;
+            if (count($secondaries) >= 10) {
+                break; // sanity cap; an umbrella review rarely has more
+            }
         }
-        return ['ok' => true, 'data' => $data];
+
+        return [
+            'ok'   => true,
+            'data' => [
+                'primary'     => $primary,
+                'secondaries' => $secondaries,
+            ],
+        ];
     }
 
     public function assessBiasDomain(string $articleText, string $tool, string $domain, ?int $reviewId = null): array
