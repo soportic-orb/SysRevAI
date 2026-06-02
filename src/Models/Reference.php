@@ -99,4 +99,17 @@ final class Reference
         $table = Database::table('references');
         Database::affecting("UPDATE `{$table}` SET status = ? WHERE id = ?", [$status, $id]);
     }
+
+    /**
+     * Remove a reference. Foreign keys cascade across the schema
+     * (screening_decisions, full_text, ai_chat_history, summaries,
+     * risk_of_bias, retrieval_queue, duplicates, …), so deleting the
+     * row here cleans everything up. The on-disk PDF, if any, is the
+     * one exception — the caller is responsible for unlinking it.
+     */
+    public static function delete(int $id): void
+    {
+        $table = Database::table('references');
+        Database::affecting("DELETE FROM `{$table}` WHERE id = ?", [$id]);
+    }
 }

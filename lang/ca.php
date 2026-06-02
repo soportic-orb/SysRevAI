@@ -421,6 +421,12 @@ return [
         'st_ft_included'  => 'Inclosa TC',
         'st_ft_excluded'  => 'Exclosa TC',
         'st_extracted'    => 'Extreta',
+        'delete'            => 'Eliminar la referència',
+        'delete_confirm'    => 'Vols eliminar aquesta referència? Aquesta acció no es pot desfer.',
+        'delete_ok'         => 'Referència eliminada.',
+        'delete_blocked'    => 'Aquesta referència ja té decisions de revisors i no es pot eliminar.',
+        'delete_forbidden'  => 'Només el propietari de la revisió pot eliminar referències.',
+        'delete_not_found'  => 'Referència no trobada en aquesta revisió.',
     ],
 
     'duplicates' => [

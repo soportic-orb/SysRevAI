@@ -17,6 +17,7 @@ use SysRevAI\Core\Session;
 /** @var array $ftStatus */
 /** @var array $ftInFlight */
 /** @var bool $ftEnabled */
+/** @var bool $canDelete */
 $id = (int) $review['id'];
 $pages = (int) ceil($total / $perPage);
 $inFlight = array_flip($ftInFlight ?? []);
@@ -147,7 +148,27 @@ $qs = static function (array $extra) use ($status, $search): string {
                                         <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
-                                <td><a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a></td>
+                                <td class="ref-actions">
+                                    <a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a>
+                                    <?php
+                                    // Delete is offered only while the reference hasn't yet
+                                    // been pulled into any reviewer's decision history. We
+                                    // approximate that by the row's status; the controller
+                                    // re-checks against screening_decisions on POST so the
+                                    // client can't bypass the guard.
+                                    $canDeleteRow = $canDelete && in_array((string) $r['status'], ['imported', 'duplicate'], true);
+                                    if ($canDeleteRow):
+                                    ?>
+                                        <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/delete"
+                                              style="display:inline"
+                                              onsubmit="return confirm('<?= e(__('references.delete_confirm')) ?>');">
+                                            <?= csrf_field() ?>
+                                            <button type="submit" class="btn btn--ghost btn--sm btn--danger"
+                                                    title="<?= e(__('references.delete')) ?>"
+                                                    aria-label="<?= e(__('references.delete')) ?>">&times;</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

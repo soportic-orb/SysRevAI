@@ -78,6 +78,17 @@ final class ScreeningDecision
         );
     }
 
+    /** Has any reviewer made any decision (any stage) on this reference? */
+    public static function hasAnyForReference(int $referenceId): bool
+    {
+        $table = Database::table('screening_decisions');
+        $row = Database::selectOne(
+            "SELECT 1 FROM `{$table}` WHERE reference_id = ? LIMIT 1",
+            [$referenceId]
+        );
+        return $row !== null;
+    }
+
     public static function decidedCount(int $referenceId, string $stage): int
     {
         $table = Database::table('screening_decisions');

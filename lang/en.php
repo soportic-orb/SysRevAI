@@ -420,6 +420,12 @@ return [
         'st_ft_included'  => 'Included FT',
         'st_ft_excluded'  => 'Excluded FT',
         'st_extracted'    => 'Extracted',
+        'delete'            => 'Delete reference',
+        'delete_confirm'    => 'Delete this reference? This cannot be undone.',
+        'delete_ok'         => 'Reference deleted.',
+        'delete_blocked'    => 'This reference already has reviewer decisions and cannot be deleted.',
+        'delete_forbidden'  => 'Only the review owner can delete references.',
+        'delete_not_found'  => 'Reference not found in this review.',
     ],
 
     'duplicates' => [
