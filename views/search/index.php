@@ -4,17 +4,38 @@ declare(strict_types=1);
 
 use SysRevAI\Core\Session;
 
+use SysRevAI\Services\DeduplicationService;
+
 /** @var string $q */
 /** @var string $mode */
 /** @var array  $results */
 /** @var array  $externalMeta  per-source breakdown (count, error) */
 /** @var ?string $externalError */
 /** @var array  $openReviews */
+/** @var ?array $outcomes  ['review_id' => int, 'map' => array<string,string>] or null */
 
 $isExternal = $mode === 'external';
 $placeholder = $isExternal
     ? __('search.placeholder_external')
     : __('search.placeholder');
+
+// Outcome lookup: prebuild the dedup_key for each external row once so
+// each table iteration is a flat hashmap probe, not a recompute.
+$outcomeMap = is_array($outcomes['map'] ?? null) ? $outcomes['map'] : [];
+$outcomeFor = static function (array $r) use ($outcomeMap): ?string {
+    $key = DeduplicationService::dedupKey([
+        'title'   => (string) ($r['title'] ?? ''),
+        'authors' => (array) ($r['authors'] ?? []),
+        'year'    => $r['year'] ?? null,
+    ]);
+    if ($key !== '' && isset($outcomeMap[$key])) {
+        return $outcomeMap[$key];
+    }
+    // The controller also stashes a DOI|PMID fallback marker for rows
+    // that don't yield a dedup_key (no title, no first author).
+    $fallback = 'doi:' . (string) ($r['doi'] ?? '') . '|pmid:' . (string) ($r['pmid'] ?? '');
+    return $outcomeMap[$fallback] ?? null;
+};
 ?>
 <div class="page">
     <div class="page__head">
@@ -54,6 +75,13 @@ $placeholder = $isExternal
         <button class="btn btn--primary"
                 data-busy-label="<?= e(__('common.working')) ?>"><?= e(__('search.go')) ?></button>
     </form>
+
+    <?php if ($q !== ''): ?>
+        <p class="search-results-for">
+            <?= e(__('search.results_for')) ?>
+            <strong>«<?= e($q) ?>»</strong>
+        </p>
+    <?php endif; ?>
 
     <?php if ($isExternal): ?>
         <p class="muted search-databases">
@@ -206,16 +234,33 @@ $placeholder = $isExternal
                                 'url'      => (string) ($r['url']      ?? ''),
                                 'keywords' => array_values($keywords),
                             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                            $srcs = (array) ($r['_sources'] ?? []);
+                            $srcs    = (array) ($r['_sources'] ?? []);
+                            $outcome = $outcomeFor($r); // 'imported' | 'duplicate' | 'error' | null
+                            $rowCls  = $outcome === 'imported' ? 'is-imported'
+                                     : ($outcome === 'duplicate' ? 'is-duplicate' : '');
                         ?>
-                            <tr>
+                            <tr class="<?= e($rowCls) ?>">
                                 <td class="search-external-table__check">
-                                    <input type="checkbox"
-                                           class="search-row-check"
-                                           form="bulkImportForm"
-                                           name="selected[]"
-                                           value="<?= e((string) $rowJson) ?>"
-                                           aria-label="<?= e(__('search.select_row')) ?>">
+                                    <?php if ($outcome === 'imported'): ?>
+                                        <span class="search-outcome search-outcome--ok"
+                                              title="<?= e(__('search.outcome_imported')) ?>"
+                                              aria-label="<?= e(__('search.outcome_imported')) ?>">
+                                            <?php $iconName = 'check'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                        </span>
+                                    <?php elseif ($outcome === 'duplicate' || $outcome === 'error'): ?>
+                                        <span class="search-outcome search-outcome--bad"
+                                              title="<?= e($outcome === 'duplicate' ? __('search.outcome_duplicate') : __('search.outcome_error')) ?>"
+                                              aria-label="<?= e($outcome === 'duplicate' ? __('search.outcome_duplicate') : __('search.outcome_error')) ?>">
+                                            <?php $iconName = 'x'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <input type="checkbox"
+                                               class="search-row-check"
+                                               form="bulkImportForm"
+                                               name="selected[]"
+                                               value="<?= e((string) $rowJson) ?>"
+                                               aria-label="<?= e(__('search.select_row')) ?>">
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <strong><?= e((string) ($r['title'] ?: '—')) ?></strong><br>
@@ -225,9 +270,20 @@ $placeholder = $isExternal
                                         <?php if (!empty($r['journal'])): ?> · <em><?= e((string) $r['journal']) ?></em><?php endif; ?>
                                     </span>
                                 </td>
-                                <td class="muted">
-                                    <?php if (!empty($r['doi'])): ?>DOI: <?= e((string) $r['doi']) ?><br><?php endif; ?>
-                                    <?php if (!empty($r['pmid'])): ?>PMID: <?= e((string) $r['pmid']) ?><?php endif; ?>
+                                <td class="muted search-external-table__ids">
+                                    <?php if (!empty($r['doi'])): ?>
+                                        DOI:
+                                        <a href="https://doi.org/<?= e(rawurlencode((string) $r['doi'])) ?>"
+                                           target="_blank" rel="noopener noreferrer"
+                                           class="link-ext"><?= e((string) $r['doi']) ?></a>
+                                        <br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($r['pmid'])): ?>
+                                        PMID:
+                                        <a href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode((string) $r['pmid'])) ?>/"
+                                           target="_blank" rel="noopener noreferrer"
+                                           class="link-ext"><?= e((string) $r['pmid']) ?></a>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php foreach ($srcs as $src): ?>
