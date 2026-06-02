@@ -193,6 +193,11 @@ final class ReviewsController
         // leaves a trace of what was asked.
         CopilotMessage::add($rid, $uid, 'user', $message);
 
+        // Page context (current screen + reference being reviewed) is
+        // supplied by the front end. Sanitised here so a malicious client
+        // can't sneak in fields from other reviews.
+        $pageContext = $this->sanitisePageContext($body['page_context'] ?? null, $rid);
+
         $result = ClaudeService::fromSettings()->copilotChat(
             $review,
             Review::pico($review),
@@ -200,6 +205,7 @@ final class ReviewsController
             $history,
             $message,
             $rid,
+            $pageContext,
         );
 
         if (!$result['ok']) {
@@ -230,6 +236,55 @@ final class ReviewsController
         CopilotMessage::clear((int) $id, (int) Auth::id());
         ActivityLog::record('copilot.cleared', [], (int) $id);
         echo json_encode(['ok' => true]);
+    }
+
+    /**
+     * Validate the client-supplied page context. Returns null when nothing
+     * meaningful is provided. The reference_id is always re-loaded from the
+     * database and must belong to this review — that way a tampered POST
+     * cannot leak references from other reviews.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function sanitisePageContext(mixed $raw, int $reviewId): ?array
+    {
+        if (!is_array($raw)) {
+            return null;
+        }
+        $allowedPages = ['titleabstract-screening', 'fulltext-screening', 'extraction', 'rob'];
+        $page = (string) ($raw['page'] ?? '');
+        if (!in_array($page, $allowedPages, true)) {
+            return null;
+        }
+        $out = ['page' => $page];
+
+        $refId = isset($raw['reference_id']) ? (int) $raw['reference_id'] : 0;
+        if ($refId > 0) {
+            $ref = \SysRevAI\Models\Reference::find($refId);
+            if ($ref !== null && (int) $ref['review_id'] === $reviewId) {
+                $out['reference_id']    = $refId;
+                $out['reference_title'] = (string) ($ref['title'] ?? '');
+                $out['reference_year']  = (int) ($ref['year'] ?? 0);
+                $out['reference_journal'] = (string) ($ref['journal'] ?? '');
+                $out['reference_doi']   = (string) ($ref['doi'] ?? '');
+                $out['reference_pmid']  = (string) ($ref['pmid'] ?? '');
+                $out['reference_abstract'] = (string) ($ref['abstract'] ?? '');
+                // Pull a slice of the article body when available so the
+                // Copilot can answer content questions during full-text
+                // screening — only on the FT page, to keep prompts small.
+                if ($page === 'fulltext-screening') {
+                    try {
+                        $ft = \SysRevAI\Models\ReferenceFullText::find($refId);
+                        if (is_array($ft) && !empty($ft['extracted_text'])) {
+                            $out['reference_full_text_excerpt'] = mb_substr((string) $ft['extracted_text'], 0, 20000);
+                        }
+                    } catch (\Throwable) {
+                        // ReferenceFullText optional — fall through silently.
+                    }
+                }
+            }
+        }
+        return $out;
     }
 
     public function archive(string $id): void

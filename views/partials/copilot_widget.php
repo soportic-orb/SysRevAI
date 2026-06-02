@@ -180,10 +180,20 @@ $copilotReviewId = (int) $reviewSubnav['id'];
         sending = true;
         var typing = appendTyping();
 
+        /* Page context (when the host page provides one) lets the Copilot
+           answer questions about the article the reviewer is currently
+           looking at. It is read live on every send so SPAs / hot view
+           changes are reflected. */
+        var pageContext = window.SysRevAICopilotContext || null;
+
         fetch(sendUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-            body: JSON.stringify({ _csrf: csrfToken, message: text })
+            body: JSON.stringify({
+                _csrf: csrfToken,
+                message: text,
+                page_context: pageContext
+            })
         })
         .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })
         .then(function (res) {

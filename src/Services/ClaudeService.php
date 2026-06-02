@@ -320,7 +320,7 @@ final class ClaudeService
      * @param string                                         $userMessage Latest user message.
      * @return array{ok:bool,reply?:string,error?:string}
      */
-    public function copilotChat(array $review, array $pico, array $metrics, array $history, string $userMessage, ?int $reviewId = null): array
+    public function copilotChat(array $review, array $pico, array $metrics, array $history, string $userMessage, ?int $reviewId = null, ?array $pageContext = null): array
     {
         if ($e = $this->guard('copilot')) {
             return $e;
@@ -345,14 +345,23 @@ final class ClaudeService
             . " • Help with methodology questions about systematic reviews (PRISMA, screening, risk of bias, "
             . "data extraction, meta-analysis).\n"
             . " • Answer questions about THIS review based on the protocol context below.\n"
+            . " • When a CURRENT PAGE CONTEXT is provided, you also know which article the user is "
+            . "currently screening — answer questions about its title, abstract or (if the full-text excerpt "
+            . "is present) its content.\n"
             . " • Suggest concrete next steps the team can take.\n"
-            . " • If asked about specific articles, remind the user that you only see metadata from the "
-            . "protocol unless they paste excerpts.\n\n"
+            . " • If asked about a specific article that is NOT in your current page context, remind the user "
+            . "to open that article first so you can see its metadata.\n\n"
             . "Tone: warm but professional, concise, evidence-aware. Reply in the same language as the user's "
             . "question. Use plain prose with short paragraphs; only use bullet lists when really helpful. "
             . "Never invent facts — if you don't know, say so and propose how to find out.\n\n"
             . "REVIEW CONTEXT (JSON):\n"
             . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        if (is_array($pageContext) && $pageContext !== []) {
+            $system .= "\n\nCURRENT PAGE CONTEXT (JSON) — the user is right now on this screen of the "
+                . "platform; treat the reference fields, when present, as the article they are looking at:\n"
+                . json_encode($pageContext, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        }
 
         $messages = [];
         // Keep at most the last 16 turns to stay within token budget while
