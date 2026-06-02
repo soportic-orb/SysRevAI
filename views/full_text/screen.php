@@ -264,9 +264,13 @@ window.SysRevAICopilotContext = {
             var msg = ta.value.trim();
             if (!msg) return;
             appendBubble('user', msg);
+            /* Snapshot the form BEFORE clearing the textarea — otherwise
+               new FormData(cf) sees the empty input and the server returns
+               "invalid_message". */
+            var data = new FormData(cf);
+            data.set('message', msg);
             ta.value = '';
             var thinking = appendBubble('assistant', '…');
-            var data = new FormData(cf);
             fetch(cf.getAttribute('data-url'), { method: 'POST', body: data })
                 .then(function (r) {
                     return r.json().catch(function () { return { ok: false, error: 'http_' + r.status }; });
