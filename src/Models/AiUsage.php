@@ -55,4 +55,23 @@ final class AiUsage
             'cost_usd'      => (float) ($row['cost'] ?? 0),
         ];
     }
+
+    /**
+     * Itemised usage log for a review — one row per Claude call, newest
+     * first. Used by the AI usage page so the user can see exactly where
+     * the token budget went.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public static function listForReview(int $reviewId, int $limit = 200): array
+    {
+        $table = Database::table('ai_usage');
+        $limit = max(1, min($limit, 1000));
+        return Database::select(
+            "SELECT id, feature, model, input_tokens, output_tokens, cost_usd, created_at
+             FROM `{$table}` WHERE review_id = ?
+             ORDER BY id DESC LIMIT {$limit}",
+            [$reviewId]
+        );
+    }
 }

@@ -527,6 +527,18 @@ final class ClaudeService
         return round(($inputTokens / 1_000_000 * $inP) + ($outputTokens / 1_000_000 * $outP), 5);
     }
 
+    /**
+     * Public USD-per-million-tokens table for the supported models, so
+     * the AI usage page can show users which rate was applied without
+     * importing the private constant.
+     *
+     * @return array<string,array{0:float,1:float}>
+     */
+    public static function pricingTable(): array
+    {
+        return self::PRICES;
+    }
+
     /** Tolerantly extract a JSON object from a model reply (handles ```json fences). */
     public function extractJson(string $text): mixed
     {

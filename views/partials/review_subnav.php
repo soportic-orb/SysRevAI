@@ -15,9 +15,29 @@ declare(strict_types=1);
  */
 
 use SysRevAI\Core\Auth;
+use SysRevAI\Models\AiUsage;
 
 $id      = (int) $review['id'];
 $isOwner = (int) $review['owner_id'] === (int) Auth::id();
+
+// AI-spend badge totals — best-effort: an exception here (table missing
+// in a partially-migrated install, transient DB blip) must not block the
+// page render. Cheap aggregate query covered by the existing index on
+// (review_id).
+try {
+    $aiTotals = AiUsage::forReview($id);
+} catch (\Throwable) {
+    $aiTotals = ['input_tokens' => 0, 'output_tokens' => 0, 'cost_usd' => 0.0];
+}
+$aiTokens = (int) $aiTotals['input_tokens'] + (int) $aiTotals['output_tokens'];
+$aiUsdToEur = (float) (setting('currency.usd_to_eur') ?? 0.92);
+$aiEur = (float) $aiTotals['cost_usd'] * $aiUsdToEur;
+$aiEurLabel = $aiEur < 0.005
+    ? number_format($aiEur, 4, ',', '.') . ' €'
+    : number_format($aiEur, $aiEur < 1 ? 4 : 2, ',', '.') . ' €';
+$aiTokensLabel = $aiTokens >= 1000
+    ? number_format($aiTokens / 1000, 1, ',', '.') . 'k'
+    : (string) $aiTokens;
 
 /** @var array<int,array{key:string,url:string,label:string,style:string,icon?:string,owner?:bool}> $links */
 $links = [
@@ -54,6 +74,17 @@ $links = [
                     </button>
                 </form>
             <?php endif; ?>
+
+            <!-- AI-spend badge: live token / EUR totals for this review,
+                 linking to the per-call breakdown. Gray surface, lime
+                 text matches the platform's primary accent. -->
+            <a class="review-subnav__ai-badge"
+               href="/reviews/<?= $id ?>/ai-usage"
+               title="<?= e(__('ai_usage.badge_tooltip', $aiTokensLabel, $aiEurLabel)) ?>">
+                <?php $iconName = 'euro'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                <span class="review-subnav__ai-tokens"><?= e($aiTokensLabel) ?></span>
+                <span class="review-subnav__ai-cost">(<?= e($aiEurLabel) ?>)</span>
+            </a>
         </div>
         <div class="review-subnav__actions">
             <?php foreach ($links as $link): ?>

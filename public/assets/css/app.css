@@ -182,6 +182,32 @@ a:hover { text-decoration: underline; }
 .review-subnav__name:hover { text-decoration: none; color: var(--c-text); opacity: .82; }
 .review-subnav__archive { margin-left: 4px; }
 
+/* Live AI-spend badge to the right of the Archive button.
+   Lime-green text on a soft gray pill so it reads at a glance without
+   competing with the workflow buttons. The link inherits hover from
+   the underlying anchor. */
+.review-subnav__ai-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-left: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--c-border);
+    border-radius: 999px;
+    background: var(--c-surface-2);
+    color: var(--c-primary-d);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    white-space: nowrap;
+}
+.review-subnav__ai-badge:hover {
+    text-decoration: none;
+    border-color: var(--c-primary-d);
+    color: var(--c-primary-d);
+}
+.review-subnav__ai-tokens { color: var(--c-primary-d); }
+.review-subnav__ai-cost   { color: var(--c-primary-d); opacity: .85; }
+
 /* All actions in a single horizontal line. If they don't fit, the row
    scrolls horizontally instead of wrapping — keeps the bar to a fixed
    2-row height across viewports. */
@@ -1166,3 +1192,26 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     gap: 6px;
 }
 .search-row-import__select { max-width: 200px; }
+
+/* AI usage page + small utilities used across listing tables. */
+.table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table--compact th, .table--compact td { padding: 6px 10px; font-size: 13px; }
+
+.ai-usage-note { margin: -4px 0 16px; font-size: 13px; }
+
+.ai-usage-pricing { margin-top: 18px; }
+.ai-usage-pricing > summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--c-muted);
+    margin-bottom: 8px;
+}
+.ai-usage-pricing > summary:hover { color: var(--c-text); }
+.ai-usage-pricing[open] > summary { color: var(--c-text); }
+
+/* Import-history "Clear list" form sits below the table, right-aligned. */
+.import-clear-form {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}

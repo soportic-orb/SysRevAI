@@ -34,7 +34,10 @@ $id = (int) $review['id'];
             <span class="field-help"><?= e(__('import.format_help')) ?></span>
         </div>
 
-        <div class="field">
+        <!-- Hidden when the user picks "Free text (AI)" because the file
+             upload field doesn't apply to that mode — the textarea below
+             is the only valid input. -->
+        <div class="field" id="fileField" data-hide-on-freetext>
             <label class="field-label" for="file"><?= e(__('import.file')) ?></label>
             <input class="input" id="file" name="file" type="file" accept=".ris,.nbib,.bib,.csv,.xml,.enw,.txt">
             <span class="field-help"><?= e(__('import.file_help')) ?></span>
@@ -52,11 +55,22 @@ $id = (int) $review['id'];
     <script>
     /* Show the global "AI is working" overlay only when the user chose
        the AI-driven free-text format. Other formats are parsed locally
-       and the regular page navigation is fast enough not to need it. */
+       and the regular page navigation is fast enough not to need it.
+       Also toggles the visibility of fields marked [data-hide-on-freetext]
+       so the file picker disappears the moment the user picks AI mode. */
     (function () {
         var form = document.querySelector('form[action$="/import"]');
         var fmt = document.getElementById('format');
         if (!form || !fmt) return;
+
+        var hideTargets = document.querySelectorAll('[data-hide-on-freetext]');
+        function syncFreetext() {
+            var hide = fmt.value === 'freetext';
+            hideTargets.forEach(function (el) { el.hidden = hide; });
+        }
+        fmt.addEventListener('change', syncFreetext);
+        syncFreetext();
+
         form.addEventListener('submit', function () {
             if (fmt.value === 'freetext' && window.SysRevAI && window.SysRevAI.showAiOverlay) {
                 window.SysRevAI.showAiOverlay();
@@ -84,6 +98,17 @@ $id = (int) $review['id'];
                     </tbody>
                 </table>
             </div>
+            <!-- Owner-only escape hatch: wipe the import audit list. The
+                 references the imports created are not deleted (that's a
+                 separate destructive action on the References page). -->
+            <form method="post" action="/reviews/<?= $id ?>/import/clear-logs"
+                  class="import-clear-form"
+                  onsubmit="return confirm('<?= e(__('import.clear_confirm')) ?>');">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn--ghost btn--sm btn--danger">
+                    <?= e(__('import.clear_btn')) ?>
+                </button>
+            </form>
         </div>
     <?php endif; ?>
 </div>
