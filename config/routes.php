@@ -11,6 +11,7 @@ declare(strict_types=1);
 | state-changing requests automatically.
 */
 
+use SysRevAI\Controllers\Admin\LegalSettingsController;
 use SysRevAI\Controllers\Admin\MaintenanceController;
 use SysRevAI\Controllers\Admin\ReportsController;
 use SysRevAI\Controllers\Admin\SettingsController;
@@ -191,6 +192,16 @@ $router->post('/admin/settings/fulltext/verify', [SettingsController::class, 've
 $router->post('/admin/settings/fulltext/test', [SettingsController::class, 'testFulltextChain'], $admin);
 $router->post('/admin/settings/files/install', [SettingsController::class, 'installDependency'], $admin);
 $router->post('/admin/settings/{section}', [SettingsController::class, 'save'], $admin);
+
+// Old admin → settings → legal URL kept alive as a redirect for stale bookmarks.
+$router->get('/admin/settings/legal', static function (): void {
+    redirect('/admin/legal/privacy');
+}, $admin);
+
+// Admin → Legal documents.
+$router->get('/admin/legal/{type}', [LegalSettingsController::class, 'edit'], $admin);
+$router->post('/admin/legal/{type}/{language}', [LegalSettingsController::class, 'save'], $admin);
+$router->post('/admin/legal/{type}/{language}/restore', [LegalSettingsController::class, 'restore'], $admin);
 
 // Admin → Users (order matters: literal paths before the {id} pattern).
 $router->get('/admin/users', [UsersController::class, 'index'], $admin);

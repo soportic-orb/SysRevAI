@@ -75,9 +75,15 @@ final class User
     public static function create(array $data): int
     {
         $table = Database::table('users');
+        // legal_accepted_at: when the caller passes true we stamp the row
+        // with NOW(); when missing we leave it NULL so the caller can decide
+        // (some internal flows, e.g. coordinator-created reviewers, may not
+        // have an explicit consent step yet).
+        $stampLegal = !empty($data['legal_accepted']);
         return Database::insert(
-            "INSERT INTO `{$table}` (name,email,password_hash,role,status,locale,is_active,email_verified_at)
-             VALUES (?,?,?,?,?,?,?,NOW())",
+            "INSERT INTO `{$table}`
+                (name,email,password_hash,role,status,locale,is_active,email_verified_at,legal_accepted_at)
+             VALUES (?,?,?,?,?,?,?, NOW(), " . ($stampLegal ? 'NOW()' : 'NULL') . ")",
             [
                 $data['name'],
                 $data['email'],

@@ -519,11 +519,31 @@ function create_admin(array $cfg, array $admin): array
     try {
         $pdo    = db_connect($cfg, true);
         $prefix = (string) $cfg['prefix'];
-        $stmt = $pdo->prepare(
-            "INSERT INTO `{$prefix}users`
-                (`name`,`email`,`password_hash`,`role`,`status`,`locale`,`is_active`,`email_verified_at`)
-             VALUES (?,?,?, 'owner','active', ?, 1, NOW())"
-        );
+        // The legal_accepted_at column is added by migration 022. We use it
+        // when present (fresh installs always include it); older databases
+        // installed before the migration ran would not, so we degrade
+        // gracefully by checking the column first.
+        $hasLegalCol = false;
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM `{$prefix}users` LIKE 'legal_accepted_at'");
+            $hasLegalCol = $col !== false && $col->fetch(\PDO::FETCH_ASSOC) !== false;
+        } catch (\Throwable) {
+            // ignore — fall back to the legacy insert.
+        }
+
+        if ($hasLegalCol) {
+            $stmt = $pdo->prepare(
+                "INSERT INTO `{$prefix}users`
+                    (`name`,`email`,`password_hash`,`role`,`status`,`locale`,`is_active`,`email_verified_at`,`legal_accepted_at`)
+                 VALUES (?,?,?, 'owner','active', ?, 1, NOW(), NOW())"
+            );
+        } else {
+            $stmt = $pdo->prepare(
+                "INSERT INTO `{$prefix}users`
+                    (`name`,`email`,`password_hash`,`role`,`status`,`locale`,`is_active`,`email_verified_at`)
+                 VALUES (?,?,?, 'owner','active', ?, 1, NOW())"
+            );
+        }
         $stmt->execute([
             $admin['name'],
             $admin['email'],

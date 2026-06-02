@@ -25,7 +25,7 @@ $nav = [
     'fulltext'    => '/admin/settings/fulltext',
     'reports'     => '/admin/reports/fulltext-coverage',
     'maintenance' => '/admin/maintenance',
-    'legal'       => '/admin/settings/legal',
+    'legal'       => '/admin/legal/privacy',
     'about'       => '/admin/settings/about',
 ];
 ?>
