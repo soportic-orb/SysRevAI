@@ -106,7 +106,29 @@ final class ReviewsController
      */
     public function extractProtocol(string $id): void
     {
-        $review = $this->loadOrDeny((int) $id, true);
+        $this->loadOrDeny((int) $id, true);
+        $this->runProtocolExtraction((int) $id);
+    }
+
+    /**
+     * Same as extractProtocol() but for the "Create a new review" form,
+     * where there's no review row yet. Any logged-in user can use it —
+     * the result is just JSON sent back to populate the form, no DB
+     * writes happen until the user actually submits the new-review form.
+     */
+    public function extractProtocolDraft(): void
+    {
+        $this->runProtocolExtraction(null);
+    }
+
+    /**
+     * Shared file-handling + Claude-call body for both extractProtocol()
+     * (existing review) and extractProtocolDraft() (new-review form).
+     * Emits the JSON response directly; the caller's job is just to
+     * gate access correctly.
+     */
+    private function runProtocolExtraction(?int $reviewId): void
+    {
         header('Content-Type: application/json; charset=utf-8');
 
         $file = $_FILES['document'] ?? null;
@@ -149,14 +171,14 @@ final class ReviewsController
             return;
         }
 
-        $result = ClaudeService::fromSettings()->extractProtocolFromText($text, (int) $id);
+        $result = ClaudeService::fromSettings()->extractProtocolFromText($text, $reviewId);
         if (!$result['ok']) {
-            ActivityLog::record('review.protocol_extract.failed', ['error' => $result['error'] ?? 'unknown'], (int) $id);
+            ActivityLog::record('review.protocol_extract.failed', ['error' => $result['error'] ?? 'unknown'], $reviewId);
             http_response_code(502);
             echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'ai_failed']);
             return;
         }
-        ActivityLog::record('review.protocol_extract.ok', [], (int) $id);
+        ActivityLog::record('review.protocol_extract.ok', [], $reviewId);
         echo json_encode(['ok' => true, 'data' => $result['data']], JSON_UNESCAPED_UNICODE);
     }
 

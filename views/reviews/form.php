@@ -14,8 +14,15 @@ $title  = (string) ($review['title'] ?? '');
 $mode   = (string) ($review['screening_mode'] ?? 'double_blind');
 $pilot  = (int) ($review['pilot_count'] ?? 50);
 $reqRev = (int) ($review['reviewers_required'] ?? 2);
+
+// AI-extract endpoint: the existing review has its own URL; new-review
+// flow uses the no-id draft endpoint. Either way the response shape is
+// identical, so the script block below is the same on both pages.
+$extractUrl = $isEdit
+    ? '/reviews/' . (int) $review['id'] . '/protocol/extract'
+    : '/reviews/extract-protocol-draft';
 ?>
-<div class="page page--narrow">
+<div class="page">
     <div class="page__head">
         <h1 class="page__title"><?= e($isEdit ? __('reviews.edit_protocol') : __('reviews.new')) ?></h1>
     </div>
@@ -24,26 +31,14 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
         <div class="alert alert--error"><?= e((string) $err) ?></div>
     <?php endif; ?>
 
-    <?php if ($isEdit): ?>
-        <div class="section-card ai-upload" id="protocolUpload">
-            <h2 class="section__subtitle"><?= e(__('reviews.ai_upload_title')) ?></h2>
-            <p class="section__intro"><?= e(__('reviews.ai_upload_intro')) ?></p>
-            <div class="ai-upload__row">
-                <input class="input" type="file" id="protocolFile" name="document"
-                       accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-                <button type="button" class="btn btn--primary" id="extractBtn"
-                        data-url="/reviews/<?= (int) $review['id'] ?>/protocol/extract"
-                        data-csrf="<?= e(csrf_token()) ?>"
-                        data-loading="<?= e(__('reviews.ai_upload_running')) ?>">
-                    <?= e(__('reviews.ai_upload_analyze')) ?>
-                </button>
-            </div>
-            <p class="ai-upload__status muted" id="extractStatus" hidden></p>
-            <p class="field-help"><?= e(__('reviews.ai_upload_help')) ?></p>
-        </div>
-    <?php endif; ?>
-
-    <form method="post" action="<?= e($formAction) ?>" class="form-grid section-card" id="protocolForm">
+    <!-- Two-column layout: the protocol form lives on the left so the
+         reviewer keeps their primary attention there, and the AI-assist
+         card sits to the right as an opt-in shortcut. On narrow screens
+         the grid collapses and the AI card stacks below the form. -->
+    <div class="protocol-form-grid">
+        <form method="post" action="<?= e($formAction) ?>"
+              class="form-grid section-card protocol-form-grid__form"
+              id="protocolForm">
         <?= csrf_field() ?>
 
         <div class="field">
@@ -108,10 +103,27 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
             <button type="submit" class="btn btn--primary"><?= e($isEdit ? __('admin.save') : __('reviews.create')) ?></button>
             <a class="btn btn--ghost" href="<?= $isEdit ? '/reviews/' . (int) $review['id'] : '/reviews' ?>"><?= e(__('reviews.cancel')) ?></a>
         </div>
-    </form>
+        </form>
+
+        <aside class="section-card ai-upload protocol-form-grid__ai" id="protocolUpload">
+            <h2 class="section__subtitle"><?= e(__('reviews.ai_upload_title')) ?></h2>
+            <p class="section__intro"><?= e(__('reviews.ai_upload_intro')) ?></p>
+            <div class="ai-upload__row">
+                <input class="input" type="file" id="protocolFile" name="document"
+                       accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <button type="button" class="btn btn--primary" id="extractBtn"
+                        data-url="<?= e($extractUrl) ?>"
+                        data-csrf="<?= e(csrf_token()) ?>"
+                        data-loading="<?= e(__('reviews.ai_upload_running')) ?>">
+                    <?= e(__('reviews.ai_upload_analyze')) ?>
+                </button>
+            </div>
+            <p class="ai-upload__status muted" id="extractStatus" hidden></p>
+            <p class="field-help"><?= e(__('reviews.ai_upload_help')) ?></p>
+        </aside>
+    </div>
 </div>
 
-<?php if ($isEdit): ?>
 <script>
 (function () {
     var btn = document.getElementById('extractBtn');
@@ -185,4 +197,3 @@ $reqRev = (int) ($review['reviewers_required'] ?? 2);
     });
 })();
 </script>
-<?php endif; ?>

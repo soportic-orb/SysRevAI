@@ -1270,3 +1270,22 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .import-preview-table__unverified .icon {
     width: 12px; height: 12px;
 }
+
+/* Protocol form layout — wide grid with the form on the left and the
+   AI-extract helper card on the right. Collapses to a single column on
+   narrower screens. */
+.protocol-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 18px;
+    align-items: start;
+}
+.protocol-form-grid__form { min-width: 0; }
+.protocol-form-grid__ai   { position: sticky; top: 80px; }
+
+@media (max-width: 900px) {
+    .protocol-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .protocol-form-grid__ai { position: static; }
+}
