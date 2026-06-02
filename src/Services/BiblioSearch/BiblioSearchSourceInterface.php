@@ -32,7 +32,12 @@ interface BiblioSearchSourceInterface
      * Sources MUST NOT throw on transport / parsing errors — they return
      * an empty array and the aggregator surfaces the failure to the user.
      *
+     * The optional $filters value object carries the user's eligibility
+     * criteria (year range, study types, …). Adapters honour what their
+     * upstream API can express natively and ignore the rest — the
+     * aggregator post-filters when needed.
+     *
      * @return list<array<string,mixed>>
      */
-    public function search(string $query, int $limit = 20): array;
+    public function search(string $query, int $limit = 20, ?BiblioSearchFilters $filters = null): array;
 }

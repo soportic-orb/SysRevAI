@@ -1193,6 +1193,27 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 
 .search-databases { margin: -4px 0 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
+/* External-search eligibility filters: a compact three-row form sitting
+   between the databases tag list and the results table. */
+.search-filters {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    background: var(--c-bg);
+}
+.search-filters__row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    margin-bottom: 8px;
+}
+.search-filters__row:last-child { margin-bottom: 0; }
+.search-filters__study-types {
+    display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+}
+.input--sm  { padding: 4px 8px; font-size: 13px; max-width: 100px; }
+.select--sm { padding: 4px 8px; font-size: 13px; }
+.checkbox--inline { font-size: 13px; }
+
 /* Echo of the exact text the user searched for, shown above the per-source
    breakdown so the page makes sense even when the query box scrolls out
    of view. */

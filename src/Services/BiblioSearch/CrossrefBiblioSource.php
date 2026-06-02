@@ -22,16 +22,36 @@ final class CrossrefBiblioSource extends BaseHttpBiblioSource
         return 'crossref';
     }
 
-    public function search(string $query, int $limit = 20): array
+    public function search(string $query, int $limit = 20, ?BiblioSearchFilters $filters = null): array
     {
         $isDoi = preg_match('#^10\.\d{4,9}/\S+$#i', $query) === 1;
-        $url = $isDoi
-            ? self::ENDPOINT . '/' . rawurlencode($query)
-            : self::ENDPOINT . '?' . http_build_query([
+        if ($isDoi) {
+            $url = self::ENDPOINT . '/' . rawurlencode($query);
+        } else {
+            $params = [
                 'query.bibliographic' => $query,
                 'rows'                => max(1, min($limit, 50)),
                 'select'              => 'DOI,title,author,issued,container-title,abstract,URL,subject,type',
-            ]);
+            ];
+            // CrossRef expresses the year range via two filter clauses
+            // joined by commas. We can't honour study type, sample size
+            // or SJR rank here — those degrade to post-filtering on the
+            // merged result set.
+            if ($filters !== null) {
+                [$from, $to] = $filters->yearRangeIso();
+                $clauses = [];
+                if ($from !== null) {
+                    $clauses[] = 'from-pub-date:' . $from;
+                }
+                if ($to !== null) {
+                    $clauses[] = 'until-pub-date:' . $to;
+                }
+                if ($clauses !== []) {
+                    $params['filter'] = implode(',', $clauses);
+                }
+            }
+            $url = self::ENDPOINT . '?' . http_build_query($params);
+        }
 
         $resp = $this->get($url);
         if ($resp['status'] !== 200 || $resp['body'] === '') {

@@ -11,6 +11,7 @@ use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Reference;
 use SysRevAI\Models\Review;
+use SysRevAI\Services\BiblioSearch\BiblioSearchFilters;
 use SysRevAI\Services\BiblioSearch\BiblioSearchService;
 use SysRevAI\Services\DeduplicationService;
 
@@ -40,10 +41,26 @@ final class SearchController
         $externalMeta  = [];
         $externalError = null;
 
+        // Eligibility filters for external searches. When the user
+        // didn't tick any control AND they're searching in the context
+        // of an accessible review (?review_id=…), we seed from the
+        // protocol so the first run already reflects the eligibility
+        // criteria. The form's controls win on every later refinement.
+        $filters = BiblioSearchFilters::fromArray($_GET);
+        if ($mode === 'external' && $filters->isEmpty()) {
+            $reviewId = (int) ($_GET['review_id'] ?? 0);
+            if ($reviewId > 0 && Review::userCanAccess($reviewId, (int) Auth::id())) {
+                $rv = Review::find($reviewId);
+                if (is_array($rv)) {
+                    $filters = BiblioSearchFilters::fromProtocol($rv);
+                }
+            }
+        }
+
         if ($q !== '') {
             try {
                 if ($mode === 'external') {
-                    $r = (new BiblioSearchService())->search($q);
+                    $r = (new BiblioSearchService())->search($q, 15, $filters);
                     $results      = $r['references'];
                     $externalMeta = $r['sources'];
                 } else {
@@ -81,6 +98,8 @@ final class SearchController
             'externalError' => $externalError,
             'openReviews'   => $openReviews,
             'outcomes'      => $outcomes,
+            'filters'       => $filters,
+            'studyTypes'    => BiblioSearchFilters::STUDY_TYPES,
         ]);
     }
 

@@ -185,6 +185,16 @@ final class SettingsController
         }
         Config::set('semantic_scholar.enabled', !empty($_POST['semantic_scholar_enabled']), 'bool', 'integrations');
 
+        // Consensus is an external bibliographic source plugged into
+        // BiblioSearchService. The enabled flag uses the biblio_search.*
+        // namespace so the aggregator's existing toggle convention
+        // governs it without a special case.
+        $consensus = trim((string) ($_POST['consensus_api_key'] ?? ''));
+        if ($consensus !== '') {
+            Config::set('consensus.api_key', $consensus, 'encrypted', 'integrations');
+        }
+        Config::set('biblio_search.consensus.enabled', !empty($_POST['consensus_enabled']), 'bool', 'integrations');
+
         ActivityLog::record('settings.apis.updated');
     }
 
