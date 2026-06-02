@@ -114,6 +114,8 @@ return [
         'mode_external'      => 'Databases',
         'databases'          => 'Databases consulted',
         'sources'            => 'Sources',
+        'col_relevance'      => 'Relevance',
+        'relevance_aria'     => 'Relevance: %d out of 5',
         'select_all'         => 'Select all',
         'select_row'         => 'Select this reference',
         'import_target_label' => 'Import to',

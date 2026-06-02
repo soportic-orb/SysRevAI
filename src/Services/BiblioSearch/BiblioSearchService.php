@@ -67,16 +67,111 @@ final class BiblioSearchService
             }
         }
 
-        // Stable sort: DOI > PMID > title-based rows.
+        // Score every row against the query, attach the score + a 1..5
+        // bucket the view renders as a dot strip, then sort by raw score
+        // descending so the most relevant hits float to the top. Rows
+        // that hit on identifier or several keywords beat rows that just
+        // share a journal name.
         $values = array_values($merged);
+        $values = array_map(function (array $row) use ($query): array {
+            $score = $this->relevance($query, $row);
+            $row['_relevance']       = $score;
+            $row['_relevance_dots']  = self::dotsFor($score);
+            return $row;
+        }, $values);
+
         usort($values, static function (array $a, array $b): int {
-            $score = static fn (array $r): int =>
+            $rel = ($b['_relevance'] ?? 0) <=> ($a['_relevance'] ?? 0);
+            if ($rel !== 0) {
+                return $rel;
+            }
+            // Same relevance — break ties on identifier completeness so
+            // the canonical version of a paper still ranks above a
+            // title-only stub.
+            $idScore = static fn (array $r): int =>
                 (($r['doi']  ?? '') !== '' ? 2 : 0) +
                 (($r['pmid'] ?? '') !== '' ? 1 : 0);
-            return $score($b) <=> $score($a);
+            return $idScore($b) <=> $idScore($a);
         });
 
         return ['references' => $values, 'sources' => $sources];
+    }
+
+    /**
+     * Heuristic 0..N relevance against the user query. Title matches
+     * outweigh abstract matches; an exact identifier paste beats
+     * everything; rows returned by more than one source get a small
+     * confidence boost.
+     *
+     * @param array<string,mixed> $row
+     */
+    private function relevance(string $query, array $row): int
+    {
+        $q = mb_strtolower(trim($query));
+        if ($q === '') {
+            return 0;
+        }
+
+        // Exact identifier paste — the user typed a DOI / PMID and the
+        // row matches it. Nothing else can beat this signal.
+        $doi  = mb_strtolower(trim((string) ($row['doi']  ?? '')));
+        $pmid = trim((string) ($row['pmid'] ?? ''));
+        if ($doi !== '' && $q === $doi) {
+            return 100;
+        }
+        if ($pmid !== '' && $q === $pmid) {
+            return 100;
+        }
+
+        $tokens = preg_split('/\W+/u', $q) ?: [];
+        $tokens = array_values(array_unique(array_filter(
+            $tokens,
+            static fn (string $t): bool => mb_strlen($t) >= 3
+        )));
+        if ($tokens === []) {
+            // Short / pure-punctuation query — fall back to a baseline
+            // so the sort still groups identifier-rich rows up top.
+            return 0;
+        }
+
+        $title    = mb_strtolower((string) ($row['title']    ?? ''));
+        $abstract = mb_strtolower((string) ($row['abstract'] ?? ''));
+        $journal  = mb_strtolower((string) ($row['journal']  ?? ''));
+
+        $score = 0;
+        foreach ($tokens as $t) {
+            if ($title !== '' && str_contains($title, $t)) {
+                $score += 3;
+            }
+            if ($abstract !== '' && str_contains($abstract, $t)) {
+                $score += 1;
+            }
+            if ($journal !== '' && str_contains($journal, $t)) {
+                $score += 1;
+            }
+        }
+
+        // Multi-source bonus: 2-3 databases returning the same row is a
+        // strong signal of canonical relevance.
+        $sources = (array) ($row['_sources'] ?? []);
+        if (count($sources) > 1) {
+            $score += count($sources) - 1;
+        }
+
+        return $score;
+    }
+
+    /** Map a raw score to the 1..5 bucket the view renders as dots. */
+    private static function dotsFor(int $score): int
+    {
+        return match (true) {
+            $score >= 100 => 5,
+            $score >= 12  => 5,
+            $score >= 8   => 4,
+            $score >= 5   => 3,
+            $score >= 2   => 2,
+            default       => 1,
+        };
     }
 
     /** @return list<BiblioSearchSourceInterface> */

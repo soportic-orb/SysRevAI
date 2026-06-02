@@ -115,6 +115,8 @@ return [
         'mode_external'      => 'Bases de dades',
         'databases'          => 'Bases de dades consultades',
         'sources'            => 'Fonts',
+        'col_relevance'      => 'Rellevància',
+        'relevance_aria'     => 'Rellevància: %d de 5',
         'select_all'         => 'Seleccionar tots',
         'select_row'         => 'Seleccionar aquesta referència',
         'import_target_label' => 'Importar a',
