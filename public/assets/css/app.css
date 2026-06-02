@@ -1236,11 +1236,16 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .search-external-table__row-action { white-space: nowrap; }
 
 .search-row-import {
+    /* Stack the destination-review dropdown above the Import button so
+       the action reads top-down per row and stays tight in the column. */
     display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    min-width: 170px;
 }
-.search-row-import__select { max-width: 200px; }
+.search-row-import__select { width: 100%; max-width: 200px; }
+.search-row-import .btn { width: 100%; }
 
 /* AI usage page + small utilities used across listing tables. */
 .table .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -1302,7 +1307,12 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
    The dots are stroke="currentColor"-style filled circles, sized to
    match the .nav-icon family so they sit naturally next to the small
    buttons. Filled dots use the platform's primary accent. */
-.search-external-table__relevance { width: 92px; }
+/* Relevance dots now ride inline under the study, not a column. */
+.search-external-table__relevance { display: inline-flex; margin-top: 6px; }
+.search-external-table__study .search-external-table__ids {
+    margin-top: 4px;
+    font-size: 12.5px;
+}
 .relevance-dots {
     display: inline-flex;
     align-items: center;
