@@ -123,8 +123,15 @@ return [
         'import_no_review'   => 'Elige una revisión de destino antes de importar.',
         'import_no_selection' => 'Selecciona al menos una referencia para importar.',
         'import_done'        => '%d referencias importadas, %d omitidas.',
+        'import_done_breakdown' => '%d importadas, %d ya estaban en la revisión, %d han fallado.',
+        'import_one_done'    => 'Referencia importada.',
+        'import_one_duplicate' => 'Esta referencia ya existe en la revisión seleccionada.',
         'import_failed'      => 'No se ha podido importar ninguna referencia.',
         'external_error'     => 'Alguna de las bases de datos devolvió un error. Mostrando solo las respuestas correctas.',
+        'results_for'        => 'Resultados para la búsqueda:',
+        'outcome_imported'   => 'Importada',
+        'outcome_duplicate'  => 'Ya existe en la revisión',
+        'outcome_error'      => 'No se ha podido importar',
     ],
 
     'about' => [

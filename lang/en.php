@@ -123,8 +123,15 @@ return [
         'import_no_review'   => 'Choose a destination review before importing.',
         'import_no_selection' => 'Select at least one reference to import.',
         'import_done'        => '%d references imported, %d skipped.',
+        'import_done_breakdown' => '%d imported, %d already in the review, %d failed.',
+        'import_one_done'    => 'Reference imported.',
+        'import_one_duplicate' => 'This reference is already in the selected review.',
         'import_failed'      => 'No references could be imported.',
         'external_error'     => 'One of the databases returned an error. Showing only the responses that worked.',
+        'results_for'        => 'Results for the search:',
+        'outcome_imported'   => 'Imported',
+        'outcome_duplicate'  => 'Already in the review',
+        'outcome_error'      => 'Could not import',
     ],
 
     'about' => [

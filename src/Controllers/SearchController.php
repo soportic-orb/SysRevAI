@@ -64,6 +64,15 @@ final class SearchController
             ))
             : [];
 
+        // One-shot outcomes carried from the previous import POST — keyed
+        // by dedup_key so the view can paint check / X icons next to the
+        // rows the user just touched. Pulled here (not from the view) so
+        // each render owns its own state.
+        $outcomes = Session::pullFlash('search_outcomes');
+        if (!is_array($outcomes) || !is_array($outcomes['map'] ?? null)) {
+            $outcomes = null;
+        }
+
         echo View::render('search/index', [
             'q'             => $q,
             'mode'          => $mode,
@@ -71,6 +80,7 @@ final class SearchController
             'externalMeta'  => $externalMeta,
             'externalError' => $externalError,
             'openReviews'   => $openReviews,
+            'outcomes'      => $outcomes,
         ]);
     }
 
@@ -79,6 +89,10 @@ final class SearchController
      * list of selected ones (`selected[]`), validate the destination
      * review, then persist via the same path as the file-based importer
      * so dedup keys and activity logs stay consistent.
+     *
+     * Records a per-reference outcome (imported / duplicate / error)
+     * keyed by dedup_key so the search page can paint a green check on
+     * the rows that landed and a red X on the ones that didn't.
      */
     public function importToReview(): void
     {
@@ -95,9 +109,11 @@ final class SearchController
             return;
         }
 
-        $payload = [];
+        $isSingle = false;
+        $payload  = [];
         if (isset($_POST['single']) && is_string($_POST['single']) && $_POST['single'] !== '') {
-            $payload = [$_POST['single']];
+            $payload  = [$_POST['single']];
+            $isSingle = true;
         } elseif (isset($_POST['selected']) && is_array($_POST['selected'])) {
             $payload = array_values(array_filter($_POST['selected'], 'is_string'));
         }
@@ -107,34 +123,70 @@ final class SearchController
             redirect($this->backHref());
         }
 
-        $imported = 0;
-        $skipped  = 0;
+        /** @var array<string,string> $outcomes  dedup_key => 'imported'|'duplicate'|'error' */
+        $outcomes  = [];
+        $imported  = 0;
+        $duplicate = 0;
+        $errored   = 0;
+
         foreach ($payload as $json) {
             $ref = json_decode($json, true);
             if (!is_array($ref) || trim((string) ($ref['title'] ?? '')) === '') {
-                $skipped++;
+                $errored++;
                 continue;
             }
-            $ref = $this->sanitise($ref);
+            $ref      = $this->sanitise($ref);
+            $dedupKey = DeduplicationService::dedupKey($ref);
+            $marker   = $dedupKey !== '' ? $dedupKey : 'doi:' . (string) ($ref['doi'] ?? '') . '|pmid:' . (string) ($ref['pmid'] ?? '');
+
+            if (Reference::existsInReview($reviewId, $dedupKey, (string) $ref['doi'], (string) $ref['pmid'])) {
+                $outcomes[$marker] = 'duplicate';
+                $duplicate++;
+                continue;
+            }
+
             try {
-                Reference::create($reviewId, $ref, 'biblio-search', DeduplicationService::dedupKey($ref));
+                Reference::create($reviewId, $ref, 'biblio-search', $dedupKey);
+                $outcomes[$marker] = 'imported';
                 $imported++;
             } catch (\Throwable $e) {
-                $skipped++;
+                $outcomes[$marker] = 'error';
+                $errored++;
             }
         }
 
         if ($imported > 0) {
             $dedup = DeduplicationService::run($reviewId);
             ActivityLog::record('references.imported', [
-                'format'   => 'biblio_search',
-                'imported' => $imported,
-                'skipped'  => $skipped,
-                'duplicates' => $dedup['exact'] ?? 0,
+                'format'     => 'biblio_search',
+                'imported'   => $imported,
+                'duplicates' => $duplicate,
+                'errors'     => $errored,
+                'fuzzy_dups' => $dedup['fuzzy'] ?? 0,
             ], $reviewId);
-            Session::flash('success', __('search.import_done', $imported, $skipped));
-        } else {
+        }
+
+        // Stash per-row outcomes so the GET re-render can paint check / X
+        // icons next to the matching reference rows.
+        Session::flash('search_outcomes', [
+            'review_id' => $reviewId,
+            'map'       => $outcomes,
+        ]);
+
+        // Single-import vs. bulk get distinct flash phrasing — the user
+        // who clicked the per-row button only ever cares about the one
+        // reference they touched.
+        if ($isSingle) {
+            $only = $outcomes[array_key_first($outcomes)] ?? 'error';
+            match ($only) {
+                'imported'  => Session::flash('success', __('search.import_one_done')),
+                'duplicate' => Session::flash('error',   __('search.import_one_duplicate')),
+                default     => Session::flash('error',   __('search.import_failed')),
+            };
+        } elseif ($imported === 0 && $duplicate === 0) {
             Session::flash('error', __('search.import_failed'));
+        } else {
+            Session::flash('success', __('search.import_done_breakdown', $imported, $duplicate, $errored));
         }
 
         redirect($this->backHref());

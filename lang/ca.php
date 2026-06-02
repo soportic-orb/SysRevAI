@@ -124,8 +124,15 @@ return [
         'import_no_review'   => 'Tria una revisió de destinació abans d\'importar.',
         'import_no_selection' => 'Selecciona almenys una referència per importar.',
         'import_done'        => '%d referències importades, %d omeses.',
+        'import_done_breakdown' => '%d importades, %d ja eren a la revisió, %d han fallat.',
+        'import_one_done'    => 'Referència importada.',
+        'import_one_duplicate' => 'Aquesta referència ja existeix a la revisió seleccionada.',
         'import_failed'      => 'No s\'ha pogut importar cap referència.',
         'external_error'     => 'Alguna de les bases de dades ha tornat un error. Es mostren només les respostes correctes.',
+        'results_for'        => 'Resultats per a la cerca:',
+        'outcome_imported'   => 'Importada',
+        'outcome_duplicate'  => 'Ja existeix a la revisió',
+        'outcome_error'      => 'No s\'ha pogut importar',
     ],
 
     'about' => [

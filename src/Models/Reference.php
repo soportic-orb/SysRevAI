@@ -91,6 +91,43 @@ final class Reference
         return ['rows' => $rows, 'total' => $total];
     }
 
+    /**
+     * Already in this review? Matches by stable dedup_key first, falling
+     * back to DOI / PMID so cleaned-up titles still detect prior imports.
+     */
+    public static function existsInReview(int $reviewId, string $dedupKey, string $doi = '', string $pmid = ''): bool
+    {
+        $table = Database::table('references');
+        if ($dedupKey !== '') {
+            $row = Database::selectOne(
+                "SELECT id FROM `{$table}` WHERE review_id = ? AND dedup_key = ? LIMIT 1",
+                [$reviewId, $dedupKey]
+            );
+            if ($row !== null) {
+                return true;
+            }
+        }
+        if ($doi !== '') {
+            $row = Database::selectOne(
+                "SELECT id FROM `{$table}` WHERE review_id = ? AND doi = ? LIMIT 1",
+                [$reviewId, $doi]
+            );
+            if ($row !== null) {
+                return true;
+            }
+        }
+        if ($pmid !== '') {
+            $row = Database::selectOne(
+                "SELECT id FROM `{$table}` WHERE review_id = ? AND pmid = ? LIMIT 1",
+                [$reviewId, $pmid]
+            );
+            if ($row !== null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function setStatus(int $id, string $status): void
     {
         if (!in_array($status, self::STATUSES, true)) {
