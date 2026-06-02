@@ -31,7 +31,6 @@ $pctOf = static function (int $n) use ($denom): int {
 <div class="page ft-screen-page">
     <div class="page__head page__head--row">
         <div>
-            <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
             <h1 class="page__title">
                 <?= e(__('fulltext.title')) ?>
                 <?php $phaseKey = 'fulltext'; require config('paths.base') . '/views/partials/phase_info.php'; ?>

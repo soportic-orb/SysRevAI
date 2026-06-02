@@ -22,7 +22,6 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
      data-error="<?= e(__('summary.translate_failed')) ?>">
 
     <div class="page__head">
-        <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
         <h1 class="page__title"><?= e(__('summary.title')) ?></h1>
         <p class="muted">
             <strong><?= e((string) ($reference['title'] ?: '—')) ?></strong><br>

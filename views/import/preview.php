@@ -15,9 +15,7 @@ $total = count($refs);
 ?>
 <div class="page">
     <div class="page__head">
-        <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /
-            <a href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a> /
-        </div>
+        <div class="breadcrumb"><a href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a> /</div>
         <h1 class="page__title"><?= e(__('import.preview_title')) ?></h1>
         <p class="page__subtitle"><?= e(__('import.preview_intro', $total)) ?></p>
     </div>

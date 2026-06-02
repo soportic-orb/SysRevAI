@@ -24,7 +24,6 @@ $fmtUsd    = static fn (float $u): string => '$' . number_format($u, $u < 1 ? 5 
 ?>
 <div class="page">
     <div class="page__head">
-        <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
         <h1 class="page__title"><?= e(__('ai_usage.title')) ?></h1>
         <p class="page__subtitle"><?= e(__('ai_usage.intro')) ?></p>
     </div>
