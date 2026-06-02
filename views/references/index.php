@@ -100,10 +100,38 @@ $qs = static function (array $extra) use ($status, $search): string {
             <a class="btn btn--primary" href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a>
         </div>
     <?php else: ?>
-        <div class="section-card" style="padding:0">
+        <!-- Citation-normalise bulk action.
+             The form holds only the hidden CSRF + style. Row checkboxes
+             carry form="referencesConvertForm" via the HTML5 attribute so
+             they submit together without nesting forms in the table. The
+             "Convert/normalize" button opens a modal that picks the style
+             and then requestSubmit()s this form. -->
+        <form method="post"
+              action="/reviews/<?= $id ?>/references/convert"
+              id="referencesConvertForm"
+              class="section-card search-bulk-card"
+              data-ai-action>
+            <?= csrf_field() ?>
+            <input type="hidden" name="style" id="referencesConvertStyle" value="apa">
+            <div class="search-bulk-toolbar">
+                <label class="checkbox search-bulk-toolbar__all">
+                    <input type="checkbox" id="refsSelectAll">
+                    <?= e(__('search.select_all')) ?>
+                </label>
+                <span class="muted search-bulk-toolbar__count" id="refsSelectedCount">0</span>
+                <span class="muted import-preview__toolbar-spacer"></span>
+                <button type="button" class="btn btn--primary btn--sm"
+                        id="convertOpenBtn" disabled>
+                    <?= e(__('references.convert_btn')) ?>
+                </button>
+            </div>
+        </form>
+
+        <div class="section-card" style="padding:0; margin-top: 12px">
             <div class="table-wrap">
                 <table class="table">
                     <thead><tr>
+                        <th class="search-external-table__check"></th>
                         <th><?= e(__('references.col_study')) ?></th>
                         <th><?= e(__('references.col_ids')) ?></th>
                         <th><?= e(__('references.col_status')) ?></th>
@@ -119,6 +147,14 @@ $qs = static function (array $extra) use ($status, $search): string {
                             $icon = $ftIcon($statusRow, $queued);
                         ?>
                             <tr>
+                                <td class="search-external-table__check">
+                                    <input type="checkbox"
+                                           class="refs-row-check"
+                                           form="referencesConvertForm"
+                                           name="reference_ids[]"
+                                           value="<?= (int) $r['id'] ?>"
+                                           aria-label="<?= e(__('search.select_row')) ?>">
+                                </td>
                                 <td>
                                     <strong><?= e((string) ($r['title'] ?: '—')) ?></strong><br>
                                     <span class="muted">
@@ -183,5 +219,90 @@ $qs = static function (array $extra) use ($status, $search): string {
                 <?php if ($page < $pages): ?><a class="btn btn--ghost btn--sm" href="?<?= e($qs(['page' => $page + 1])) ?>">&rarr;</a><?php endif; ?>
             </div>
         <?php endif; ?>
+
+        <!-- Citation-style picker modal. Triggered by #convertOpenBtn,
+             dismissed by the close button / backdrop click. Picking a
+             style and hitting Confirm writes the selected style into the
+             hidden input on #referencesConvertForm and submits it. -->
+        <dialog class="info-modal" id="convertModal">
+            <div class="info-modal__inner">
+                <button type="button" class="info-modal__close"
+                        data-info-close
+                        aria-label="<?= e(__('common.close')) ?>">&times;</button>
+                <h3><?= e(__('references.convert_modal_title')) ?></h3>
+                <p class="muted"><?= e(__('references.convert_modal_intro')) ?></p>
+                <div class="field">
+                    <label class="field-label" for="convertModalStyle">
+                        <?= e(__('citations.style_label')) ?>
+                    </label>
+                    <select class="select" id="convertModalStyle">
+                        <?php foreach (\SysRevAI\Controllers\CitationsController::STYLES as $s): ?>
+                            <option value="<?= e($s) ?>"><?= e(__('citations.style_' . $s)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn btn--ghost" data-info-close>
+                        <?= e(__('reviews.cancel')) ?>
+                    </button>
+                    <button type="button" class="btn btn--primary" id="convertModalConfirm"
+                            data-busy-label="<?= e(__('common.working')) ?>">
+                        <?= e(__('references.convert_modal_confirm')) ?>
+                    </button>
+                </div>
+            </div>
+        </dialog>
     <?php endif; ?>
 </div>
+
+<?php if ($rows !== []): ?>
+<script>
+(function () {
+    'use strict';
+
+    var all      = document.getElementById('refsSelectAll');
+    var counter  = document.getElementById('refsSelectedCount');
+    var openBtn  = document.getElementById('convertOpenBtn');
+    var modal    = document.getElementById('convertModal');
+    var confirm  = document.getElementById('convertModalConfirm');
+    var styleSel = document.getElementById('convertModalStyle');
+    var hidden   = document.getElementById('referencesConvertStyle');
+    var convertForm = document.getElementById('referencesConvertForm');
+    var rows     = document.querySelectorAll('.refs-row-check');
+
+    function recompute() {
+        var n = 0;
+        rows.forEach(function (c) { if (c.checked) n++; });
+        counter.textContent = String(n);
+        openBtn.disabled = n === 0;
+    }
+
+    all.addEventListener('change', function () {
+        rows.forEach(function (c) { c.checked = all.checked; });
+        recompute();
+    });
+    rows.forEach(function (c) {
+        c.addEventListener('change', function () {
+            if (!c.checked) all.checked = false;
+            recompute();
+        });
+    });
+    recompute();
+
+    openBtn.addEventListener('click', function () {
+        if (typeof modal.showModal === 'function') {
+            modal.showModal();
+        } else {
+            modal.setAttribute('open', '');
+            modal.classList.add('is-open');
+        }
+    });
+    confirm.addEventListener('click', function () {
+        hidden.value = styleSel.value || 'apa';
+        if (typeof modal.close === 'function') modal.close();
+        else { modal.removeAttribute('open'); modal.classList.remove('is-open'); }
+        convertForm.requestSubmit();
+    });
+})();
+</script>
+<?php endif; ?>
