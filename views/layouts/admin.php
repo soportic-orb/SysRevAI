@@ -7,7 +7,6 @@ declare(strict_types=1);
 /** @var string $activeSection */
 $appName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
 $user    = auth_user();
-$version = (string) config('app.version', '0.1.0-dev');
 
 // Admin navigation: section key => URL. Settings-form sections live under
 // /admin/settings/{key}; Users and Maintenance have their own controllers.
@@ -123,7 +122,7 @@ $nav = [
 
 <footer class="appfooter">
     <span>
-        <?= e($appName) ?> v<?= e($version) ?> · <?= e(__('footer.powered_by')) ?>
+        <?= e($appName) ?> · <?= e(__('footer.powered_by')) ?>
         <a class="appfooter__github"
            href="https://github.com/soportic-orb/SysRevAI"
            target="_blank" rel="noopener noreferrer">
