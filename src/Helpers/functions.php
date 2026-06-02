@@ -147,3 +147,11 @@ if (!function_exists('current_locale')) {
     }
 }
 
+if (!function_exists('markdown')) {
+    /** Render a Claude reply (or other trusted markdown) as safe HTML. */
+    function markdown(string $text): string
+    {
+        return \SysRevAI\Helpers\Markdown::render($text);
+    }
+}
+

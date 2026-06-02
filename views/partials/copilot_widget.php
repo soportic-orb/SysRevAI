@@ -249,7 +249,13 @@ $copilotReviewId = (int) $reviewSubnav['id'];
         if (greeting) greeting.hidden = true;
         var div = document.createElement('div');
         div.className = 'copilot__msg copilot__msg--' + role;
-        div.textContent = content;
+        /* Render Markdown for the assistant so bold, lists, tables and
+           code blocks appear formatted. User input stays as plain text. */
+        if (role === 'assistant' && window.SysRevAI && window.SysRevAI.mdRender) {
+            div.innerHTML = window.SysRevAI.mdRender(content);
+        } else {
+            div.textContent = content;
+        }
         msgs.appendChild(div);
         scrollToBottom();
         return div;

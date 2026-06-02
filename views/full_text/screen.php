@@ -139,7 +139,7 @@ $basePath = '/reviews/' . $id . '/full-text';
                                 <p class="muted"><?= e(__('fulltext.chat_empty')) ?></p>
                             <?php else: ?>
                                 <?php foreach ($chatHistory as $m): ?>
-                                    <div class="chat-msg chat-msg--<?= e((string) $m['role']) ?>"><?= nl2br(e((string) $m['content'])) ?></div>
+                                    <div class="chat-msg chat-msg--<?= e((string) $m['role']) ?>"><?= $m['role'] === 'assistant' ? markdown((string) $m['content']) : nl2br(e((string) $m['content'])) ?></div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
@@ -292,7 +292,14 @@ window.SysRevAICopilotContext = {
         if (empty) empty.remove();
         var div = document.createElement('div');
         div.className = 'chat-msg chat-msg--' + role;
-        div.textContent = text;
+        /* Assistant replies get full Markdown rendering (bold, lists,
+           tables, code). User messages stay plain-text — we never want a
+           reviewer's literal typing to be interpreted as HTML. */
+        if (role === 'assistant' && window.SysRevAI && window.SysRevAI.mdRender) {
+            div.innerHTML = window.SysRevAI.mdRender(text);
+        } else {
+            div.textContent = text;
+        }
         ch.appendChild(div);
         ch.scrollTop = ch.scrollHeight;
         return div;
