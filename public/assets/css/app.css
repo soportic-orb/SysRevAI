@@ -518,6 +518,13 @@ a:hover { text-decoration: underline; }
 .auth-card__title { margin: 0 0 18px; font-size: 22px; }
 .auth-card__footer { margin: 16px 0 0; text-align: center; font-size: 14px; color: var(--c-muted); }
 .auth-card__footer a { font-weight: 600; }
+.auth-github {
+    margin: 18px 0 0;
+    text-align: center;
+    /* Hover state shouldn't inherit the muted text rule from any
+       wrapping link colour, just the pill's own override. */
+}
+.auth-github .appfooter__github { color: #fff; }
 .error-code { font-size: 56px; font-weight: 800; color: var(--c-primary); line-height: 1; margin-bottom: 8px; }
 .lead { color: var(--c-muted); }
 

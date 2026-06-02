@@ -33,6 +33,14 @@ $appName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
             <span class="brand__name"><?= e($appName) ?></span>
         </div>
         <?= $content ?>
+        <p class="auth-github">
+            <a class="appfooter__github"
+               href="https://github.com/soportic-orb/SysRevAI"
+               target="_blank" rel="noopener noreferrer">
+                <?php $iconName = 'github'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                <?= e(__('footer.github')) ?>
+            </a>
+        </p>
     </main>
 </body>
 </html>
