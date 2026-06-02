@@ -317,6 +317,10 @@ return [
         'dot_none'        => 'Not found yet',
         'dot_queued'      => 'Queued',
         'dot_never'       => 'Not attempted',
+        'discard_btn'     => 'Discard article (no PDF)',
+        'discard_help'    => 'An article without a PDF (or abstract) cannot be assessed. Discarding it records an exclusion with reason "No full text available" so it appears correctly in PRISMA.',
+        'discard_confirm' => 'Discard this article and record it as excluded?',
+        'discard_reason'  => 'No full text available',
     ],
 
     'screening' => [

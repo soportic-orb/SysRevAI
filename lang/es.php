@@ -317,6 +317,10 @@ return [
         'dot_none'        => 'Aún no encontrado',
         'dot_queued'      => 'En la cola',
         'dot_never'       => 'Sin intentar',
+        'discard_btn'     => 'Descartar el artículo (sin PDF)',
+        'discard_help'    => 'Un artículo sin PDF (o sin resumen) no se puede evaluar. Al descartarlo se registra una exclusión con el motivo «Texto completo no disponible» para que aparezca correctamente en PRISMA.',
+        'discard_confirm' => '¿Descartar este artículo y registrarlo como excluido?',
+        'discard_reason'  => 'Texto completo no disponible',
     ],
 
     'screening' => [

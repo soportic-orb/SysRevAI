@@ -318,6 +318,10 @@ return [
         'dot_none'        => 'No trobat encara',
         'dot_queued'      => 'A la cua',
         'dot_never'       => 'Sense intentar',
+        'discard_btn'     => 'Descartar l\'article (sense PDF)',
+        'discard_help'    => 'Un article sense PDF (o sense resum) no es pot avaluar. En descartar-lo es registra una exclusió amb el motiu «Text complet no disponible» perquè aparegui correctament al PRISMA.',
+        'discard_confirm' => 'Vols descartar aquest article i registrar-lo com a exclòs?',
+        'discard_reason'  => 'Text complet no disponible',
     ],
 
     'screening' => [
