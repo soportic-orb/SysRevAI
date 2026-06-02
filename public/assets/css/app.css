@@ -1371,3 +1371,18 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 }
 .secondary-card__pico li { margin-bottom: 2px; }
 .secondary-card__actions { display: flex; justify-content: flex-end; }
+
+/* Card swapped in after a successful background "Create review" — a
+   slim confirmation row with a link to the new sibling, keeping the
+   slot so the parent layout doesn't reflow. */
+.secondary-card--created {
+    background: color-mix(in srgb, var(--c-ok) 10%, transparent);
+    border-color: color-mix(in srgb, var(--c-ok) 40%, var(--c-border));
+}
+.secondary-card__done {
+    margin: 0;
+    font-size: 13px;
+    color: var(--c-ok);
+}
+.secondary-card__done a { color: var(--c-ok); font-weight: 600; }
+.secondary-card__done a:hover { text-decoration: underline; }
