@@ -120,6 +120,40 @@ $extractUrl = $isEdit
             </div>
             <p class="ai-upload__status muted" id="extractStatus" hidden></p>
             <p class="field-help"><?= e(__('reviews.ai_upload_help')) ?></p>
+
+            <!-- Detected sub-studies. Hidden until the AI returns a
+                 non-empty `secondaries` list. Each card is rendered by JS
+                 from #secondaryTemplate and submits straight to /reviews
+                 (the regular store endpoint), so creating one extra review
+                 from a parent protocol is one click. -->
+            <div class="ai-upload__secondaries" id="secondariesContainer" hidden>
+                <h3 class="ai-upload__secondaries-title"><?= e(__('reviews.ai_secondaries_title')) ?></h3>
+                <p class="muted ai-upload__secondaries-intro"><?= e(__('reviews.ai_secondaries_intro')) ?></p>
+                <div id="secondariesList"></div>
+            </div>
+
+            <template id="secondaryTemplate">
+                <form method="post" action="/reviews" class="secondary-card">
+                    <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="title" value="">
+                    <input type="hidden" name="question" value="">
+                    <input type="hidden" name="population" value="">
+                    <input type="hidden" name="intervention" value="">
+                    <input type="hidden" name="comparison" value="">
+                    <input type="hidden" name="outcome" value="">
+                    <input type="hidden" name="study_design" value="">
+                    <input type="hidden" name="inclusion_criteria" value="">
+                    <input type="hidden" name="exclusion_criteria" value="">
+                    <h4 class="secondary-card__title"></h4>
+                    <p class="secondary-card__question muted"></p>
+                    <ul class="secondary-card__pico muted"></ul>
+                    <div class="secondary-card__actions">
+                        <button type="submit" class="btn btn--primary btn--sm">
+                            <?= e(__('reviews.ai_secondary_create')) ?>
+                        </button>
+                    </div>
+                </form>
+            </template>
         </aside>
     </div>
 </div>
@@ -132,13 +166,21 @@ $extractUrl = $isEdit
     if (!btn || !input || !status) return;
 
     var labels = {
-        ok:      <?= json_encode(__('reviews.ai_upload_ok')) ?>,
-        empty:   <?= json_encode(__('reviews.ai_upload_empty')) ?>,
-        toobig:  <?= json_encode(__('reviews.ai_upload_too_large')) ?>,
-        format:  <?= json_encode(__('reviews.ai_upload_bad_format')) ?>,
-        failed:  <?= json_encode(__('reviews.ai_upload_failed')) ?>,
-        nofile:  <?= json_encode(__('reviews.ai_upload_pick_first')) ?>
+        ok:           <?= json_encode(__('reviews.ai_upload_ok')) ?>,
+        okMulti:      <?= json_encode(__('reviews.ai_upload_ok_multi')) ?>,
+        empty:        <?= json_encode(__('reviews.ai_upload_empty')) ?>,
+        toobig:       <?= json_encode(__('reviews.ai_upload_too_large')) ?>,
+        format:       <?= json_encode(__('reviews.ai_upload_bad_format')) ?>,
+        failed:       <?= json_encode(__('reviews.ai_upload_failed')) ?>,
+        nofile:       <?= json_encode(__('reviews.ai_upload_pick_first')) ?>,
+        picoPop:      <?= json_encode(__('reviews.pico_population')) ?>,
+        picoInt:      <?= json_encode(__('reviews.pico_intervention')) ?>,
+        picoOut:      <?= json_encode(__('reviews.pico_outcome')) ?>
     };
+
+    var secondariesContainer = document.getElementById('secondariesContainer');
+    var secondariesList      = document.getElementById('secondariesList');
+    var secondaryTemplate    = document.getElementById('secondaryTemplate');
 
     function show(msg, ok) {
         status.hidden = false;
@@ -151,6 +193,66 @@ $extractUrl = $isEdit
         el.value = value;
         el.classList.add('ai-suggested');
         el.addEventListener('input', function () { el.classList.remove('ai-suggested'); }, { once: true });
+    }
+
+    /* Pre-fill the main form fields with the primary protocol the AI
+       returned. Old-shape responses (flat object) still work — we treat
+       the whole thing as the primary so a model regression doesn't break
+       the form pre-fill. */
+    function applyPrimary(p) {
+        if (!p) return;
+        setField('title',              p.title);
+        setField('question',           p.question);
+        setField('population',         p.population);
+        setField('intervention',       p.intervention);
+        setField('comparison',         p.comparison);
+        setField('outcome',            p.outcome);
+        setField('study_design',       p.study_design);
+        setField('inclusion_criteria', p.inclusion_criteria);
+        setField('exclusion_criteria', p.exclusion_criteria);
+    }
+
+    /* Render one card per detected sub-study. Each card is a self-contained
+       <form> POSTing to /reviews with the AI-extracted fields as hidden
+       inputs — submitting it creates a new sibling review without leaving
+       this page. */
+    function renderSecondaries(list) {
+        if (!secondariesContainer || !secondariesList || !secondaryTemplate) return;
+        secondariesList.innerHTML = '';
+        if (!Array.isArray(list) || list.length === 0) {
+            secondariesContainer.hidden = true;
+            return;
+        }
+        list.forEach(function (s, idx) {
+            var node = secondaryTemplate.content.firstElementChild.cloneNode(true);
+            var fields = ['title','question','population','intervention','comparison',
+                          'outcome','study_design','inclusion_criteria','exclusion_criteria'];
+            fields.forEach(function (f) {
+                var input = node.querySelector('input[name="' + f + '"]');
+                if (input) input.value = (s && typeof s[f] === 'string') ? s[f] : '';
+            });
+            node.querySelector('.secondary-card__title').textContent =
+                (s && s.title) ? s.title : ('Sub-study #' + (idx + 1));
+            node.querySelector('.secondary-card__question').textContent =
+                (s && s.question) ? s.question : '';
+            var pico = node.querySelector('.secondary-card__pico');
+            pico.innerHTML = '';
+            [
+                [labels.picoPop, s && s.population],
+                [labels.picoInt, s && s.intervention],
+                [labels.picoOut, s && s.outcome]
+            ].forEach(function (pair) {
+                if (!pair[1]) return;
+                var li = document.createElement('li');
+                var strong = document.createElement('strong');
+                strong.textContent = pair[0] + ': ';
+                li.appendChild(strong);
+                li.appendChild(document.createTextNode(pair[1]));
+                pico.appendChild(li);
+            });
+            secondariesList.appendChild(node);
+        });
+        secondariesContainer.hidden = false;
     }
 
     btn.addEventListener('click', function () {
@@ -179,15 +281,16 @@ $extractUrl = $isEdit
                     return;
                 }
                 var d = res.body.data || {};
-                setField('question',           d.question);
-                setField('population',         d.population);
-                setField('intervention',       d.intervention);
-                setField('comparison',         d.comparison);
-                setField('outcome',            d.outcome);
-                setField('study_design',       d.study_design);
-                setField('inclusion_criteria', d.inclusion_criteria);
-                setField('exclusion_criteria', d.exclusion_criteria);
-                show(labels.ok, true);
+                // New shape: {primary, secondaries}. Old shape: flat 8
+                // fields — applyPrimary() handles both.
+                var primary = d.primary ? d.primary : d;
+                var secondaries = Array.isArray(d.secondaries) ? d.secondaries : [];
+                applyPrimary(primary);
+                renderSecondaries(secondaries);
+                show(secondaries.length > 0
+                        ? labels.okMulti.replace('%d', String(secondaries.length))
+                        : labels.ok,
+                     true);
             })
             .catch(function () { show(labels.failed, false); })
             .then(function () {
