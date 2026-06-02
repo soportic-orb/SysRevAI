@@ -679,11 +679,30 @@ a:hover { text-decoration: underline; }
 }
 .appfooter a { color: var(--c-muted); }
 .appfooter a:hover { color: var(--c-text); }
+/* Black pill in the footer linking to the GitHub repo. Sized to sit
+   level with the rest of the footer text (12px) while staying clearly
+   tappable; white text + glyph against #000 so the colour-override
+   from `.appfooter a` doesn't bleed through. */
 .appfooter__github {
-    display: inline-flex; align-items: center; gap: 4px;
-    margin: 0 2px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    margin: 0 4px;
+    vertical-align: -1px;
+    background: #000;
+    color: #fff !important;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
 }
-.appfooter__github:hover { text-decoration: none; }
+.appfooter__github:hover,
+.appfooter a.appfooter__github:hover {
+    background: #1f2937;
+    color: #fff;
+    text-decoration: none;
+}
+.appfooter__github .icon { color: #fff; }
 .donate { color: #c2487f; font-weight: 600; }
 .donate:hover { color: #a23667; }
 
