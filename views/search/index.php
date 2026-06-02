@@ -270,9 +270,20 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
                                         <?php if (!empty($r['journal'])): ?> · <em><?= e((string) $r['journal']) ?></em><?php endif; ?>
                                     </span>
                                 </td>
-                                <td class="muted">
-                                    <?php if (!empty($r['doi'])): ?>DOI: <?= e((string) $r['doi']) ?><br><?php endif; ?>
-                                    <?php if (!empty($r['pmid'])): ?>PMID: <?= e((string) $r['pmid']) ?><?php endif; ?>
+                                <td class="muted search-external-table__ids">
+                                    <?php if (!empty($r['doi'])): ?>
+                                        DOI:
+                                        <a href="https://doi.org/<?= e(rawurlencode((string) $r['doi'])) ?>"
+                                           target="_blank" rel="noopener noreferrer"
+                                           class="link-ext"><?= e((string) $r['doi']) ?></a>
+                                        <br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($r['pmid'])): ?>
+                                        PMID:
+                                        <a href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode((string) $r['pmid'])) ?>/"
+                                           target="_blank" rel="noopener noreferrer"
+                                           class="link-ext"><?= e((string) $r['pmid']) ?></a>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php foreach ($srcs as $src): ?>
