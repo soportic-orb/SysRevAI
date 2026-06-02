@@ -6,51 +6,208 @@ namespace SysRevAI\Controllers;
 
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Database;
+use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
+use SysRevAI\Models\ActivityLog;
+use SysRevAI\Models\Reference;
+use SysRevAI\Models\Review;
+use SysRevAI\Services\BiblioSearch\BiblioSearchService;
+use SysRevAI\Services\DeduplicationService;
 
 /**
- * Cross-review reference search, scoped to the user's accessible reviews.
- * Uses the FULLTEXT index on references(title, abstract) (and on the
- * extracted text when available) with a LIKE fallback for short queries.
+ * Cross-review reference search with two modes:
+ *
+ *   - "local" (default): probes the user's own references via the
+ *     FULLTEXT index on title/abstract plus LIKE on the identifier
+ *     columns.
+ *   - "external": fans the query out to CrossRef, OpenAlex and Europe PMC
+ *     via BiblioSearchService and offers per-row / bulk import into one
+ *     of the user's open reviews.
  */
 final class SearchController
 {
+    private const VALID_MODES = ['local', 'external'];
+
     public function index(): void
     {
-        $q = trim((string) ($_GET['q'] ?? ''));
-        $results = [];
+        $q    = trim((string) ($_GET['q'] ?? ''));
+        $mode = (string) ($_GET['mode'] ?? 'local');
+        if (!in_array($mode, self::VALID_MODES, true)) {
+            $mode = 'local';
+        }
+
+        $results       = [];
+        $externalMeta  = [];
+        $externalError = null;
+
         if ($q !== '') {
             try {
-                $results = $this->search($q, (int) Auth::id());
+                if ($mode === 'external') {
+                    $r = (new BiblioSearchService())->search($q);
+                    $results      = $r['references'];
+                    $externalMeta = $r['sources'];
+                } else {
+                    $results = $this->searchLocal($q, (int) Auth::id());
+                }
             } catch (\Throwable $e) {
                 $results = [];
+                if ($mode === 'external') {
+                    $externalError = $e->getMessage();
+                }
             }
         }
+
+        $openReviews = $mode === 'external'
+            ? array_values(array_filter(
+                Review::forUser((int) Auth::id(), 'active'),
+                fn (array $rv): bool => Review::userCanAccess((int) $rv['id'], (int) Auth::id())
+            ))
+            : [];
+
         echo View::render('search/index', [
-            'q'       => $q,
-            'results' => $results,
+            'q'             => $q,
+            'mode'          => $mode,
+            'results'       => $results,
+            'externalMeta'  => $externalMeta,
+            'externalError' => $externalError,
+            'openReviews'   => $openReviews,
         ]);
     }
 
+    /**
+     * POST /search/import — accept either one (`single`) reference or a
+     * list of selected ones (`selected[]`), validate the destination
+     * review, then persist via the same path as the file-based importer
+     * so dedup keys and activity logs stay consistent.
+     */
+    public function importToReview(): void
+    {
+        $reviewId = (int) ($_POST['review_id'] ?? 0);
+        if ($reviewId <= 0) {
+            Session::flash('error', __('search.import_no_review'));
+            redirect($this->backHref());
+        }
+
+        $review = Review::find($reviewId);
+        if ($review === null || !Review::userCanAccess($reviewId, (int) Auth::id())) {
+            http_response_code(403);
+            echo View::render('errors/403', [], 'layouts/auth');
+            return;
+        }
+
+        $payload = [];
+        if (isset($_POST['single']) && is_string($_POST['single']) && $_POST['single'] !== '') {
+            $payload = [$_POST['single']];
+        } elseif (isset($_POST['selected']) && is_array($_POST['selected'])) {
+            $payload = array_values(array_filter($_POST['selected'], 'is_string'));
+        }
+
+        if ($payload === []) {
+            Session::flash('error', __('search.import_no_selection'));
+            redirect($this->backHref());
+        }
+
+        $imported = 0;
+        $skipped  = 0;
+        foreach ($payload as $json) {
+            $ref = json_decode($json, true);
+            if (!is_array($ref) || trim((string) ($ref['title'] ?? '')) === '') {
+                $skipped++;
+                continue;
+            }
+            $ref = $this->sanitise($ref);
+            try {
+                Reference::create($reviewId, $ref, 'biblio-search', DeduplicationService::dedupKey($ref));
+                $imported++;
+            } catch (\Throwable $e) {
+                $skipped++;
+            }
+        }
+
+        if ($imported > 0) {
+            $dedup = DeduplicationService::run($reviewId);
+            ActivityLog::record('references.imported', [
+                'format'   => 'biblio_search',
+                'imported' => $imported,
+                'skipped'  => $skipped,
+                'duplicates' => $dedup['exact'] ?? 0,
+            ], $reviewId);
+            Session::flash('success', __('search.import_done', $imported, $skipped));
+        } else {
+            Session::flash('error', __('search.import_failed'));
+        }
+
+        redirect($this->backHref());
+    }
+
+    /* ─── Helpers ──────────────────────────────────────────────────── */
+
+    private function backHref(): string
+    {
+        $q    = trim((string) ($_POST['back_q'] ?? ''));
+        $mode = (string) ($_POST['back_mode'] ?? 'external');
+        $qs   = http_build_query(['q' => $q, 'mode' => $mode]);
+        return '/search?' . $qs;
+    }
+
+    /**
+     * Whitelist the fields we accept from a posted reference. The form
+     * payload comes from the browser, so we treat it as untrusted: cap
+     * sizes, normalise arrays, and silently drop everything else.
+     *
+     * @param array<string,mixed> $ref
+     * @return array<string,mixed>
+     */
+    private function sanitise(array $ref): array
+    {
+        $clip = static fn (string $s, int $max): string =>
+            mb_substr(trim($s), 0, $max);
+
+        $authors = [];
+        foreach ((array) ($ref['authors'] ?? []) as $a) {
+            $a = $clip((string) $a, 255);
+            if ($a !== '') {
+                $authors[] = $a;
+            }
+            if (count($authors) >= 50) {
+                break;
+            }
+        }
+        $keywords = [];
+        foreach ((array) ($ref['keywords'] ?? []) as $k) {
+            $k = $clip((string) $k, 100);
+            if ($k !== '') {
+                $keywords[] = $k;
+            }
+            if (count($keywords) >= 30) {
+                break;
+            }
+        }
+
+        return [
+            'title'    => $clip((string) ($ref['title']    ?? ''), 1024),
+            'authors'  => $authors,
+            'year'     => isset($ref['year']) && is_numeric($ref['year']) ? (int) $ref['year'] : null,
+            'journal'  => $clip((string) ($ref['journal']  ?? ''), 255),
+            'abstract' => $clip((string) ($ref['abstract'] ?? ''), 32_000),
+            'doi'      => $clip((string) ($ref['doi']      ?? ''), 255),
+            'pmid'     => $clip((string) ($ref['pmid']     ?? ''), 32),
+            'url'      => $clip((string) ($ref['url']      ?? ''), 1024),
+            'keywords' => $keywords,
+        ];
+    }
+
     /** @return array<int,array> */
-    private function search(string $q, int $userId): array
+    private function searchLocal(string $q, int $userId): array
     {
         $refs    = Database::table('references');
         $reviews = Database::table('reviews');
         $members = Database::table('review_users');
 
-        // DOIs are often pasted with a `https://doi.org/` or `doi:` prefix —
-        // strip them so the LIKE match hits the stored identifier directly.
         $idQuery = $this->stripDoiPrefix($q);
 
-        // Free-text queries get FULLTEXT relevance ranking against title /
-        // abstract; identifiers and short queries fall through to LIKE.
-        // The FT index only covers (title, abstract), so we ALWAYS OR in a
-        // LIKE probe against doi/pmid even on long queries — otherwise a
-        // pasted DOI like "10.1186/s12879-021-06525-6" (which never appears
-        // in the abstract) would silently return no results.
-        $useFt = mb_strlen($q) >= 4;
-        $like  = '%' . $q . '%';
+        $useFt  = mb_strlen($q) >= 4;
+        $like   = '%' . $q . '%';
         $idLike = '%' . $idQuery . '%';
 
         if ($useFt) {
@@ -58,8 +215,6 @@ final class SearchController
             $where  = '( MATCH(r.title, r.abstract) AGAINST (? IN NATURAL LANGUAGE MODE)
                          OR r.title LIKE ? OR r.abstract LIKE ?
                          OR r.doi LIKE ? OR r.pmid LIKE ? )';
-            // Order: SELECT score, JOIN user, WHERE match, WHERE title, WHERE abstract,
-            //        WHERE doi, WHERE pmid, WHERE owner, WHERE member.
             $params = [$q, $userId, $q, $like, $like, $idLike, $like, $userId, $userId];
         } else {
             $score  = '1';
@@ -80,11 +235,6 @@ final class SearchController
         return Database::select($sql, $params);
     }
 
-    /**
-     * Normalise pasted DOI input — users often include a resolver prefix
-     * (`https://doi.org/`, `http://dx.doi.org/`, `doi:`) which won't appear
-     * in the stored identifier.
-     */
     private function stripDoiPrefix(string $q): string
     {
         $q = trim($q);
