@@ -131,30 +131,42 @@ $basePath = '/reviews/' . $id . '/full-text';
                 </section>
 
                 <?php if ($fullText !== null): ?>
-                    <!-- AI Chat with this article -->
-                    <section class="section-card chat-panel">
-                        <h3 class="section__subtitle"><?= e(__('fulltext.chat_title')) ?></h3>
-                        <div class="chat-history" id="chatHistory">
-                            <?php if ($chatHistory === []): ?>
-                                <p class="muted"><?= e(__('fulltext.chat_empty')) ?></p>
-                            <?php else: ?>
-                                <?php foreach ($chatHistory as $m): ?>
-                                    <div class="chat-msg chat-msg--<?= e((string) $m['role']) ?>"><?= nl2br(e((string) $m['content'])) ?></div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                    <!-- AI Chat with this article (collapsible, open by default) -->
+                    <section class="section-card collapse-card chat-panel"
+                             data-collapsible>
+                        <button type="button" class="collapse-card__head"
+                                data-collapsible-toggle aria-controls="ftChatBody" aria-expanded="true">
+                            <span class="collapse-card__title"><?= e(__('fulltext.chat_title')) ?></span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                 class="icon icon--chevron" aria-hidden="true">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="collapse-card__body chat-panel__body"
+                             id="ftChatBody" data-collapsible-body>
+                            <div class="chat-history" id="chatHistory">
+                                <?php if ($chatHistory === []): ?>
+                                    <p class="muted"><?= e(__('fulltext.chat_empty')) ?></p>
+                                <?php else: ?>
+                                    <?php foreach ($chatHistory as $m): ?>
+                                        <div class="chat-msg chat-msg--<?= e((string) $m['role']) ?>"><?= $m['role'] === 'assistant' ? markdown((string) $m['content']) : nl2br(e((string) $m['content'])) ?></div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                            <form class="chat-form" id="chatForm"
+                                  data-url="/reviews/<?= $id ?>/references/<?= (int) $reference['id'] ?>/chat"
+                                  data-err-default="<?= e(__('fulltext.chat_err_default')) ?>"
+                                  data-err-no-key="<?= e(__('fulltext.chat_err_no_api_key')) ?>"
+                                  data-err-disabled="<?= e(__('fulltext.chat_err_disabled')) ?>"
+                                  data-err-budget="<?= e(__('fulltext.chat_err_budget')) ?>"
+                                  data-err-no-text="<?= e(__('fulltext.chat_err_no_text')) ?>"
+                                  data-err-invalid="<?= e(__('fulltext.chat_err_invalid')) ?>">
+                                <?= csrf_field() ?>
+                                <textarea class="input" name="message" rows="2" placeholder="<?= e(__('fulltext.chat_placeholder')) ?>" required></textarea>
+                                <button class="btn btn--primary btn--sm" type="submit"><?= e(__('fulltext.chat_send')) ?></button>
+                            </form>
                         </div>
-                        <form class="chat-form" id="chatForm"
-                              data-url="/reviews/<?= $id ?>/references/<?= (int) $reference['id'] ?>/chat"
-                              data-err-default="<?= e(__('fulltext.chat_err_default')) ?>"
-                              data-err-no-key="<?= e(__('fulltext.chat_err_no_api_key')) ?>"
-                              data-err-disabled="<?= e(__('fulltext.chat_err_disabled')) ?>"
-                              data-err-budget="<?= e(__('fulltext.chat_err_budget')) ?>"
-                              data-err-no-text="<?= e(__('fulltext.chat_err_no_text')) ?>"
-                              data-err-invalid="<?= e(__('fulltext.chat_err_invalid')) ?>">
-                            <?= csrf_field() ?>
-                            <textarea class="input" name="message" rows="2" placeholder="<?= e(__('fulltext.chat_placeholder')) ?>" required></textarea>
-                            <button class="btn btn--primary btn--sm" type="submit"><?= e(__('fulltext.chat_send')) ?></button>
-                        </form>
                     </section>
 
                     <!-- Decision box (below the AI chat) -->
@@ -292,7 +304,14 @@ window.SysRevAICopilotContext = {
         if (empty) empty.remove();
         var div = document.createElement('div');
         div.className = 'chat-msg chat-msg--' + role;
-        div.textContent = text;
+        /* Assistant replies get full Markdown rendering (bold, lists,
+           tables, code). User messages stay plain-text — we never want a
+           reviewer's literal typing to be interpreted as HTML. */
+        if (role === 'assistant' && window.SysRevAI && window.SysRevAI.mdRender) {
+            div.innerHTML = window.SysRevAI.mdRender(text);
+        } else {
+            div.textContent = text;
+        }
         ch.appendChild(div);
         ch.scrollTop = ch.scrollHeight;
         return div;

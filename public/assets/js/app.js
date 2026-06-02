@@ -332,3 +332,145 @@
     window.SysRevAI = window.SysRevAI || {};
     window.SysRevAI.toast = show;
 })();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Tiny Markdown renderer for AI chat bubbles. Mirrors the subset that
+   src/Helpers/Markdown.php supports: bold, italic, inline code, fenced
+   code blocks, headings, ordered/unordered lists, blockquotes, links and
+   pipe tables. Always HTML-escapes the input first, so a stray <script>
+   from the model can never become a tag.
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function renderInline(s) {
+        // Inline code first so its body isn't touched by bold/italic.
+        var codes = [];
+        s = s.replace(/`([^`\n]+)`/g, function (_, body) {
+            codes.push('<code class="md-code">' + body + '</code>');
+            return ' IC' + (codes.length - 1) + ' ';
+        });
+        // Links: [text](http(s):// | mailto:)
+        s = s.replace(/\[([^\]]+)\]\(((?:https?:|mailto:)[^)\s]+)\)/gi, function (_, text, href) {
+            return '<a href="' + escapeHtml(href).replace(/"/g, '&quot;') +
+                   '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+        });
+        s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/(^|[^\w*])\*([^*\n]+)\*(?![\w*])/g, '$1<em>$2</em>');
+        s = s.replace(/(^|[^\w_])_([^_\n]+)_(?![\w_])/g, '$1<em>$2</em>');
+        s = s.replace(/ IC(\d+) /g, function (_, i) { return codes[+i] || ''; });
+        return s;
+    }
+
+    function renderList(lines, ordered) {
+        var tag = ordered ? 'ol' : 'ul';
+        var cls = ordered ? 'md-ol' : 'md-ul';
+        var pattern = ordered ? /^\s*\d+\.\s+(.*)$/ : /^\s*[*\-]\s+(.*)$/;
+        var items = [];
+        var cur = null;
+        for (var i = 0; i < lines.length; i++) {
+            var m = lines[i].match(pattern);
+            if (m) {
+                if (cur !== null) items.push(cur);
+                cur = m[1];
+            } else {
+                cur = (cur === null ? '' : cur + ' ') + lines[i].trim();
+            }
+        }
+        if (cur !== null) items.push(cur);
+        var html = '';
+        for (var j = 0; j < items.length; j++) {
+            html += '<li>' + renderInline(items[j]) + '</li>';
+        }
+        return '<' + tag + ' class="' + cls + '">' + html + '</' + tag + '>';
+    }
+
+    function renderTable(raw) {
+        var rows = raw.split('\n').filter(function (r) { return r.trim() !== ''; });
+        if (rows.length < 2) return '';
+        function split(row) {
+            row = row.trim().replace(/^\||\|$/g, '');
+            return row.split('|').map(function (c) { return c.trim(); });
+        }
+        var head = split(rows[0]);
+        var body = rows.slice(2);
+        var html = '<table class="md-table"><thead><tr>';
+        for (var i = 0; i < head.length; i++) html += '<th>' + renderInline(head[i]) + '</th>';
+        html += '</tr></thead><tbody>';
+        for (var r = 0; r < body.length; r++) {
+            var cells = split(body[r]);
+            html += '<tr>';
+            for (var c = 0; c < cells.length; c++) html += '<td>' + renderInline(cells[c]) + '</td>';
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderBlock(block) {
+        var lines = block.split('\n');
+        var first = lines[0];
+
+        var hMatch = first.match(/^(#{1,4})\s+(.+)$/);
+        if (hMatch && lines.length === 1) {
+            var level = Math.min(4, hMatch[1].length) + 2;
+            return '<h' + level + ' class="md-h">' + renderInline(hMatch[2]) + '</h' + level + '>';
+        }
+        if (/^>\s?/.test(first)) {
+            var stripped = lines.map(function (l) { return l.replace(/^>\s?/, ''); }).join('\n');
+            return '<blockquote class="md-quote">' + renderBlock(stripped) + '</blockquote>';
+        }
+        if (/^(\s*)[*\-]\s+/.test(first)) return renderList(lines, false);
+        if (/^\s*\d+\.\s+/.test(first))   return renderList(lines, true);
+
+        var esc = lines.map(renderInline);
+        return '<p class="md-p">' + esc.join('<br>') + '</p>';
+    }
+
+    function mdRender(text) {
+        if (text == null) return '';
+        var src = String(text).replace(/\r\n?/g, '\n').replace(/^\s+|\s+$/g, '');
+        if (src === '') return '';
+        src = escapeHtml(src);
+
+        // Extract fenced code blocks.
+        var codeBlocks = [];
+        src = src.replace(/```([a-zA-Z0-9_+\-]*)\n([\s\S]*?)```/g, function (_, lang, body) {
+            var cls = lang ? ' class="lang-' + lang.replace(/[^a-zA-Z0-9_+\-]/g, '') + '"' : '';
+            codeBlocks.push('<pre class="md-pre"><code' + cls + '>' + body + '</code></pre>');
+            return ' CB' + (codeBlocks.length - 1) + ' ';
+        });
+
+        // Extract pipe tables.
+        var tables = [];
+        src = src.replace(/(?:^|\n)((?:\|[^\n]+\|\n)\|[\s:|\-]+\|\n(?:\|[^\n]+\|\n?)+)/g, function (_, t) {
+            tables.push(renderTable(t));
+            return '\n TB' + (tables.length - 1) + ' \n';
+        });
+
+        var blocks = src.split(/\n{2,}/);
+        var out = [];
+        for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i].replace(/\s+$/, '');
+            if (b === '') continue;
+            if (/^ (?:CB|TB)\d+ $/.test(b.trim())) {
+                out.push(b.trim());
+            } else {
+                out.push(renderBlock(b));
+            }
+        }
+        var html = out.join('\n');
+        html = html.replace(/ CB(\d+) /g, function (_, i) { return codeBlocks[+i] || ''; });
+        html = html.replace(/ TB(\d+) /g, function (_, i) { return tables[+i] || ''; });
+        return html;
+    }
+
+    window.SysRevAI = window.SysRevAI || {};
+    window.SysRevAI.mdRender = mdRender;
+})();
