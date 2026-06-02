@@ -255,6 +255,103 @@ final class ClaudeService
     }
 
     /**
+     * Re-format a free-text block of bibliographic references into the
+     * requested citation style (APA, Vancouver, NLM, Chicago, MLA,
+     * Harvard, AMA, IEEE). The model keeps the underlying bibliographic
+     * data unchanged and only restyles the punctuation, ordering and
+     * spelling-out conventions for each reference.
+     *
+     * @param string $text  one citation per line / paragraph
+     * @param string $style canonical style key (apa, vancouver, nlm, …)
+     * @return array{
+     *   ok:bool,
+     *   items?:list<array{original:string,normalized:string}>,
+     *   error?:string
+     * }
+     */
+    public function normalizeCitations(string $text, string $style, ?int $reviewId = null): array
+    {
+        if ($e = $this->guard('extraction')) {
+            return $e;
+        }
+        $styleLabel = match (strtolower($style)) {
+            'apa'        => 'APA 7th edition',
+            'vancouver'  => 'Vancouver',
+            'nlm'        => 'NLM (National Library of Medicine)',
+            'chicago'    => 'Chicago author-date',
+            'mla'        => 'MLA 9th edition',
+            'harvard'    => 'Harvard',
+            'ama'        => 'AMA 11th edition',
+            'ieee'       => 'IEEE',
+            default      => 'APA 7th edition',
+        };
+
+        $system = "You are a bibliographic-citation normaliser. You receive a free-text block of references "
+            . "(in any style or no consistent style at all) and re-format every one of them to the "
+            . "{$styleLabel} citation style. NEVER invent missing fields — if a reference is incomplete in "
+            . "the source, leave the corresponding part blank in the normalised output. Preserve every "
+            . "identifier (DOI, PMID, URL) you can find. One entry per distinct reference. Return ONLY a "
+            . "JSON object with this exact shape, no markdown fences, no commentary:\n\n"
+            . '{"citations":[{"original":"<the reference as it arrived>","normalized":"<the reference '
+            . 'reformatted to ' . $styleLabel . '>"}]}';
+
+        // Chunk so the response can comfortably fit inside max_tokens — a
+        // typical normalised reference is 100-300 tokens long.
+        $chunks = $this->splitBibliographyIntoChunks($text);
+        if ($chunks === []) {
+            return ['ok' => false, 'error' => 'invalid_json'];
+        }
+
+        $items = [];
+        $lastError = null;
+        $okChunks = 0;
+        foreach ($chunks as $chunk) {
+            $res = $this->request(
+                $this->modelComplex,
+                $system,
+                [['role' => 'user', 'content' => $this->truncate($chunk, 50000)]],
+                8192,
+                'extraction',
+                $reviewId,
+                true
+            );
+            if (!$res['ok']) {
+                $lastError = $res['error'];
+                if (in_array($lastError, ['no_api_key', 'feature_disabled', 'budget_exceeded'], true)) {
+                    return ['ok' => false, 'error' => $lastError];
+                }
+                continue;
+            }
+            $json = $res['json'];
+            if (!is_array($json) || !is_array($json['citations'] ?? null)) {
+                $lastError = 'invalid_json';
+                continue;
+            }
+            $okChunks++;
+            foreach ($json['citations'] as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $original   = trim((string) ($row['original']   ?? ''));
+                $normalized = trim((string) ($row['normalized'] ?? ''));
+                if ($normalized === '') {
+                    continue;
+                }
+                $items[] = [
+                    'original'   => $original,
+                    'normalized' => $normalized,
+                ];
+            }
+        }
+
+        if ($okChunks === 0 && $items === []) {
+            return ['ok' => false, 'error' => $lastError ?? 'invalid_json'];
+        }
+
+        return ['ok' => true, 'items' => $items];
+    }
+
+    /**
      * Parse a free-form text block of references (any format — APA,
      * Vancouver, numbered list, Harvard, plain copy-paste from Word…) and
      * return a normalised array suitable for direct import. Sites can

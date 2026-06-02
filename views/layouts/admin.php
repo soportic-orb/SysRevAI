@@ -68,6 +68,10 @@ $nav = [
             <?php $iconName = 'search'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.search')) ?>
         </a>
+        <a href="/citations">
+            <?php $iconName = 'references'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.citations')) ?>
+        </a>
         <a href="/admin/settings" class="is-active">
             <?php $iconName = 'settings'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.settings')) ?>

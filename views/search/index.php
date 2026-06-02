@@ -212,6 +212,18 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
                         disabled>
                     <?= e(__('search.import_selected')) ?>
                 </button>
+                <!-- Second submit on the SAME bulk form: hand the
+                     selected[] payload off to the citation normaliser
+                     instead of writing references straight into a
+                     review. formaction wins over the parent form's
+                     action when this button is the one clicked. -->
+                <button type="submit" class="btn btn--ghost btn--sm"
+                        id="bulkConvertBtn"
+                        formaction="/citations/from-search"
+                        data-busy-label="<?= e(__('common.working')) ?>"
+                        disabled>
+                    <?= e(__('search.send_to_converter')) ?>
+                </button>
             </div>
         </form>
 
@@ -335,17 +347,21 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
     /* Bulk toolbar: "select all" toggles every row checkbox; the counter
        and the import button track the live selection so the user can't
        submit an empty form. */
-    var selectAll = document.getElementById('searchSelectAll');
-    var counter   = document.getElementById('searchSelectedCount');
-    var importBtn = document.getElementById('bulkImportBtn');
-    var reviewSel = document.getElementById('bulkReviewId');
-    var rows      = document.querySelectorAll('.search-row-check');
+    var selectAll  = document.getElementById('searchSelectAll');
+    var counter    = document.getElementById('searchSelectedCount');
+    var importBtn  = document.getElementById('bulkImportBtn');
+    var convertBtn = document.getElementById('bulkConvertBtn');
+    var reviewSel  = document.getElementById('bulkReviewId');
+    var rows       = document.querySelectorAll('.search-row-check');
 
     function recompute() {
         var n = 0;
         rows.forEach(function (c) { if (c.checked) n++; });
         counter.textContent = String(n);
         importBtn.disabled = n === 0 || !reviewSel.value;
+        // The converter doesn't need a destination review — it just
+        // hands the selected rows off to /citations.
+        if (convertBtn) convertBtn.disabled = n === 0;
     }
 
     selectAll.addEventListener('change', function () {
