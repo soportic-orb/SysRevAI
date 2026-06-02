@@ -145,7 +145,12 @@ $basePath = '/reviews/' . $id . '/full-text';
                         </div>
                         <form class="chat-form" id="chatForm"
                               data-url="/reviews/<?= $id ?>/references/<?= (int) $reference['id'] ?>/chat"
-                              data-error="<?= e(__('screening.ai_error')) ?>">
+                              data-err-default="<?= e(__('fulltext.chat_err_default')) ?>"
+                              data-err-no-key="<?= e(__('fulltext.chat_err_no_api_key')) ?>"
+                              data-err-disabled="<?= e(__('fulltext.chat_err_disabled')) ?>"
+                              data-err-budget="<?= e(__('fulltext.chat_err_budget')) ?>"
+                              data-err-no-text="<?= e(__('fulltext.chat_err_no_text')) ?>"
+                              data-err-invalid="<?= e(__('fulltext.chat_err_invalid')) ?>">
                             <?= csrf_field() ?>
                             <textarea class="input" name="message" rows="2" placeholder="<?= e(__('fulltext.chat_placeholder')) ?>" required></textarea>
                             <button class="btn btn--primary btn--sm" type="submit"><?= e(__('fulltext.chat_send')) ?></button>
@@ -238,6 +243,21 @@ window.SysRevAICopilotContext = {
     var cf = document.getElementById('chatForm');
     var ch = document.getElementById('chatHistory');
     if (cf && ch) {
+        /* Map server-side error codes to specific user-facing messages so
+           the reviewer can see whether it's a feature toggle, a budget
+           cap, a missing PDF text or a real network failure — rather than
+           the previous generic "AI unavailable" wall. */
+        var errLabel = function (code) {
+            switch (code) {
+                case 'no_api_key':       return cf.getAttribute('data-err-no-key');
+                case 'feature_disabled': return cf.getAttribute('data-err-disabled');
+                case 'budget_exceeded':  return cf.getAttribute('data-err-budget');
+                case 'no_text':          return cf.getAttribute('data-err-no-text');
+                case 'invalid_message':  return cf.getAttribute('data-err-invalid');
+                default:                 return cf.getAttribute('data-err-default');
+            }
+        };
+
         cf.addEventListener('submit', function (e) {
             e.preventDefault();
             var ta = cf.querySelector('textarea');
@@ -248,16 +268,18 @@ window.SysRevAICopilotContext = {
             var thinking = appendBubble('assistant', '…');
             var data = new FormData(cf);
             fetch(cf.getAttribute('data-url'), { method: 'POST', body: data })
-                .then(function (r) { return r.json(); })
+                .then(function (r) {
+                    return r.json().catch(function () { return { ok: false, error: 'http_' + r.status }; });
+                })
                 .then(function (d) {
                     thinking.remove();
                     if (d && d.ok && d.reply) {
                         appendBubble('assistant', d.reply);
                     } else {
-                        appendBubble('assistant', cf.getAttribute('data-error'));
+                        appendBubble('assistant', errLabel((d && d.error) || ''));
                     }
                 })
-                .catch(function () { thinking.remove(); appendBubble('assistant', cf.getAttribute('data-error')); });
+                .catch(function () { thinking.remove(); appendBubble('assistant', errLabel('')); });
         });
     }
 
