@@ -92,6 +92,28 @@ final class ImportController
         redirect('/reviews/' . $rid . '/references');
     }
 
+    /**
+     * Wipe the audit list for this review. Owner / admin only — non-owners
+     * never see the button, but we re-check here so a forged POST can't
+     * delete history out from under the owner.
+     */
+    public function clearLogs(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+
+        if ((int) $review['owner_id'] !== (int) Auth::id()
+            && !Auth::hasRole('owner', 'admin')) {
+            Session::flash('error', __('import.clear_forbidden'));
+            redirect('/reviews/' . $rid . '/import');
+        }
+
+        $deleted = ImportLog::clearForReview($rid);
+        ActivityLog::record('imports.logs_cleared', ['deleted' => $deleted], $rid);
+        Session::flash('success', __('import.clear_done', $deleted));
+        redirect('/reviews/' . $rid . '/import');
+    }
+
     /** @return array{0:string,1:string} [content, filename] */
     private function readInput(): array
     {

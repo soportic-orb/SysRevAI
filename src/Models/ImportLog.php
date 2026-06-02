@@ -40,4 +40,11 @@ final class ImportLog
             [$reviewId]
         );
     }
+
+    /** Wipe the audit list for one review. The references themselves stay. */
+    public static function clearForReview(int $reviewId): int
+    {
+        $table = Database::table('import_logs');
+        return Database::affecting("DELETE FROM `{$table}` WHERE review_id = ?", [$reviewId]);
+    }
 }

@@ -17,6 +17,7 @@ use SysRevAI\Controllers\Admin\ReportsController;
 use SysRevAI\Controllers\Admin\SettingsController;
 use SysRevAI\Controllers\Admin\UsersController;
 use SysRevAI\Controllers\AboutController;
+use SysRevAI\Controllers\AiUsageController;
 use SysRevAI\Controllers\LegalController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
@@ -73,6 +74,7 @@ $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'
 $router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
+$router->get('/reviews/{id}/ai-usage', [AiUsageController::class, 'index'], ['auth']);
 $router->get('/reviews/{id}/copilot/history', [ReviewsController::class, 'copilotHistory'], ['auth']);
 $router->post('/reviews/{id}/copilot/clear', [ReviewsController::class, 'copilotClear'], ['auth']);
 $router->post('/reviews/{id}/copilot', [ReviewsController::class, 'copilot'], ['auth']);
@@ -93,6 +95,7 @@ $router->get('/reviews/{id}/references', [ReferencesController::class, 'index'],
 $router->post('/reviews/{id}/references/{refId}/delete', [ReferencesController::class, 'delete'], ['auth']);
 $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
+$router->post('/reviews/{id}/import/clear-logs', [ImportController::class, 'clearLogs'], ['auth']);
 $router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/duplicates/check-ai', [DuplicatesController::class, 'checkAi'], ['auth']);
 $router->post('/reviews/{id}/duplicates/resolve', [DuplicatesController::class, 'resolve'], ['auth']);

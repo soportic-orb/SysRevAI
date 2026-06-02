@@ -55,6 +55,11 @@ $path = match ($iconName ?? '') {
     'x'         => '<line x1="6" y1="6" x2="18" y2="18"></line>'
                  . '<line x1="6" y1="18" x2="18" y2="6"></line>',
 
+    // Euro currency symbol for the AI-cost badge in the review sub-nav.
+    'euro'      => '<path d="M18.5 6.5A6 6 0 0 0 8 11h7"></path>'
+                 . '<path d="M15 14H8a6 6 0 0 0 10.5 4.5"></path>'
+                 . '<path d="M4 11h12"></path><path d="M4 14h12"></path>',
+
     default     => '',
 };
 
