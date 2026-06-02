@@ -42,7 +42,6 @@ $qs = static function (array $extra) use ($status, $search): string {
 <div class="page">
     <div class="page__head page__head--row">
         <div>
-            <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
             <h1 class="page__title"><?= e(__('references.title')) ?> <span class="muted">(<?= $total ?>)</span></h1>
         </div>
         <div class="btn-row">

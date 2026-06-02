@@ -18,7 +18,6 @@ $basePath = $basePath ?? '/reviews/' . $id . '/screen';
     </div>
 
     <div class="page__head">
-        <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
         <h1 class="page__title"><?= e(__('screening.coordinator_view')) ?></h1>
     </div>
 

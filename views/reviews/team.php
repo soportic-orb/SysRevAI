@@ -15,7 +15,6 @@ Session::forget('_last_invite_link');
 ?>
 <div class="page page--narrow">
     <div class="page__head">
-        <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
         <h1 class="page__title"><?= e(__('team.title')) ?></h1>
     </div>
 

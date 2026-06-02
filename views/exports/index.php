@@ -11,7 +11,6 @@ $id = (int) $review['id'];
 ?>
 <div class="page">
     <div class="page__head">
-        <div class="breadcrumb"><a href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a> /</div>
         <h1 class="page__title"><?= e(__('exports.title')) ?></h1>
         <p class="page__subtitle"><?= e(__('exports.intro')) ?></p>
     </div>
