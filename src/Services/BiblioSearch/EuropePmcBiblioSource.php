@@ -23,13 +23,22 @@ final class EuropePmcBiblioSource extends BaseHttpBiblioSource
         return 'europepmc';
     }
 
-    public function search(string $query, int $limit = 20): array
+    public function search(string $query, int $limit = 20, ?BiblioSearchFilters $filters = null): array
     {
         $q = $query;
         if (preg_match('#^10\.\d{4,9}/\S+$#i', $query) === 1) {
             $q = 'DOI:' . $query;
         } elseif (preg_match('#^\d{1,9}$#', $query) === 1) {
             $q = 'EXT_ID:' . $query . ' AND SRC:MED';
+        }
+
+        // Europe PMC has no separate filter param — narrowing happens by
+        // appending Lucene-style clauses to the query string. Only the
+        // year range is portable enough to be worth doing here.
+        if ($filters !== null && ($filters->yearMin !== null || $filters->yearMax !== null)) {
+            $min = $filters->yearMin ?? 1800;
+            $max = $filters->yearMax ?? ((int) date('Y') + 1);
+            $q .= ' AND (PUB_YEAR:[' . $min . ' TO ' . $max . '])';
         }
 
         $url = self::ENDPOINT . '?' . http_build_query([

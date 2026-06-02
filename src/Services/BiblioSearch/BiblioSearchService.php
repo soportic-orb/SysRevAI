@@ -14,7 +14,7 @@ namespace SysRevAI\Services\BiblioSearch;
  */
 final class BiblioSearchService
 {
-    public const SOURCES = ['crossref', 'openalex', 'europepmc'];
+    public const SOURCES = ['crossref', 'openalex', 'europepmc', 'consensus'];
     private const DEFAULT_LIMIT_PER_SOURCE = 15;
     private const HARD_RESULT_CAP = 60;
 
@@ -36,7 +36,7 @@ final class BiblioSearchService
      *     sources:    array<string,array{count:int,error:?string}>
      * }
      */
-    public function search(string $query, int $perSource = self::DEFAULT_LIMIT_PER_SOURCE): array
+    public function search(string $query, int $perSource = self::DEFAULT_LIMIT_PER_SOURCE, ?BiblioSearchFilters $filters = null): array
     {
         $query = trim($query);
         if ($query === '') {
@@ -48,7 +48,7 @@ final class BiblioSearchService
         foreach ($this->sources as $src) {
             $name = $src->name();
             try {
-                $hits = $src->search($query, $perSource);
+                $hits = $src->search($query, $perSource, $filters);
             } catch (\Throwable $e) {
                 $sources[$name] = ['count' => 0, 'error' => 'exception'];
                 continue;
@@ -185,10 +185,17 @@ final class BiblioSearchService
             if (!$enabled) {
                 continue;
             }
+            // Consensus is gated additionally on a configured API key —
+            // skipping it silently when missing keeps the other three
+            // databases serving the search.
+            if ($name === 'consensus' && trim((string) (setting('consensus.api_key') ?? '')) === '') {
+                continue;
+            }
             $out[] = match ($name) {
                 'crossref'  => new CrossrefBiblioSource(),
                 'openalex'  => new OpenAlexBiblioSource(),
                 'europepmc' => new EuropePmcBiblioSource(),
+                'consensus' => new ConsensusBiblioSource(),
             };
         }
         return $out;

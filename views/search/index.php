@@ -95,7 +95,73 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
             <span class="tag tag--soft">CrossRef</span>
             <span class="tag tag--soft">OpenAlex</span>
             <span class="tag tag--soft">Europe PMC</span>
+            <?php if ((bool) (setting('biblio_search.consensus.enabled') ?? false)
+                    && trim((string) (setting('consensus.api_key') ?? '')) !== ''): ?>
+                <span class="tag tag--soft">Consensus</span>
+            <?php endif; ?>
         </p>
+
+        <?php
+        /** @var \SysRevAI\Services\BiblioSearch\BiblioSearchFilters $filters */
+        /** @var string[] $studyTypes */
+        ?>
+        <!-- Eligibility filters. Submit again on change so the URL stays
+             the source of truth — the controller seeds an initial set
+             from the protocol when none of these are populated. -->
+        <form method="get" action="/search" class="search-filters">
+            <input type="hidden" name="mode" value="external">
+            <input type="hidden" name="q" value="<?= e($q) ?>">
+            <?php if (!empty($_GET['review_id'])): ?>
+                <input type="hidden" name="review_id" value="<?= (int) $_GET['review_id'] ?>">
+            <?php endif; ?>
+            <div class="search-filters__row">
+                <label class="field-label" for="filter_year_min"><?= e(__('search.filter_year_min')) ?></label>
+                <input class="input input--sm" id="filter_year_min" name="year_min" type="number" min="1800" max="2100"
+                       value="<?= e($filters->yearMin !== null ? (string) $filters->yearMin : '') ?>">
+                <label class="field-label" for="filter_year_max"><?= e(__('search.filter_year_max')) ?></label>
+                <input class="input input--sm" id="filter_year_max" name="year_max" type="number" min="1800" max="2100"
+                       value="<?= e($filters->yearMax !== null ? (string) $filters->yearMax : '') ?>">
+                <label class="field-label" for="filter_sample_size_min"><?= e(__('search.filter_sample_size_min')) ?></label>
+                <input class="input input--sm" id="filter_sample_size_min" name="sample_size_min" type="number" min="1"
+                       value="<?= e($filters->sampleSizeMin !== null ? (string) $filters->sampleSizeMin : '') ?>">
+                <label class="field-label" for="filter_sjr_max"><?= e(__('search.filter_sjr_max')) ?></label>
+                <select class="select select--sm" id="filter_sjr_max" name="sjr_max">
+                    <option value=""><?= e(__('search.filter_any')) ?></option>
+                    <?php foreach ([1, 2, 3, 4] as $sjr): ?>
+                        <option value="<?= $sjr ?>" <?= $filters->sjrMax === $sjr ? 'selected' : '' ?>>Q<?= $sjr ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="search-filters__row">
+                <label class="checkbox">
+                    <input type="checkbox" name="human" value="1" <?= $filters->human === true ? 'checked' : '' ?>>
+                    <?= e(__('search.filter_human')) ?>
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="exclude_preprints" value="1" <?= $filters->excludePreprints === true ? 'checked' : '' ?>>
+                    <?= e(__('search.filter_exclude_preprints')) ?>
+                </label>
+                <span class="search-filters__study-types">
+                    <span class="field-label"><?= e(__('search.filter_study_types')) ?></span>
+                    <?php foreach ($studyTypes as $st):
+                        $stKey = str_replace([' ', '-'], '_', $st);
+                    ?>
+                        <label class="checkbox checkbox--inline">
+                            <input type="checkbox" name="study_types[]" value="<?= e($st) ?>"
+                                   <?= in_array($st, $filters->studyTypes, true) ? 'checked' : '' ?>>
+                            <?= e(__('search.study_type_' . $stKey)) ?>
+                        </label>
+                    <?php endforeach; ?>
+                </span>
+            </div>
+            <div class="search-filters__row">
+                <button type="submit" class="btn btn--ghost btn--sm"><?= e(__('search.filter_apply')) ?></button>
+                <a class="btn btn--ghost btn--sm"
+                   href="/search?<?= e(http_build_query(['q' => $q, 'mode' => 'external'])) ?>">
+                    <?= e(__('search.filter_reset')) ?>
+                </a>
+            </div>
+        </form>
     <?php endif; ?>
 
     <?php if ($q === ''): ?>

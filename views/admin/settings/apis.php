@@ -98,5 +98,25 @@ use SysRevAI\Core\Config;
         </label>
     </div>
 
+    <div class="api-block">
+        <h2 class="section__subtitle">Consensus</h2>
+        <p class="api-help">
+            <?= e(__('admin.apis.help_consensus')) ?>
+            <a href="https://consensus.app/account/api" target="_blank" rel="noopener noreferrer">
+                <?= e(__('admin.apis.link_consensus')) ?> &rarr;
+            </a>
+        </p>
+        <div class="field">
+            <label class="field-label" for="consensus_api_key"><?= e(__('admin.apis.consensus_api_key')) ?></label>
+            <input class="input" id="consensus_api_key" name="consensus_api_key" type="password" autocomplete="off"
+                   placeholder="<?= Config::hasEncrypted('consensus.api_key') ? '••••••  (' . e(__('admin.claude.key_set')) . ')' : '' ?>">
+            <span class="field-help"><?= e(__('admin.apis.consensus_api_key_help')) ?></span>
+        </div>
+        <label class="checkbox">
+            <input type="checkbox" name="consensus_enabled" value="1" <?= (bool) (setting('biblio_search.consensus.enabled') ?? false) ? 'checked' : '' ?>>
+            <?= e(__('admin.apis.consensus_enabled')) ?>
+        </label>
+    </div>
+
     <div><button type="submit" class="btn btn--primary"><?= e(__('admin.save')) ?></button></div>
 </form>

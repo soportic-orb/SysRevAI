@@ -23,7 +23,7 @@ final class OpenAlexBiblioSource extends BaseHttpBiblioSource
         return 'openalex';
     }
 
-    public function search(string $query, int $limit = 20): array
+    public function search(string $query, int $limit = 20, ?BiblioSearchFilters $filters = null): array
     {
         $email = (string) (setting('fulltext.polite_email') ?? setting('crossref.email') ?? '');
         $params = ['per_page' => max(1, min($limit, 50))];
@@ -40,6 +40,22 @@ final class OpenAlexBiblioSource extends BaseHttpBiblioSource
             $url = self::ENDPOINT . '/pmid:' . rawurlencode($query) . '?' . http_build_query($params);
         } else {
             $params['search'] = $query;
+            // Year-range filter. OpenAlex's `filter` query param takes a
+            // comma-separated list of clauses; everything else in the
+            // filter set degrades to post-filtering on the merged result.
+            if ($filters !== null) {
+                [$from, $to] = $filters->yearRangeIso();
+                $clauses = [];
+                if ($from !== null) {
+                    $clauses[] = 'from_publication_date:' . $from;
+                }
+                if ($to !== null) {
+                    $clauses[] = 'to_publication_date:' . $to;
+                }
+                if ($clauses !== []) {
+                    $params['filter'] = implode(',', $clauses);
+                }
+            }
             $url = self::ENDPOINT . '?' . http_build_query($params);
         }
 
