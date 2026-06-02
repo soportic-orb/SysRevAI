@@ -38,8 +38,21 @@ final class ReviewsController
 
     public function store(): void
     {
+        // AJAX detection — the secondary-study cards on the new-review form
+        // post here with X-Requested-With:fetch so the user can spawn extra
+        // sibling reviews without losing the main draft they're still
+        // editing. Falls through to the normal redirect for plain submits.
+        $isAjax = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch'
+            || str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json');
+
         $data = $this->readInput();
         if ($data['title'] === '') {
+            if ($isAjax) {
+                http_response_code(422);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['ok' => false, 'error' => __('reviews.title_required')]);
+                return;
+            }
             Session::flash('error', __('reviews.title_required'));
             redirect('/reviews/new');
         }
@@ -53,6 +66,18 @@ final class ReviewsController
         }
 
         ActivityLog::record('review.created', ['review_id' => $id], $id);
+
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'ok'    => true,
+                'id'    => $id,
+                'title' => $data['title'],
+                'url'   => '/reviews/' . $id,
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         Session::flash('success', __('reviews.created'));
         redirect('/reviews/' . $id);
     }

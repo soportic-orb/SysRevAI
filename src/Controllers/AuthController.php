@@ -10,6 +10,7 @@ use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\User;
+use SysRevAI\Services\MailService;
 use SysRevAI\Services\Totp;
 
 final class AuthController
@@ -174,6 +175,34 @@ final class AuthController
             'legal_accepted' => true,
         ]);
         ActivityLog::record('users.self_registered', ['user_id' => $id, 'manual_approval' => $manualApprove]);
+
+        // Notify the platform's owners / admins so they don't have to
+        // poll the admin panel for new sign-ups. Wrapped in a try/catch
+        // because mail must never break the primary registration flow.
+        try {
+            $siteName = (string) (setting('site.name') ?? config('app.name', 'SysRevAI'));
+            $siteUrl  = (string) (setting('site.url')  ?? config('app.url', ''));
+            $whenLine = 'Signed up at ' . date('Y-m-d H:i T');
+
+            if ($manualApprove) {
+                $subject = sprintf('[%s] New user awaiting validation: %s', $siteName, $name);
+                $body = "A new user has signed up and is awaiting administrator validation.\n\n"
+                    . "Name:  {$name}\n"
+                    . "Email: {$email}\n"
+                    . "{$whenLine}\n\n"
+                    . ($siteUrl !== '' ? "Approve them in the admin panel: {$siteUrl}/admin/users\n" : '');
+            } else {
+                $subject = sprintf('[%s] New user registered: %s', $siteName, $name);
+                $body = "A new user has signed up and is already active.\n\n"
+                    . "Name:  {$name}\n"
+                    . "Email: {$email}\n"
+                    . "{$whenLine}\n\n"
+                    . ($siteUrl !== '' ? "Manage users: {$siteUrl}/admin/users\n" : '');
+            }
+            MailService::notifyAdmins($subject, $body);
+        } catch (\Throwable) {
+            // Best-effort: ignore mail failures.
+        }
 
         if ($manualApprove) {
             Session::flash('login_email', $email);

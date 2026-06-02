@@ -159,6 +159,34 @@ final class User
         );
     }
 
+    /**
+     * Email addresses of every active owner / admin. Used by
+     * MailService::notifyAdmins() to fan operational notifications out
+     * (new user registered, pending validation, …).
+     *
+     * @return list<string>
+     */
+    public static function adminEmails(): array
+    {
+        $table = Database::table('users');
+        $rows = Database::select(
+            "SELECT email FROM `{$table}`
+              WHERE role IN ('owner', 'admin')
+                AND is_active = 1
+                AND status = 'active'
+                AND email <> ''
+              ORDER BY role = 'owner' DESC, id ASC"
+        );
+        $out = [];
+        foreach ($rows as $r) {
+            $email = trim((string) ($r['email'] ?? ''));
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $out[] = $email;
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
     public static function countOwners(): int
     {
         $table = Database::table('users');

@@ -175,7 +175,13 @@ $extractUrl = $isEdit
         nofile:       <?= json_encode(__('reviews.ai_upload_pick_first')) ?>,
         picoPop:      <?= json_encode(__('reviews.pico_population')) ?>,
         picoInt:      <?= json_encode(__('reviews.pico_intervention')) ?>,
-        picoOut:      <?= json_encode(__('reviews.pico_outcome')) ?>
+        picoOut:      <?= json_encode(__('reviews.pico_outcome')) ?>,
+        createBtn:    <?= json_encode(__('reviews.ai_secondary_create')) ?>,
+        creating:     <?= json_encode(__('reviews.ai_secondary_creating')) ?>,
+        created:      <?= json_encode(__('reviews.ai_secondary_created')) ?>,
+        createdToast: <?= json_encode(__('reviews.ai_secondary_created_toast')) ?>,
+        createFailed: <?= json_encode(__('reviews.ai_secondary_create_failed')) ?>,
+        openReview:   <?= json_encode(__('reviews.ai_secondary_open')) ?>
     };
 
     var secondariesContainer = document.getElementById('secondariesContainer');
@@ -250,6 +256,67 @@ $extractUrl = $isEdit
                 li.appendChild(document.createTextNode(pair[1]));
                 pico.appendChild(li);
             });
+            // Background submit: the user is still drafting the main
+            // review, so navigating away to the freshly-created sibling
+            // would lose their work. Intercept the submit, send via
+            // fetch with the AJAX header, and on success swap the card
+            // for a success state + raise a toast.
+            node.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var form = ev.currentTarget;
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn && submitBtn.disabled) return;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = labels.creating;
+                }
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                }).then(function (r) {
+                    return r.json().then(function (j) { return { ok: r.ok, body: j }; });
+                }).then(function (res) {
+                    if (!res.ok || !res.body || !res.body.ok) {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = labels.createBtn;
+                        }
+                        if (window.SysRevAI && window.SysRevAI.toast) {
+                            window.SysRevAI.toast((res.body && res.body.error) || labels.createFailed, 'error');
+                        }
+                        return;
+                    }
+                    // Success — replace the card with a "created" badge
+                    // pointing at the new review.
+                    var created = document.createElement('div');
+                    created.className = 'secondary-card secondary-card--created';
+                    var done = document.createElement('p');
+                    done.className = 'secondary-card__done';
+                    done.appendChild(document.createTextNode(labels.created + ' '));
+                    var link = document.createElement('a');
+                    link.href = res.body.url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.textContent = res.body.title || labels.openReview;
+                    done.appendChild(link);
+                    created.appendChild(done);
+                    form.parentNode.replaceChild(created, form);
+                    if (window.SysRevAI && window.SysRevAI.toast) {
+                        window.SysRevAI.toast(labels.createdToast, 'success');
+                    }
+                }).catch(function () {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = labels.createBtn;
+                    }
+                    if (window.SysRevAI && window.SysRevAI.toast) {
+                        window.SysRevAI.toast(labels.createFailed, 'error');
+                    }
+                });
+            });
+
             secondariesList.appendChild(node);
         });
         secondariesContainer.hidden = false;
