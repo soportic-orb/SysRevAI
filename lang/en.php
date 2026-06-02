@@ -83,6 +83,7 @@ return [
 
     'footer' => [
         'powered_by' => 'Open source (AGPL-3.0)',
+        'github'     => 'Go to project',
         'author'     => 'Developed by Octavi Rodriguez Blanco',
         'support'    => 'Support the project',
         'privacy'    => 'Privacy Policy',
