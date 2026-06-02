@@ -10,6 +10,7 @@ use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\User;
+use SysRevAI\Models\UserInvitation;
 
 /**
  * Admin → Users and permissions: list, create, update and delete accounts,
@@ -27,13 +28,63 @@ final class UsersController
         } catch (\Throwable) {
             $users = [];
         }
+        // Pending platform-level invitations. Wrapped in try/catch
+        // because the user_invitations table only exists after migration
+        // 023; older installs shouldn't blank the page.
+        try {
+            $invitations = UserInvitation::pending();
+        } catch (\Throwable) {
+            $invitations = [];
+        }
+        // Surface the last-created invite link as a one-shot banner so
+        // the admin can copy it right away — important when SMTP is
+        // misconfigured or the invitation email never arrives.
+        $lastInviteLink = Session::get('_last_user_invite_link');
+        Session::forget('_last_user_invite_link');
 
         echo View::render('admin/users/index', [
-            'activeSection' => 'users',
-            'users'         => $users,
-            'search'        => $search,
-            'roles'         => self::ROLES,
+            'activeSection'  => 'users',
+            'users'          => $users,
+            'invitations'    => $invitations,
+            'lastInviteLink' => $lastInviteLink,
+            'search'         => $search,
+            'roles'          => self::ROLES,
         ], 'layouts/admin');
+    }
+
+    /**
+     * Admin-issued invitation. Creates a token-backed user_invitation
+     * row and stashes the resulting URL so the admin can copy it from
+     * the page — useful when the SMTP layer is down or the invitee
+     * never receives the email.
+     */
+    public function invite(): void
+    {
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+        $role  = in_array(($_POST['role'] ?? 'reviewer'), self::ROLES, true) ? $_POST['role'] : 'reviewer';
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('admin_error', __('admin.users.invite_invalid_email'));
+            redirect('/admin/users');
+        }
+        if (User::findByEmail($email) !== null) {
+            Session::flash('admin_error', __('admin.users.email_taken'));
+            redirect('/admin/users');
+        }
+
+        $token = UserInvitation::create($email, $role, (int) Auth::id());
+        Session::set('_last_user_invite_link', UserInvitation::inviteUrl($token));
+        ActivityLog::record('users.invited', ['email' => $email, 'role' => $role]);
+        Session::flash('admin_success', __('admin.users.invitation_created'));
+        redirect('/admin/users');
+    }
+
+    public function revokeInvitation(string $id): void
+    {
+        UserInvitation::revoke((int) $id);
+        ActivityLog::record('users.invitation_revoked', ['invitation_id' => (int) $id]);
+        Session::flash('admin_success', __('admin.users.invitation_revoked'));
+        redirect('/admin/users');
     }
 
     public function create(): void

@@ -28,6 +28,7 @@ use SysRevAI\Controllers\FullTextRetrievalController;
 use SysRevAI\Controllers\ImportController;
 use SysRevAI\Controllers\RetrievalQueueController;
 use SysRevAI\Controllers\InvitationsController;
+use SysRevAI\Controllers\UserInvitationsController;
 use SysRevAI\Controllers\MembersController;
 use SysRevAI\Controllers\NotificationsController;
 use SysRevAI\Controllers\ProfileController;
@@ -177,6 +178,10 @@ $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 $router->get('/invite/{token}', [InvitationsController::class, 'show'], ['auth']);
 $router->post('/invite/{token}/accept', [InvitationsController::class, 'accept'], ['auth']);
 
+// Platform-level user invitations (admin-issued, guest-accepted).
+$router->get('/user-invite/{token}', [UserInvitationsController::class, 'show'], ['guest']);
+$router->post('/user-invite/{token}/accept', [UserInvitationsController::class, 'accept'], ['guest']);
+
 // Notifications.
 $router->get('/notifications/poll', [NotificationsController::class, 'poll'], ['auth']);
 $router->get('/notifications', [NotificationsController::class, 'index'], ['auth']);
@@ -223,6 +228,8 @@ $router->post('/admin/legal/{type}/{language}/restore', [LegalSettingsController
 $router->get('/admin/users', [UsersController::class, 'index'], $admin);
 $router->post('/admin/users/registration', [UsersController::class, 'saveRegistration'], $admin);
 $router->post('/admin/users', [UsersController::class, 'create'], $admin);
+$router->post('/admin/users/invite', [UsersController::class, 'invite'], $admin);
+$router->post('/admin/users/invitations/{id}/revoke', [UsersController::class, 'revokeInvitation'], $admin);
 $router->post('/admin/users/{id}/delete', [UsersController::class, 'delete'], $admin);
 $router->post('/admin/users/{id}', [UsersController::class, 'update'], $admin);
 

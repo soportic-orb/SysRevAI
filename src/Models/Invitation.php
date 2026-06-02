@@ -58,4 +58,10 @@ final class Invitation
         $table = Database::table('invitations');
         Database::affecting("DELETE FROM `{$table}` WHERE id = ? AND review_id = ?", [$id, $reviewId]);
     }
+
+    /** Absolute URL the invitee opens to accept the invitation. */
+    public static function inviteUrl(string $token): string
+    {
+        return base_url('/invite/' . $token);
+    }
 }
