@@ -37,8 +37,7 @@ $minLen    = (int) (setting('security.min_password_length') ?? 12);
 
 <?php if ($lastInviteLink): ?>
     <div class="alert alert--success invite-link-banner">
-        <strong><?= e(__('admin.users.invite_link_label')) ?>:</strong>
-        <code class="invite-link"><?= e((string) $lastInviteLink) ?></code>
+        <strong><?= e(__('admin.users.invite_link_label')) ?>.</strong>
         <button type="button"
                 class="btn btn--ghost btn--sm copy-to-clipboard"
                 data-copy="<?= e((string) $lastInviteLink) ?>"
@@ -83,8 +82,7 @@ $minLen    = (int) (setting('security.min_password_length') ?? 12);
                     <tr>
                         <td>
                             <?= e((string) $inv['email']) ?>
-                            <span class="tag tag--soft"><?= e((string) $inv['role']) ?></span><br>
-                            <code class="invite-link invite-link--inline"><?= e($url) ?></code>
+                            <span class="tag tag--soft"><?= e((string) $inv['role']) ?></span>
                         </td>
                         <td class="muted"><?= e(__('team.expires')) ?>: <?= e((string) $inv['expires_at']) ?></td>
                         <td class="invite-row__actions">
