@@ -195,6 +195,21 @@ $pctOf = static function (int $n) use ($denom): int {
 
 <?php if ($reference !== null): ?>
 <script>
+/* Copilot context — lets the floating chat answer questions about the
+   article the reviewer is currently looking at. */
+window.SysRevAICopilotContext = {
+    page:               'titleabstract-screening',
+    reference_id:        <?= (int) $reference['id'] ?>,
+    reference_title:    <?= json_encode((string) ($reference['title'] ?? ''), JSON_UNESCAPED_UNICODE) ?>,
+    reference_year:      <?= (int) ($reference['year'] ?? 0) ?>,
+    reference_journal:  <?= json_encode((string) ($reference['journal'] ?? ''), JSON_UNESCAPED_UNICODE) ?>,
+    reference_doi:      <?= json_encode((string) ($reference['doi'] ?? ''), JSON_UNESCAPED_UNICODE) ?>,
+    reference_pmid:     <?= json_encode((string) ($reference['pmid'] ?? ''), JSON_UNESCAPED_UNICODE) ?>,
+    reference_abstract: <?= json_encode((string) ($reference['abstract'] ?? ''), JSON_UNESCAPED_UNICODE) ?>,
+    has_full_text:      false
+};
+</script>
+<script>
 (function () {
     var start = Date.now();
     var form = document.getElementById('screenForm');

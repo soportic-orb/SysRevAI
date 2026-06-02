@@ -718,6 +718,34 @@ a:hover { text-decoration: underline; }
 .chat-form .btn { align-self: flex-end; }
 @media (max-width: 880px) { .ft-layout { grid-template-columns: 1fr; } }
 
+/* New full-text screen layout:
+   • the page breaks out of the .content max-width so the working area
+     uses nearly the full viewport;
+   • PDF column = 4/6, sidebar (protocol + chat + decision) = 2/6;
+   • everything collapses to a single column under 1024px. */
+.ft-screen-page {
+    max-width: none;
+    margin-left:  calc(50% - 50vw + 24px);
+    margin-right: calc(50% - 50vw + 24px);
+}
+.ft-screen-grid {
+    display: grid;
+    grid-template-columns: 4fr 2fr;
+    gap: 18px;
+    align-items: start;
+}
+.ft-screen-grid__main { min-width: 0; }
+.ft-screen-grid__side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ft-pdf-viewer iframe { height: min(80vh, 960px); }
+.screen-protocol-card { padding: 0; }
+.screen-decision-card { padding: 16px 18px; }
+.screen-decision-card .field { margin-bottom: 8px; }
+
+@media (max-width: 1100px) {
+    .ft-screen-page { margin-left: 0; margin-right: 0; }
+    .ft-screen-grid { grid-template-columns: 1fr; }
+}
+
 /* AI suggestion panel */
 .ai-suggest { margin-top: 16px; }
 .ai-suggest__panel { margin-top: 10px; padding: 12px 14px; border-radius: 8px; font-size: 14px; background: var(--c-bg); border: 1px solid var(--c-border); }
