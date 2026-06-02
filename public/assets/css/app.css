@@ -104,8 +104,24 @@ a:hover { text-decoration: underline; }
 .topbar__brand { display: flex; align-items: center; gap: 10px; }
 .topbar__brand:hover { text-decoration: none; }
 .topbar__nav { display: flex; gap: 18px; flex: 1; }
-.topbar__nav a { color: var(--c-muted); font-weight: 500; font-size: 15px; }
+.topbar__nav a {
+    color: var(--c-muted); font-weight: 500; font-size: 15px;
+    display: inline-flex; align-items: center; gap: 6px;
+}
 .topbar__nav a:hover { color: var(--c-text); text-decoration: none; }
+
+/* Inline glyphs used in nav links (top bar + review sub-nav) and small
+   buttons (Archive). The icon inherits its colour from the surrounding
+   link / button via stroke="currentColor", so light / dark themes and
+   the .is-active state need no extra rules. */
+.nav-icon {
+    flex-shrink: 0;
+    width: 16px; height: 16px;
+    vertical-align: -2px;
+}
+.btn .nav-icon { margin-right: 2px; }
+.review-subnav__actions .btn { display: inline-flex; align-items: center; gap: 4px; }
+
 .topbar__user { display: flex; align-items: center; gap: 12px; }
 .topbar__name {
     font-size: 14px; color: var(--c-muted);

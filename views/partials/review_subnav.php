@@ -19,17 +19,17 @@ use SysRevAI\Core\Auth;
 $id      = (int) $review['id'];
 $isOwner = (int) $review['owner_id'] === (int) Auth::id();
 
-/** @var array<int,array{key:string,url:string,label:string,style:string,owner?:bool}> $links */
+/** @var array<int,array{key:string,url:string,label:string,style:string,icon?:string,owner?:bool}> $links */
 $links = [
     ['key' => 'overview',   'url' => "/reviews/{$id}",              'label' => __('reviews.overview'),      'style' => 'ghost'],
     ['key' => 'screening',  'url' => "/reviews/{$id}/screen",       'label' => __('screening.title'),       'style' => 'primary'],
     ['key' => 'fulltext',   'url' => "/reviews/{$id}/full-text",    'label' => __('fulltext.title'),        'style' => 'primary'],
     ['key' => 'extraction', 'url' => "/reviews/{$id}/extraction",   'label' => __('extraction.title'),      'style' => 'primary'],
     ['key' => 'rob',        'url' => "/reviews/{$id}/risk-of-bias", 'label' => __('rob.title'),             'style' => 'primary'],
-    ['key' => 'exports',    'url' => "/reviews/{$id}/exports",      'label' => __('exports.title'),         'style' => 'ghost'],
-    ['key' => 'references', 'url' => "/reviews/{$id}/references",   'label' => __('references.title'),      'style' => 'ghost'],
-    ['key' => 'team',       'url' => "/reviews/{$id}/team",         'label' => __('team.title'),            'style' => 'ghost', 'owner' => true],
-    ['key' => 'protocol',   'url' => "/reviews/{$id}/protocol",     'label' => __('reviews.edit_protocol'), 'style' => 'ghost', 'owner' => true],
+    ['key' => 'exports',    'url' => "/reviews/{$id}/exports",      'label' => __('exports.title'),         'style' => 'ghost', 'icon' => 'export'],
+    ['key' => 'references', 'url' => "/reviews/{$id}/references",   'label' => __('references.title'),      'style' => 'ghost', 'icon' => 'references'],
+    ['key' => 'team',       'url' => "/reviews/{$id}/team",         'label' => __('team.title'),            'style' => 'ghost', 'icon' => 'team',     'owner' => true],
+    ['key' => 'protocol',   'url' => "/reviews/{$id}/protocol",     'label' => __('reviews.edit_protocol'), 'style' => 'ghost', 'icon' => 'protocol', 'owner' => true],
 ];
 ?>
 <nav class="review-subnav" aria-label="<?= e(__('reviews.subnav_aria')) ?>">
@@ -49,6 +49,7 @@ $links = [
                       onsubmit="return confirm('<?= e($confirmMsg) ?>');">
                     <?= csrf_field() ?>
                     <button class="btn btn--xs btn--ghost" type="submit">
+                        <?php $iconName = 'archive'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
                         <?= e($review['status'] === 'archived' ? __('reviews.unarchive') : __('reviews.archive')) ?>
                     </button>
                 </form>
@@ -64,6 +65,9 @@ $links = [
                 ?>
                 <a class="<?= e($classes) ?>" href="<?= e($link['url']) ?>"
                    <?= $isActive ? 'aria-current="page"' : '' ?>>
+                    <?php if (!empty($link['icon'])): ?>
+                        <?php $iconName = $link['icon']; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                    <?php endif; ?>
                     <?= e($link['label']) ?>
                 </a>
             <?php endforeach; ?>
