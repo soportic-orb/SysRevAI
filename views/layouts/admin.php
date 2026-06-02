@@ -56,10 +56,22 @@ $nav = [
         <span class="brand__name"><?= e($appName) ?></span>
     </a>
     <nav class="topbar__nav">
-        <a href="/dashboard"><?= e(__('nav.dashboard')) ?></a>
-        <a href="/reviews"><?= e(__('nav.reviews')) ?></a>
-        <a href="/search"><?= e(__('nav.search')) ?></a>
-        <a href="/admin/settings" class="is-active"><?= e(__('nav.settings')) ?></a>
+        <a href="/dashboard">
+            <?php $iconName = 'dashboard'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.dashboard')) ?>
+        </a>
+        <a href="/reviews">
+            <?php $iconName = 'reviews'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.reviews')) ?>
+        </a>
+        <a href="/search">
+            <?php $iconName = 'search'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.search')) ?>
+        </a>
+        <a href="/admin/settings" class="is-active">
+            <?php $iconName = 'settings'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.settings')) ?>
+        </a>
     </nav>
     <div class="topbar__user">
         <?php require config('paths.base') . '/views/partials/theme_toggle.php'; ?>
