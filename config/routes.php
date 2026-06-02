@@ -61,6 +61,7 @@ $router->get('/about', [AboutController::class, 'show']);
 $router->get('/privacy', [LegalController::class, 'privacy']);
 $router->get('/terms', [LegalController::class, 'terms']);
 $router->get('/search', [SearchController::class, 'index'], ['auth']);
+$router->post('/search/import', [SearchController::class, 'importToReview'], ['auth']);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 
