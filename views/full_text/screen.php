@@ -8,6 +8,8 @@ declare(strict_types=1);
 /** @var array $reasons */
 /** @var int $pending */
 /** @var int $completed */
+/** @var int $totalReferences */
+/** @var int $totalInStage */
 /** @var int $conflicts */
 /** @var bool $canCoordinate */
 /** @var string $stage */
@@ -18,6 +20,13 @@ $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
 $authors = $reference ? (json_decode((string) $reference['authors_json'], true) ?: []) : [];
 $basePath = '/reviews/' . $id . '/full-text';
+
+// Stats cards — percentages relative to the review's total references,
+// matching the T/A screening page so reviewers get a consistent denominator.
+$denom = max(1, (int) ($totalReferences ?? 0));
+$pctOf = static function (int $n) use ($denom): int {
+    return (int) round(($n / $denom) * 100);
+};
 ?>
 <div class="page ft-screen-page">
     <div class="page__head page__head--row">
@@ -38,6 +47,29 @@ $basePath = '/reviews/' . $id . '/full-text';
                     <button class="btn btn--ghost"><?= e(__('screening.coordinator_view')) ?></button>
                 </form>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="screen-stats" aria-label="<?= e(__('screening.stats_aria')) ?>">
+        <div class="screen-stat">
+            <span class="screen-stat__value"><?= (int) $pending ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_pending')) ?></span>
+            <span class="screen-stat__pct"><?= $pctOf((int) $pending) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+        </div>
+        <div class="screen-stat screen-stat--done">
+            <span class="screen-stat__value"><?= (int) $completed ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_done')) ?></span>
+            <span class="screen-stat__pct"><?= $pctOf((int) $completed) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+        </div>
+        <div class="screen-stat screen-stat--team">
+            <span class="screen-stat__value"><?= (int) $totalInStage ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_team_pending')) ?></span>
+            <span class="screen-stat__pct"><?= $pctOf((int) $totalInStage) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+        </div>
+        <div class="screen-stat screen-stat--total">
+            <span class="screen-stat__value"><?= (int) $totalReferences ?></span>
+            <span class="screen-stat__label"><?= e(__('screening.stat_total_review')) ?></span>
+            <span class="screen-stat__pct">100%</span>
         </div>
     </div>
 
@@ -81,6 +113,21 @@ $basePath = '/reviews/' . $id . '/full-text';
                                 <span class="field-help"><?= e(__('fulltext.upload_help')) ?></span>
                             </div>
                             <div><button class="btn btn--primary"><?= e(__('fulltext.upload_btn')) ?></button></div>
+                        </form>
+
+                        <!-- Discard escape hatch: an article without PDF (and so
+                             without screenable full text) cannot be accepted —
+                             let the reviewer drop it without uploading anything,
+                             persisting the decision as an exclude with a stable
+                             reason so it shows up correctly in PRISMA. -->
+                        <form method="post" action="<?= e($basePath) ?>/decide" class="ft-discard-form"
+                              onsubmit="return confirm('<?= e(__('fulltext.discard_confirm')) ?>');">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="reference_id" value="<?= (int) $reference['id'] ?>">
+                            <input type="hidden" name="decision" value="exclude">
+                            <input type="hidden" name="reason" value="<?= e(__('fulltext.discard_reason')) ?>">
+                            <p class="muted ft-discard-form__help"><?= e(__('fulltext.discard_help')) ?></p>
+                            <button class="btn btn--exclude" type="submit"><?= e(__('fulltext.discard_btn')) ?></button>
                         </form>
                     <?php else: ?>
                         <div class="pdf-viewer ft-pdf-viewer">
