@@ -69,7 +69,13 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
         </a>
     </div>
 
-    <form method="get" action="/search" class="toolbar">
+    <!-- data-ai-action: the global helper in app.js raises the "AI is
+         working" overlay on submit so the user gets feedback while we
+         fan the query out to CrossRef, OpenAlex and Europe PMC. We only
+         opt in for external mode because the local FULLTEXT search is
+         fast enough not to need it. -->
+    <form method="get" action="/search" class="toolbar"
+          <?= $isExternal ? 'data-ai-action' : '' ?>>
         <input type="hidden" name="mode" value="<?= e($mode) ?>">
         <input class="input" name="q" value="<?= e($q) ?>" placeholder="<?= e($placeholder) ?>" autofocus>
         <button class="btn btn--primary"

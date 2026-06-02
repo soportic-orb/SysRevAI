@@ -95,6 +95,9 @@ $router->get('/reviews/{id}/references', [ReferencesController::class, 'index'],
 $router->post('/reviews/{id}/references/{refId}/delete', [ReferencesController::class, 'delete'], ['auth']);
 $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
+$router->get('/reviews/{id}/import/preview', [ImportController::class, 'preview'], ['auth']);
+$router->post('/reviews/{id}/import/preview/confirm', [ImportController::class, 'confirm'], ['auth']);
+$router->post('/reviews/{id}/import/preview/discard', [ImportController::class, 'discardPreview'], ['auth']);
 $router->post('/reviews/{id}/import/clear-logs', [ImportController::class, 'clearLogs'], ['auth']);
 $router->get('/reviews/{id}/duplicates', [DuplicatesController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/duplicates/check-ai', [DuplicatesController::class, 'checkAi'], ['auth']);

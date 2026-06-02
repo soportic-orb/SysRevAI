@@ -1237,3 +1237,36 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     justify-content: flex-end;
     margin-top: 10px;
 }
+
+/* Import preview page — table where the reviewer picks which parsed
+   references actually land in the review. */
+
+.import-preview__meta { margin: -4px 0 14px; }
+.import-preview__toolbar { padding: 0; }
+.import-preview__toolbar-spacer { flex: 1; }
+.import-preview__discard {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.import-preview-table__check { width: 36px; text-align: center; }
+.import-preview-table__ids   { font-size: 13px; }
+
+.import-preview-table tr.is-unverified {
+    background: color-mix(in srgb, var(--c-fail) 8%, transparent);
+}
+
+.import-preview-table__unverified {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--c-fail);
+    font-size: 13px;
+}
+.import-preview-table__unverified .search-outcome {
+    width: 18px; height: 18px;
+}
+.import-preview-table__unverified .icon {
+    width: 12px; height: 12px;
+}
