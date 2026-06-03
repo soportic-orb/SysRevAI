@@ -221,7 +221,12 @@ final class SearchController
             'credits_remaining' => $resp['credits_remaining'],
             'ok'                => $resp['ok'],
             'error'             => $resp['error'],
+            'http_status'       => $resp['status'] ?? null,
             'docs_returned'     => count($resp['docs']),
+            // Only stash the provider's reply on error so admins can
+            // diagnose a 400 from EvidenceHunt without re-running the
+            // call. The question itself is never logged.
+            'response_excerpt'  => !$resp['ok'] ? ($resp['response_excerpt'] ?? null) : null,
         ], $reviewId > 0 ? $reviewId : null);
 
         return ['docs' => $resp['docs'], 'meta' => $meta];
