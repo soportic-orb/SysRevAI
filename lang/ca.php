@@ -615,6 +615,10 @@ return [
         'user_intro'         => 'T\'han convidat a crear un compte per a %s. Tria un nom i una contrasenya per acabar.',
         'user_accept_btn'    => 'Crear el meu compte',
         'user_name_required' => 'Indica el teu nom.',
+        'login_intro'        => 'Ja existeix un compte SysRevAI per %s. Inicia sessió per acceptar aquesta invitació.',
+        'login_btn'          => 'Iniciar sessió i unir-se',
+        'register_intro'     => 'Encara no existeix cap compte SysRevAI per a %s. Indica un nom i una contrasenya per crear el compte i unir-te a la revisió d\'una sola passa.',
+        'register_btn'       => 'Crear el meu compte i unir-me',
     ],
 
     'notifications' => [

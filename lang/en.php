@@ -614,6 +614,10 @@ return [
         'user_intro'         => 'You have been invited to create an account for %s. Pick a name and a password to finish.',
         'user_accept_btn'    => 'Create my account',
         'user_name_required' => 'Please provide your name.',
+        'login_intro'        => 'A SysRevAI account already exists for %s. Sign in to accept this invitation.',
+        'login_btn'          => 'Sign in and join',
+        'register_intro'     => 'No SysRevAI account exists for %s yet. Set a name and a password to create one and join the review in one step.',
+        'register_btn'       => 'Create my account and join',
     ],
 
     'notifications' => [
