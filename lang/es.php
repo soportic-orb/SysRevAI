@@ -21,6 +21,7 @@ return [
         'info_button'  => 'Información sobre esta sección',
         'confirm_archive'   => '¿Seguro que quieres archivar esta revisión? Pasará a la lista de archivadas y dejará de aparecer en el tauler.',
         'confirm_unarchive' => '¿Restaurar esta revisión a la lista activa?',
+        'confirm_delete_review' => '¿Eliminar definitivamente esta revisión? Se borrarán todas las referencias, decisiones, textos completos, extracciones y archivos asociados. Esta acción no se puede deshacer.',
     ],
 
     'nav' => [
@@ -763,6 +764,9 @@ return [
         'archived'           => 'Archivadas',
         'archived_ok'        => 'Revisión archivada.',
         'unarchived_ok'      => 'Revisión restaurada.',
+        'delete'             => 'Eliminar',
+        'deleted_ok'         => 'Revisión eliminada definitivamente.',
+        'delete_requires_archived' => 'Solo se pueden eliminar revisiones archivadas. Archívala primero.',
         'status_active'      => 'Activa',
         'status_archived'    => 'Archivada',
         'status_completed'   => 'Completada',

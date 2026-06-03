@@ -21,6 +21,7 @@ return [
         'info_button'  => 'About this section',
         'confirm_archive'   => 'Are you sure you want to archive this review? It will move to the archive list and stop appearing in the dashboard.',
         'confirm_unarchive' => 'Restore this review to the active list?',
+        'confirm_delete_review' => 'Permanently delete this review? Every reference, decision, full text, extraction and associated file will be erased. This cannot be undone.',
     ],
 
     'nav' => [
@@ -763,6 +764,9 @@ return [
         'archived'           => 'Archived',
         'archived_ok'        => 'Review archived.',
         'unarchived_ok'      => 'Review restored.',
+        'delete'             => 'Delete',
+        'deleted_ok'         => 'Review permanently deleted.',
+        'delete_requires_archived' => 'Only archived reviews can be deleted. Archive it first.',
         'status_active'      => 'Active',
         'status_archived'    => 'Archived',
         'status_completed'   => 'Completed',

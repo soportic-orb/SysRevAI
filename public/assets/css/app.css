@@ -1160,6 +1160,9 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 /* Buttons: danger */
 .btn--danger { background: #fbe9e1; border-color: #f3c4a9; color: var(--c-fail); }
 .btn--danger:hover { background: #f7d8c8; }
+/* Solid red variant for irreversible actions (e.g. permanent delete). */
+.btn--danger-solid { background: #dc2626; border-color: #dc2626; color: #fff; }
+.btn--danger-solid:hover { background: #b91c1c; border-color: #b91c1c; }
 
 /* Per-row action cluster on the references table — keeps the summary
    button and the delete cross side by side without wrapping. */

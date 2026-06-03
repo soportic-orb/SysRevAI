@@ -84,6 +84,7 @@ $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'
 $router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
+$router->post('/reviews/{id}/delete', [ReviewsController::class, 'destroy'], ['auth']);
 $router->get('/reviews/{id}/ai-usage', [AiUsageController::class, 'index'], ['auth']);
 $router->get('/reviews/{id}/copilot/history', [ReviewsController::class, 'copilotHistory'], ['auth']);
 $router->post('/reviews/{id}/copilot/clear', [ReviewsController::class, 'copilotClear'], ['auth']);
