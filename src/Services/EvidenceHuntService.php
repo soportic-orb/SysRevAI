@@ -426,11 +426,54 @@ final class EvidenceHuntService
         return $s;
     }
 
-    /** Coerce arbitrary locale strings to a two-letter ISO 639-1 code. */
+    /**
+     * EvidenceHunt validates userLanguage against a closed whitelist —
+     * sending an unsupported code (notably Catalan, the platform's
+     * default locale) trips HTTP 400 on the schema check. The list is
+     * mirrored verbatim from the provider's error response.
+     */
+    private const SUPPORTED_LANGS = [
+        'sq', 'ar', 'be', 'bn', 'bs', 'bg', 'zh', 'hr', 'cs', 'da',
+        'en', 'eo', 'et', 'fi', 'fr', 'fy', 'ka', 'de', 'el', 'he',
+        'hi', 'hu', 'is', 'id', 'it', 'ja', 'jw', 'ko', 'lv', 'lt',
+        'mk', 'mt', 'nl', 'ne', 'no', 'fa', 'pl', 'pt', 'ro', 'ru',
+        'sr', 'sl', 'so', 'es', 'su', 'sw', 'sv', 'th', 'tr', 'uk',
+        'vi',
+    ];
+
+    /**
+     * Closest-supported fallback for SysRevAI locales (and a few common
+     * neighbours) that EvidenceHunt doesn't accept. Catalan → Spanish
+     * preserves the most linguistic context for the search; Basque /
+     * Galician follow the same rule. Anything else falls through to
+     * English by the caller below.
+     */
+    private const LANG_FALLBACKS = [
+        'ca' => 'es',
+        'eu' => 'es',
+        'gl' => 'es',
+    ];
+
+    /**
+     * Coerce arbitrary locale strings to an EvidenceHunt-supported ISO
+     * 639-1 code. Falls back to a regional cousin first (so Catalan UI
+     * queries reach the Spanish index), then to English.
+     */
     private static function normaliseLang(string $locale): string
     {
         $code = strtolower(substr($locale, 0, 2));
-        return $code !== '' ? $code : 'en';
+        if ($code === '') {
+            return 'en';
+        }
+        if (in_array($code, self::SUPPORTED_LANGS, true)) {
+            return $code;
+        }
+        if (isset(self::LANG_FALLBACKS[$code])
+            && in_array(self::LANG_FALLBACKS[$code], self::SUPPORTED_LANGS, true)
+        ) {
+            return self::LANG_FALLBACKS[$code];
+        }
+        return 'en';
     }
 
     /** Trim long inputs by character budget (≈ char/4 tokens). */
