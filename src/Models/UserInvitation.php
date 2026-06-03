@@ -44,6 +44,24 @@ final class UserInvitation
         );
     }
 
+    /**
+     * The first still-valid invitation that matches the given email —
+     * used by the manual-registration flow to lift the admin's pre-chosen
+     * role onto the brand-new account and skip the pending-approval step.
+     */
+    public static function findValidForEmail(string $email): ?array
+    {
+        $table = Database::table('user_invitations');
+        return Database::selectOne(
+            "SELECT * FROM `{$table}`
+              WHERE email = ?
+                AND accepted_at IS NULL
+                AND (expires_at IS NULL OR expires_at >= NOW())
+              ORDER BY id ASC LIMIT 1",
+            [strtolower($email)]
+        );
+    }
+
     public static function isValid(array $invitation): bool
     {
         return $invitation['accepted_at'] === null
