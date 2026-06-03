@@ -614,6 +614,10 @@ return [
         'user_intro'         => 'Te han invitado a crear una cuenta para %s. Elige un nombre y una contraseña para terminar.',
         'user_accept_btn'    => 'Crear mi cuenta',
         'user_name_required' => 'Indica tu nombre.',
+        'login_intro'        => 'Ya existe una cuenta SysRevAI para %s. Inicia sesión para aceptar esta invitación.',
+        'login_btn'          => 'Iniciar sesión y unirse',
+        'register_intro'     => 'Todavía no existe ninguna cuenta SysRevAI para %s. Indica un nombre y una contraseña para crear la cuenta y unirte a la revisión en un solo paso.',
+        'register_btn'       => 'Crear mi cuenta y unirme',
     ],
 
     'notifications' => [

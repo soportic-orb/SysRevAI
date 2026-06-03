@@ -175,8 +175,12 @@ $router->post('/reviews/{id}/extraction/{refId}', [ExtractionController::class, 
 $router->get('/reviews/{id}', [ReviewsController::class, 'show'], ['auth']);
 
 // Invitations (token links).
-$router->get('/invite/{token}', [InvitationsController::class, 'show'], ['auth']);
-$router->post('/invite/{token}/accept', [InvitationsController::class, 'accept'], ['auth']);
+// Review-scoped invitations: any visitor can open the link. The
+// controller branches on the session state (guest vs. logged in) and
+// either logs the user in / registers them from the same form, or
+// adds an existing account to the review.
+$router->get('/invite/{token}', [InvitationsController::class, 'show']);
+$router->post('/invite/{token}/accept', [InvitationsController::class, 'accept']);
 
 // Platform-level user invitations (admin-issued, guest-accepted).
 $router->get('/user-invite/{token}', [UserInvitationsController::class, 'show'], ['guest']);
