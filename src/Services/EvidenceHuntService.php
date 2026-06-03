@@ -60,7 +60,8 @@ final class EvidenceHuntService
      *   docs:list<array<string,mixed>>, answer:string,
      *   output_id:?string,
      *   credits_used:?int, credits_remaining:?int,
-     *   status:?int
+     *   status:?int,
+     *   response_excerpt:?string
      * }
      */
     public function query(string $question, array $opts = []): array
@@ -70,6 +71,7 @@ final class EvidenceHuntService
             'docs' => [], 'answer' => '', 'output_id' => null,
             'credits_used' => null, 'credits_remaining' => null,
             'status' => null,
+            'response_excerpt' => null,
         ];
 
         $key = (string) (setting('evidencehunt.api_key') ?? '');
@@ -85,14 +87,24 @@ final class EvidenceHuntService
         }
         $question = self::clipToTokens($question, self::MAX_TOKENS);
 
+        // EvidenceHunt's API treats outputId as a conversation identifier:
+        // valid (existing) on follow-ups, otherwise the server assigns one.
+        // We've seen the endpoint return HTTP 400 when an empty string is
+        // sent in place of "no id yet", so omit the key entirely on the
+        // first turn. The followUp flag goes alongside it.
+        $followUp = (bool) ($opts['followUp'] ?? false);
+        $outputId = trim((string) ($opts['outputId'] ?? ''));
+
         $body = [
             'question'          => $question,
             'sources'           => $opts['sources']     ?? ['pubmed'],
             'userLanguage'      => self::normaliseLang((string) ($opts['userLanguage'] ?? 'en')),
             'chatElaborateMode' => (bool) ($opts['elaborate'] ?? false),
-            'followUp'          => (bool) ($opts['followUp'] ?? false),
-            'outputId'          => (string) ($opts['outputId'] ?? ''),
         ];
+        if ($followUp && $outputId !== '') {
+            $body['followUp'] = true;
+            $body['outputId'] = $outputId;
+        }
 
         // Capture response headers without including the request key — we
         // only care about X-Credits-* and we read them out of the headers
@@ -146,7 +158,9 @@ final class EvidenceHuntService
         // Map the documented status codes to stable error tokens the
         // controller / view can translate. The body of 402 carries the
         // {error, required, balance} payload; the others ship plain text
-        // we don't surface verbatim (no leaking provider phrasing).
+        // we don't surface verbatim to end users (no leaking provider
+        // phrasing) but we keep a clipped excerpt for the activity log
+        // so admins can diagnose 400s from the protocol payload.
         if ($status !== 200) {
             $out['error'] = match ($status) {
                 400     => 'bad_request',
@@ -157,6 +171,7 @@ final class EvidenceHuntService
                 500,502,503,504 => 'server_error',
                 default => 'http_' . $status,
             };
+            $out['response_excerpt'] = self::clipExcerpt($raw);
             return $out;
         }
 
@@ -423,5 +438,25 @@ final class EvidenceHuntService
             return $text;
         }
         return mb_substr($text, 0, $maxChars);
+    }
+
+    /**
+     * Clip a raw response body to a small excerpt suitable for the
+     * activity log. We never log the request payload (it can carry a
+     * sensitive question), but the response body is provider-authored
+     * and is what we need to understand a rejected payload.
+     */
+    private static function clipExcerpt(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+        // Collapse any control bytes so the log row stays one tidy line.
+        $raw = (string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $raw);
+        if (mb_strlen($raw) > 500) {
+            return mb_substr($raw, 0, 500) . '…';
+        }
+        return $raw;
     }
 }
