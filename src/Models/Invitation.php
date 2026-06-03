@@ -41,6 +41,25 @@ final class Invitation
         );
     }
 
+    /**
+     * Every valid (non-accepted, non-expired) invitation that points to
+     * the given email — across every review. Used by the manual-
+     * registration flow to auto-attach a brand-new account to whichever
+     * reviews the admin had already invited it to.
+     */
+    public static function pendingForEmail(string $email): array
+    {
+        $table = Database::table('invitations');
+        return Database::select(
+            "SELECT * FROM `{$table}`
+              WHERE email = ?
+                AND accepted_at IS NULL
+                AND (expires_at IS NULL OR expires_at >= NOW())
+              ORDER BY id ASC",
+            [strtolower($email)]
+        );
+    }
+
     public static function isValid(array $invitation): bool
     {
         return $invitation['accepted_at'] === null

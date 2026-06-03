@@ -9,7 +9,10 @@ use SysRevAI\Core\Crypto;
 use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
+use SysRevAI\Models\Invitation;
+use SysRevAI\Models\ReviewUser;
 use SysRevAI\Models\User;
+use SysRevAI\Models\UserInvitation;
 use SysRevAI\Services\MailService;
 use SysRevAI\Services\Totp;
 
@@ -160,21 +163,56 @@ final class AuthController
             $back(__('auth.register_email_taken'));
         }
 
+        // An admin-issued invitation (platform-level or review-scoped) for
+        // this email is a trust signal: skip the manual-approval gate and,
+        // if there's a platform invitation, honour the role the admin picked.
+        $userInvitation   = UserInvitation::findValidForEmail($email);
+        $reviewInvitations = Invitation::pendingForEmail($email);
+        $hasInvitation     = $userInvitation !== null || $reviewInvitations !== [];
+
         $manualApprove = (bool) (setting('registration.manual_approval') ?? true);
-        $status = $manualApprove ? 'pending' : 'active';
-        $isActive = $manualApprove ? 0 : 1;
+        $autoApprove   = $hasInvitation || !$manualApprove;
+        $status        = $autoApprove ? 'active' : 'pending';
+        $isActive      = $autoApprove ? 1 : 0;
+        $role          = $userInvitation !== null ? (string) $userInvitation['role'] : 'reviewer';
 
         $id = User::create([
             'name'          => $name,
             'email'         => $email,
             'password_hash' => password_hash($pw, PASSWORD_ARGON2ID),
-            'role'          => 'reviewer',
+            'role'          => $role,
             'status'        => $status,
             'locale'        => (string) (setting('app.locale') ?? 'ca'),
             'is_active'     => $isActive,
             'legal_accepted' => true,
         ]);
-        ActivityLog::record('users.self_registered', ['user_id' => $id, 'manual_approval' => $manualApprove]);
+        ActivityLog::record('users.self_registered', [
+            'user_id'         => $id,
+            'manual_approval' => $manualApprove,
+            'invited'         => $hasInvitation,
+        ]);
+
+        if ($userInvitation !== null) {
+            UserInvitation::markAccepted((int) $userInvitation['id']);
+            ActivityLog::record('users.invitation_accepted', [
+                'user_id' => $id,
+                'role'    => $userInvitation['role'],
+            ]);
+        }
+
+        $joinedReviewIds = [];
+        foreach ($reviewInvitations as $inv) {
+            $reviewId = (int) $inv['review_id'];
+            ReviewUser::add($reviewId, $id, (string) $inv['role']);
+            Invitation::markAccepted((int) $inv['id']);
+            $joinedReviewIds[] = $reviewId;
+        }
+        if ($joinedReviewIds !== []) {
+            ActivityLog::record('reviews.invitation_accepted_on_register', [
+                'user_id'    => $id,
+                'review_ids' => $joinedReviewIds,
+            ]);
+        }
 
         // Notify the platform's owners / admins so they don't have to
         // poll the admin panel for new sign-ups. Wrapped in a try/catch
@@ -184,7 +222,7 @@ final class AuthController
             $siteUrl  = (string) (setting('site.url')  ?? config('app.url', ''));
             $whenLine = 'Signed up at ' . date('Y-m-d H:i T');
 
-            if ($manualApprove) {
+            if (!$autoApprove) {
                 $subject = sprintf('[%s] New user awaiting validation: %s', $siteName, $name);
                 $body = "A new user has signed up and is awaiting administrator validation.\n\n"
                     . "Name:  {$name}\n"
@@ -192,11 +230,20 @@ final class AuthController
                     . "{$whenLine}\n\n"
                     . ($siteUrl !== '' ? "Approve them in the admin panel: {$siteUrl}/admin/users\n" : '');
             } else {
+                $reviewLine = $joinedReviewIds !== []
+                    ? 'Auto-added to ' . count($joinedReviewIds) . ' invited review(s).' . "\n"
+                    : '';
+                $invitedLine = $hasInvitation
+                    ? "Activated via a pending invitation; admin approval was skipped.\n"
+                    : '';
                 $subject = sprintf('[%s] New user registered: %s', $siteName, $name);
                 $body = "A new user has signed up and is already active.\n\n"
                     . "Name:  {$name}\n"
                     . "Email: {$email}\n"
-                    . "{$whenLine}\n\n"
+                    . "{$whenLine}\n"
+                    . $invitedLine
+                    . $reviewLine
+                    . "\n"
                     . ($siteUrl !== '' ? "Manage users: {$siteUrl}/admin/users\n" : '');
             }
             MailService::notifyAdmins($subject, $body);
@@ -204,7 +251,7 @@ final class AuthController
             // Best-effort: ignore mail failures.
         }
 
-        if ($manualApprove) {
+        if (!$autoApprove) {
             Session::flash('login_email', $email);
             Session::flash('login_error', __('auth.register_pending'));
             redirect('/login');
