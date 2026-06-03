@@ -187,6 +187,7 @@ return [
         'eh_error_oversize'           => 'EvidenceHunt\'s reply was too large.',
         'eh_error_stream_error'       => 'EvidenceHunt returned an error during generation.',
         'eh_error_stream_failed'      => 'EvidenceHunt could not complete the answer.',
+        'eh_error_details_summary'    => 'EvidenceHunt response details',
     ],
 
     'citations' => [

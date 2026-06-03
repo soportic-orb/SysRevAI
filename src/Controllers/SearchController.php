@@ -208,6 +208,12 @@ final class SearchController
         $meta['error']             = $resp['error'];
         $meta['credits_used']      = $resp['credits_used'];
         $meta['credits_remaining'] = $resp['credits_remaining'];
+        $meta['http_status']       = $resp['status'] ?? null;
+        // Provider-side error body. Useful when EvidenceHunt 400s on a
+        // payload we thought was fine: the response body usually states
+        // which field tripped the schema validator. Surfaced in the view
+        // inside a <details> so it doesn't clutter the alert.
+        $meta['response_excerpt']  = $resp['response_excerpt'] ?? null;
         if (!empty($resp['output_id'])) {
             Session::set(self::EH_OUTPUT_KEY, $resp['output_id']);
             $meta['output_id'] = $resp['output_id'];
