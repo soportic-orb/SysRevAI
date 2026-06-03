@@ -20,7 +20,7 @@ final class AiUsageController
 {
     public function index(string $id): void
     {
-        $review = $this->memberOrDeny((int) $id);
+        $review = $this->ownerOrAdminOrDeny((int) $id);
         $rid = (int) $id;
 
         $totals = AiUsage::forReview($rid);
@@ -42,10 +42,18 @@ final class AiUsageController
         ]);
     }
 
-    private function memberOrDeny(int $reviewId): array
+    /**
+     * Token spend is sensitive operational data: visible only to the
+     * review owner and platform admins/owners. Other reviewers — even
+     * legitimate members of the review — get a 403.
+     */
+    private function ownerOrAdminOrDeny(int $reviewId): array
     {
         $review = Review::find($reviewId);
-        if ($review === null || !Review::userCanAccess($reviewId, (int) Auth::id())) {
+        $uid    = (int) Auth::id();
+        $isReviewOwner = $review !== null && (int) $review['owner_id'] === $uid;
+        $isPlatformAdmin = Auth::hasRole('owner', 'admin');
+        if ($review === null || (!$isReviewOwner && !$isPlatformAdmin)) {
             http_response_code(403);
             echo View::render('errors/403', [], 'layouts/auth');
             exit;
