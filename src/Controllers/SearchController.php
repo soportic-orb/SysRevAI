@@ -14,9 +14,10 @@ use SysRevAI\Models\Review;
 use SysRevAI\Services\BiblioSearch\BiblioSearchFilters;
 use SysRevAI\Services\BiblioSearch\BiblioSearchService;
 use SysRevAI\Services\DeduplicationService;
+use SysRevAI\Services\EvidenceHuntService;
 
 /**
- * Cross-review reference search with two modes:
+ * Cross-review reference search with three modes:
  *
  *   - "local" (default): probes the user's own references via the
  *     FULLTEXT index on title/abstract plus LIKE on the identifier
@@ -24,10 +25,19 @@ use SysRevAI\Services\DeduplicationService;
  *   - "external": fans the query out to CrossRef, OpenAlex and Europe PMC
  *     via BiblioSearchService and offers per-row / bulk import into one
  *     of the user's open reviews.
+ *   - "evidencehunt": AI-assisted PubMed discovery — accepts a free-text
+ *     question (or generates one from a review's PICO) and shows an LLM
+ *     answer together with the documents it's grounded on. Complementary
+ *     to PRISMA, not a replacement.
  */
 final class SearchController
 {
-    private const VALID_MODES = ['local', 'external'];
+    private const VALID_MODES = ['local', 'external', 'evidencehunt'];
+
+    // Persist the latest EvidenceHunt output_id in the session so the
+    // user can post a follow-up question against the same conversation
+    // without having to copy the id around the URL.
+    private const EH_OUTPUT_KEY = '_eh_output_id';
 
     public function index(): void
     {
@@ -40,6 +50,16 @@ final class SearchController
         $results       = [];
         $externalMeta  = [];
         $externalError = null;
+        $eh = [
+            'answer'            => '',
+            'question'          => '',
+            'output_id'         => null,
+            'credits_used'      => null,
+            'credits_remaining' => null,
+            'error'             => null,
+            'review_id'         => 0,
+            'elaborate'         => false,
+        ];
 
         // Eligibility filters for external searches. When the user
         // didn't tick any control AND they're searching in the context
@@ -57,7 +77,14 @@ final class SearchController
             }
         }
 
-        if ($q !== '') {
+        if ($mode === 'evidencehunt') {
+            // EvidenceHunt is a separate lane: free-text question, with
+            // an optional review_id that auto-generates the question from
+            // the protocol's PICO. No filter form, no FULLTEXT.
+            $r = $this->runEvidenceHunt($eh);
+            $results = $r['docs'];
+            $eh      = $r['meta'];
+        } elseif ($q !== '') {
             try {
                 if ($mode === 'external') {
                     $r = (new BiblioSearchService())->search($q, 15, $filters);
@@ -74,7 +101,7 @@ final class SearchController
             }
         }
 
-        $openReviews = $mode === 'external'
+        $openReviews = ($mode === 'external' || $mode === 'evidencehunt')
             ? array_values(array_filter(
                 Review::forUser((int) Auth::id(), 'active'),
                 fn (array $rv): bool => Review::userCanAccess((int) $rv['id'], (int) Auth::id())
@@ -100,7 +127,79 @@ final class SearchController
             'outcomes'      => $outcomes,
             'filters'       => $filters,
             'studyTypes'    => BiblioSearchFilters::STUDY_TYPES,
+            'eh'            => $eh,
         ]);
+    }
+
+    /**
+     * Drive EvidenceHunt. Returns the normalised docs (so the existing
+     * external-row markup can paint them) and a meta block with the
+     * answer, credits and follow-up output_id.
+     *
+     * @return array{docs:list<array<string,mixed>>, meta:array<string,mixed>}
+     */
+    private function runEvidenceHunt(array $meta): array
+    {
+        $svc = new EvidenceHuntService();
+        $uid = (int) Auth::id();
+
+        $q          = trim((string) ($_GET['q']         ?? ''));
+        $followQ    = trim((string) ($_GET['follow_q']  ?? ''));
+        $reviewId   = (int) ($_GET['review_id']         ?? 0);
+        $elaborate  = !empty($_GET['elaborate']);
+
+        // PICO → question with a fixed template (no Claude call). The
+        // user can still override by typing a question; a typed value
+        // wins over the auto-generated one.
+        if ($q === '' && $reviewId > 0 && Review::userCanAccess($reviewId, $uid)) {
+            $rv = Review::find($reviewId);
+            if (is_array($rv)) {
+                $q = EvidenceHuntService::questionFromPico($rv);
+            }
+        }
+
+        // Follow-up against the previous turn — needs the stored output_id.
+        $prevOutputId = (string) (Session::get(self::EH_OUTPUT_KEY) ?? '');
+        $isFollowUp   = $followQ !== '' && $prevOutputId !== '';
+        $effectiveQ   = $isFollowUp ? $followQ : $q;
+
+        $meta['question']  = $effectiveQ;
+        $meta['review_id'] = $reviewId;
+        $meta['elaborate'] = $elaborate;
+        $meta['output_id'] = $prevOutputId !== '' ? $prevOutputId : null;
+
+        if ($effectiveQ === '') {
+            return ['docs' => [], 'meta' => $meta];
+        }
+
+        $resp = $svc->query($effectiveQ, [
+            'elaborate'    => $elaborate,
+            'userLanguage' => current_locale(),
+            'followUp'     => $isFollowUp,
+            'outputId'     => $isFollowUp ? $prevOutputId : '',
+        ]);
+
+        $meta['answer']            = (string) $resp['answer'];
+        $meta['error']             = $resp['error'];
+        $meta['credits_used']      = $resp['credits_used'];
+        $meta['credits_remaining'] = $resp['credits_remaining'];
+        if (!empty($resp['output_id'])) {
+            Session::set(self::EH_OUTPUT_KEY, $resp['output_id']);
+            $meta['output_id'] = $resp['output_id'];
+        }
+
+        ActivityLog::record('evidencehunt.query', [
+            'review_id'         => $reviewId > 0 ? $reviewId : null,
+            'follow_up'         => $isFollowUp,
+            'elaborate'         => $elaborate,
+            'credits_used'      => $resp['credits_used'],
+            'credits_remaining' => $resp['credits_remaining'],
+            'ok'                => $resp['ok'],
+            'error'             => $resp['error'],
+            'docs_returned'     => count($resp['docs']),
+        ], $reviewId > 0 ? $reviewId : null);
+
+        return ['docs' => $resp['docs'], 'meta' => $meta];
     }
 
     /**
@@ -142,6 +241,12 @@ final class SearchController
             redirect($this->backHref());
         }
 
+        // Origin hint on the form lets us label rows from EvidenceHunt
+        // distinctly in references.source_file — the dedup / activity-log
+        // flow is identical to the regular external import.
+        $origin = (string) ($_POST['origin'] ?? 'biblio-search');
+        $sourceTag = $origin === 'evidencehunt' ? 'evidencehunt' : 'biblio-search';
+
         /** @var array<string,string> $outcomes  dedup_key => 'imported'|'duplicate'|'error' */
         $outcomes  = [];
         $imported  = 0;
@@ -165,7 +270,7 @@ final class SearchController
             }
 
             try {
-                Reference::create($reviewId, $ref, 'biblio-search', $dedupKey);
+                Reference::create($reviewId, $ref, $sourceTag, $dedupKey);
                 $outcomes[$marker] = 'imported';
                 $imported++;
             } catch (\Throwable $e) {
@@ -177,7 +282,7 @@ final class SearchController
         if ($imported > 0) {
             $dedup = DeduplicationService::run($reviewId);
             ActivityLog::record('references.imported', [
-                'format'     => 'biblio_search',
+                'format'     => $origin === 'evidencehunt' ? 'evidencehunt' : 'biblio_search',
                 'imported'   => $imported,
                 'duplicates' => $duplicate,
                 'errors'     => $errored,
@@ -217,8 +322,18 @@ final class SearchController
     {
         $q    = trim((string) ($_POST['back_q'] ?? ''));
         $mode = (string) ($_POST['back_mode'] ?? 'external');
-        $qs   = http_build_query(['q' => $q, 'mode' => $mode]);
-        return '/search?' . $qs;
+        if (!in_array($mode, self::VALID_MODES, true)) {
+            $mode = 'external';
+        }
+        // EvidenceHunt costs credits per call: returning to /search with
+        // the question would silently re-fire the query. Drop it on the
+        // import round-trip; the user lands on the EH tab with an empty
+        // form and the import flash visible.
+        $params = ['mode' => $mode];
+        if ($mode !== 'evidencehunt') {
+            $params['q'] = $q;
+        }
+        return '/search?' . http_build_query($params);
     }
 
     /**

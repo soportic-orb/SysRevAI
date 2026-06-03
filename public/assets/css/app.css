@@ -1213,6 +1213,27 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 
 .search-databases { margin: -4px 0 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
+/* EvidenceHunt: free-text question form + AI answer panel. The form is
+   a stacked variant of .toolbar so the textarea spans the full width
+   while the row of secondary controls stays compact. */
+.eh-form { flex-direction: column; align-items: stretch; gap: 10px; }
+.eh-form__question { width: 100%; min-height: 64px; resize: vertical; }
+.eh-form__row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.eh-form__hint { margin: 0; }
+.eh-followup-form { gap: 8px; align-items: center; }
+
+.eh-answer { padding: 14px 16px; margin: 14px 0; }
+.eh-answer__head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--c-border);
+}
+.eh-answer__badge { background: var(--c-primary); color: var(--c-on-primary); }
+.eh-answer__note { font-size: 12.5px; }
+.eh-answer__credits { margin-left: auto; font-size: 12.5px; }
+.eh-answer__body { line-height: 1.55; }
+.eh-answer__body p:last-child { margin-bottom: 0; }
+
 /* External-search eligibility filters: a compact three-row form sitting
    between the databases tag list and the results table. */
 .search-filters {

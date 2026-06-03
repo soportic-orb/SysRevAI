@@ -118,5 +118,29 @@ use SysRevAI\Core\Config;
         </label>
     </div>
 
+    <div class="api-block">
+        <h2 class="section__subtitle">EvidenceHunt</h2>
+        <p class="api-help">
+            <?= e(__('admin.apis.help_evidencehunt')) ?>
+            <a href="https://evidencehunt.com/account/api" target="_blank" rel="noopener noreferrer">
+                <?= e(__('admin.apis.link_evidencehunt')) ?> &rarr;
+            </a>
+        </p>
+        <div class="field">
+            <label class="field-label" for="evidencehunt_api_key"><?= e(__('admin.apis.evidencehunt_api_key')) ?></label>
+            <input class="input" id="evidencehunt_api_key" name="evidencehunt_api_key" type="password" autocomplete="off"
+                   placeholder="<?= Config::hasEncrypted('evidencehunt.api_key') ? '••••••  (' . e(__('admin.claude.key_set')) . ')' : '' ?>">
+            <span class="field-help"><?= e(__('admin.apis.evidencehunt_api_key_help')) ?></span>
+        </div>
+        <label class="checkbox">
+            <input type="checkbox" name="evidencehunt_enabled" value="1" <?= (bool) (setting('evidencehunt.enabled') ?? false) ? 'checked' : '' ?>>
+            <?= e(__('admin.apis.evidencehunt_enabled')) ?>
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" name="evidencehunt_elaborate_default" value="1" <?= (bool) (setting('evidencehunt.elaborate_default') ?? false) ? 'checked' : '' ?>>
+            <?= e(__('admin.apis.evidencehunt_elaborate_default')) ?>
+        </label>
+    </div>
+
     <div><button type="submit" class="btn btn--primary"><?= e(__('admin.save')) ?></button></div>
 </form>

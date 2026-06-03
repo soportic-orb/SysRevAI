@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use SysRevAI\Core\Config;
 use SysRevAI\Core\Session;
 
 use SysRevAI\Services\DeduplicationService;
@@ -13,11 +14,20 @@ use SysRevAI\Services\DeduplicationService;
 /** @var ?string $externalError */
 /** @var array  $openReviews */
 /** @var ?array $outcomes  ['review_id' => int, 'map' => array<string,string>] or null */
+/** @var array  $eh        EvidenceHunt meta (answer, error, credits, output_id, review_id) */
 
 $isExternal = $mode === 'external';
+$isEvidenceHunt = $mode === 'evidencehunt';
 $placeholder = $isExternal
     ? __('search.placeholder_external')
     : __('search.placeholder');
+
+// EvidenceHunt rows are imported via the same endpoint as the external
+// flow, so the row markup below reuses the same checkboxes / templates.
+// The only difference at the form layer is an 'origin' hint so we can
+// label the reference as 'evidencehunt' in source_file.
+$importOrigin = $isEvidenceHunt ? 'evidencehunt' : 'biblio-search';
+$backMode = $mode;
 
 // Outcome lookup: prebuild the dedup_key for each external row once so
 // each table iteration is a flat hashmap probe, not a recompute.
@@ -53,11 +63,11 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
     <?php endif; ?>
 
     <!-- Mode toggle: keeps the current query so the user can pivot between
-         databases and their own corpus without retyping. -->
+         databases, their own corpus and EvidenceHunt without retyping. -->
     <div class="search-mode" role="tablist" aria-label="<?= e(__('search.mode_aria')) ?>">
-        <a class="search-mode__tab <?= !$isExternal ? 'is-active' : '' ?>"
+        <a class="search-mode__tab <?= $mode === 'local' ? 'is-active' : '' ?>"
            role="tab"
-           aria-selected="<?= !$isExternal ? 'true' : 'false' ?>"
+           aria-selected="<?= $mode === 'local' ? 'true' : 'false' ?>"
            href="/search?<?= e(http_build_query(['q' => $q, 'mode' => 'local'])) ?>">
             <?= e(__('search.mode_local')) ?>
         </a>
@@ -67,26 +77,130 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
            href="/search?<?= e(http_build_query(['q' => $q, 'mode' => 'external'])) ?>">
             <?= e(__('search.mode_external')) ?>
         </a>
+        <?php
+        // Tab is only offered when the admin has both flipped the toggle
+        // ON and configured a key — same convention as Consensus' source
+        // pill in external mode. Without it the service would return
+        // missing_api_key on every call.
+        $ehAvailable = (bool) (setting('evidencehunt.enabled') ?? false)
+            && Config::hasEncrypted('evidencehunt.api_key');
+        ?>
+        <?php if ($ehAvailable || $isEvidenceHunt): ?>
+        <a class="search-mode__tab <?= $isEvidenceHunt ? 'is-active' : '' ?>"
+           role="tab"
+           aria-selected="<?= $isEvidenceHunt ? 'true' : 'false' ?>"
+           href="/search?<?= e(http_build_query(['q' => '', 'mode' => 'evidencehunt'])) ?>">
+            <?= e(__('search.mode_evidencehunt')) ?>
+        </a>
+        <?php endif; ?>
     </div>
 
-    <!-- data-ai-action: the global helper in app.js raises the "AI is
-         working" overlay on submit so the user gets feedback while we
-         fan the query out to CrossRef, OpenAlex and Europe PMC. We only
-         opt in for external mode because the local FULLTEXT search is
-         fast enough not to need it. -->
-    <form method="get" action="/search" class="toolbar"
-          <?= $isExternal ? 'data-ai-action' : '' ?>>
-        <input type="hidden" name="mode" value="<?= e($mode) ?>">
-        <input class="input" name="q" value="<?= e($q) ?>" placeholder="<?= e($placeholder) ?>" autofocus>
-        <button class="btn btn--primary"
-                data-busy-label="<?= e(__('common.working')) ?>"><?= e(__('search.go')) ?></button>
-    </form>
+    <?php if ($isEvidenceHunt): ?>
+        <!-- EvidenceHunt: free-text question OR auto-derived from a review's
+             PICO. data-ai-action raises the platform-wide "AI is working"
+             overlay because EvidenceHunt buffers the NDJSON stream on the
+             server and can take several seconds to come back. -->
+        <form method="get" action="/search" class="toolbar eh-form" data-ai-action>
+            <input type="hidden" name="mode" value="evidencehunt">
+            <textarea class="input eh-form__question" name="q" rows="3"
+                      placeholder="<?= e(__('search.placeholder_evidencehunt')) ?>"
+                      autofocus><?= e($q !== '' ? $q : (string) ($eh['question'] ?? '')) ?></textarea>
+            <div class="eh-form__row">
+                <label class="field-label" for="eh_review_id"><?= e(__('search.eh_review_label')) ?></label>
+                <select class="select select--sm" id="eh_review_id" name="review_id">
+                    <option value=""><?= e(__('search.eh_review_none')) ?></option>
+                    <?php foreach ($openReviews as $rv): ?>
+                        <option value="<?= (int) $rv['id'] ?>"
+                                <?= (int) ($eh['review_id'] ?? 0) === (int) $rv['id'] ? 'selected' : '' ?>>
+                            <?= e((string) $rv['title']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <label class="checkbox">
+                    <input type="checkbox" name="elaborate" value="1"
+                           <?= !empty($eh['elaborate']) ? 'checked' : '' ?>>
+                    <?= e(__('search.eh_elaborate')) ?>
+                </label>
+                <button class="btn btn--primary"
+                        data-busy-label="<?= e(__('common.working')) ?>">
+                    <?= e(__('search.eh_go')) ?>
+                </button>
+            </div>
+            <p class="muted eh-form__hint"><?= e(__('search.eh_hint')) ?></p>
+        </form>
 
-    <?php if ($q !== ''): ?>
+        <?php if (!empty($eh['output_id']) && !empty($eh['answer'])): ?>
+            <!-- Follow-up: cheap "ask again on the same conversation"
+                 against the persisted output_id. Costs +1 credit. -->
+            <form method="get" action="/search" class="toolbar eh-followup-form" data-ai-action>
+                <input type="hidden" name="mode" value="evidencehunt">
+                <?php if (!empty($eh['review_id'])): ?>
+                    <input type="hidden" name="review_id" value="<?= (int) $eh['review_id'] ?>">
+                <?php endif; ?>
+                <input class="input" name="follow_q"
+                       placeholder="<?= e(__('search.eh_followup_placeholder')) ?>">
+                <button class="btn btn--ghost btn--sm"
+                        data-busy-label="<?= e(__('common.working')) ?>">
+                    <?= e(__('search.eh_followup_go')) ?>
+                </button>
+            </form>
+        <?php endif; ?>
+    <?php else: ?>
+        <!-- data-ai-action: the global helper in app.js raises the "AI is
+             working" overlay on submit so the user gets feedback while we
+             fan the query out to CrossRef, OpenAlex and Europe PMC. We only
+             opt in for external mode because the local FULLTEXT search is
+             fast enough not to need it. -->
+        <form method="get" action="/search" class="toolbar"
+              <?= $isExternal ? 'data-ai-action' : '' ?>>
+            <input type="hidden" name="mode" value="<?= e($mode) ?>">
+            <input class="input" name="q" value="<?= e($q) ?>" placeholder="<?= e($placeholder) ?>" autofocus>
+            <button class="btn btn--primary"
+                    data-busy-label="<?= e(__('common.working')) ?>"><?= e(__('search.go')) ?></button>
+        </form>
+    <?php endif; ?>
+
+    <?php if ($q !== '' && !$isEvidenceHunt): ?>
         <p class="search-results-for">
             <?= e(__('search.results_for')) ?>
             <strong>«<?= e($q) ?>»</strong>
         </p>
+    <?php endif; ?>
+
+    <?php if ($isEvidenceHunt && !empty($eh['question'])): ?>
+        <p class="search-results-for">
+            <?= e(__('search.eh_question_used')) ?>
+            <strong>«<?= e((string) $eh['question']) ?>»</strong>
+        </p>
+    <?php endif; ?>
+
+    <?php if ($isEvidenceHunt && !empty($eh['error'])):
+        $ehErrKey = 'search.eh_error_' . $eh['error'];
+        $ehMsg = __($ehErrKey);
+        if ($ehMsg === $ehErrKey) {
+            $ehMsg = __('search.eh_error_generic');
+        }
+    ?>
+        <div class="alert alert--error"><?= e($ehMsg) ?></div>
+    <?php endif; ?>
+
+    <?php if ($isEvidenceHunt && !empty($eh['answer'])): ?>
+        <div class="section-card eh-answer">
+            <div class="eh-answer__head">
+                <span class="tag tag--soft eh-answer__badge">
+                    <?= e(__('search.eh_ai_badge')) ?>
+                </span>
+                <span class="muted eh-answer__note">
+                    <?= e(__('search.eh_complementary_note')) ?>
+                </span>
+                <?php if ($eh['credits_remaining'] !== null): ?>
+                    <span class="muted eh-answer__credits">
+                        <?= e(__('search.eh_credits_remaining', (int) $eh['credits_remaining'])) ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <div class="eh-answer__body"><?= markdown((string) $eh['answer']) ?></div>
+        </div>
     <?php endif; ?>
 
     <?php if ($isExternal): ?>
@@ -164,26 +278,48 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
         </form>
     <?php endif; ?>
 
-    <?php if ($q === ''): ?>
+    <?php
+    // The unified "show external-style result table" flag — EvidenceHunt
+    // returns the same normalised reference rows so it gets the same
+    // bulk-import / per-row import UX as the database search.
+    $showExternalRows = $isExternal || $isEvidenceHunt;
+    // For local/external the empty input is "q". For EvidenceHunt the
+    // input lives in the answer block; we treat "no question and no
+    // answer yet" as the initial empty state.
+    $isEmptyQuery = $isEvidenceHunt
+        ? (empty($eh['question']) && empty($eh['answer']))
+        : ($q === '');
+    ?>
+
+    <?php if ($isEmptyQuery): ?>
         <p class="muted">
-            <?= e($isExternal ? __('search.hint_external') : __('search.hint')) ?>
+            <?php
+            $hintKey = $isEvidenceHunt ? 'search.hint_evidencehunt' : ($isExternal ? 'search.hint_external' : 'search.hint');
+            echo e(__($hintKey));
+            ?>
         </p>
     <?php elseif ($results === []): ?>
-        <div class="empty-state">
-            <p><?= e(__('search.no_results', $q)) ?></p>
-            <?php if ($externalError !== null): ?>
-                <p class="muted"><?= e(__('search.external_error')) ?></p>
+        <?php if (!$isEvidenceHunt): ?>
+            <div class="empty-state">
+                <p><?= e(__('search.no_results', $q)) ?></p>
+                <?php if ($externalError !== null): ?>
+                    <p class="muted"><?= e(__('search.external_error')) ?></p>
+                <?php endif; ?>
+            </div>
+            <?php if ($isExternal && $externalMeta !== []): ?>
+                <p class="muted">
+                    <?php foreach ($externalMeta as $name => $m): ?>
+                        <span class="tag tag--soft"><?= e($name) ?>: <?= (int) $m['count'] ?></span>
+                    <?php endforeach; ?>
+                </p>
             <?php endif; ?>
-        </div>
-        <?php if ($isExternal && $externalMeta !== []): ?>
-            <p class="muted">
-                <?php foreach ($externalMeta as $name => $m): ?>
-                    <span class="tag tag--soft"><?= e($name) ?>: <?= (int) $m['count'] ?></span>
-                <?php endforeach; ?>
-            </p>
+        <?php elseif (empty($eh['error']) && !empty($eh['question'])): ?>
+            <div class="empty-state">
+                <p><?= e(__('search.eh_no_docs')) ?></p>
+            </div>
         <?php endif; ?>
 
-    <?php elseif (!$isExternal): ?>
+    <?php elseif (!$showExternalRows): ?>
         <!-- Local: existing in-platform references. No bulk operations needed
              since these are already inside one of the user's reviews. -->
         <p class="muted"><?= e(__('search.count', count($results))) ?></p>
@@ -225,16 +361,19 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
         </div>
 
     <?php else: ?>
-        <!-- External: fresh hits straight from the databases. Each row carries
-             its full reference payload as a hidden JSON blob so the same
-             import endpoint handles both single-row "Import" and the bulk
-             "Import selected" flow. -->
+        <!-- External / EvidenceHunt: fresh hits with a unified row shape.
+             Each row carries its full reference payload as a hidden JSON
+             blob so the same import endpoint handles both single-row
+             "Import" and the bulk "Import selected" flow. -->
         <p class="muted">
             <?= e(__('search.count', count($results))) ?>
-            <?php if ($externalMeta !== []): ?>
+            <?php if ($isExternal && $externalMeta !== []): ?>
                 · <?php foreach ($externalMeta as $name => $m): ?>
                     <span class="tag tag--soft"><?= e($name) ?>: <?= (int) $m['count'] ?></span>
                 <?php endforeach; ?>
+            <?php endif; ?>
+            <?php if ($isEvidenceHunt): ?>
+                · <span class="tag tag--soft">EvidenceHunt · PubMed</span>
             <?php endif; ?>
         </p>
 
@@ -253,8 +392,12 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
         -->
         <form method="post" action="/search/import" id="bulkImportForm" class="section-card search-bulk-card">
             <?= csrf_field() ?>
-            <input type="hidden" name="back_q" value="<?= e($q) ?>">
-            <input type="hidden" name="back_mode" value="external">
+            <input type="hidden" name="back_q" value="<?= e($isEvidenceHunt ? (string) ($eh['question'] ?? '') : $q) ?>">
+            <input type="hidden" name="back_mode" value="<?= e($backMode) ?>">
+            <input type="hidden" name="origin" value="<?= e($importOrigin) ?>">
+            <?php if ($isEvidenceHunt && !empty($eh['review_id'])): ?>
+                <input type="hidden" name="back_review_id" value="<?= (int) $eh['review_id'] ?>">
+            <?php endif; ?>
 
             <div class="search-bulk-toolbar">
                 <label class="checkbox search-bulk-toolbar__all">
@@ -406,8 +549,12 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
             <template id="rowImportTemplate">
                 <form method="post" action="/search/import" class="search-row-import">
                     <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
-                    <input type="hidden" name="back_q" value="<?= e($q) ?>">
-                    <input type="hidden" name="back_mode" value="external">
+                    <input type="hidden" name="back_q" value="<?= e($isEvidenceHunt ? (string) ($eh['question'] ?? '') : $q) ?>">
+                    <input type="hidden" name="back_mode" value="<?= e($backMode) ?>">
+                    <input type="hidden" name="origin" value="<?= e($importOrigin) ?>">
+                    <?php if ($isEvidenceHunt && !empty($eh['review_id'])): ?>
+                        <input type="hidden" name="back_review_id" value="<?= (int) $eh['review_id'] ?>">
+                    <?php endif; ?>
                     <input type="hidden" name="review_id" value="">
                     <input type="hidden" name="single" value="">
                     <select class="select select--sm search-row-import__select" aria-label="<?= e(__('search.import_target_label')) ?>">
@@ -422,7 +569,7 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
     <?php endif; ?>
 </div>
 
-<?php if ($isExternal && $results !== [] && $openReviews !== []): ?>
+<?php if (($isExternal || $isEvidenceHunt) && $results !== [] && $openReviews !== []): ?>
 <script>
 (function () {
     'use strict';
