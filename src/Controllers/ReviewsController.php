@@ -356,6 +356,42 @@ final class ReviewsController
         redirect($new === 'archived' ? '/reviews' : '/reviews/' . (int) $id);
     }
 
+    /**
+     * Permanently delete an archived review and all of its data.
+     * Restricted to the review owner and platform admins/owners.
+     * Refuses on non-archived reviews — archiving is the required
+     * cool-off step so accidental clicks don't destroy live work.
+     */
+    public function destroy(string $id): void
+    {
+        $rid = (int) $id;
+        $review = Review::find($rid);
+        $uid    = (int) Auth::id();
+        $isReviewOwner   = $review !== null && (int) $review['owner_id'] === $uid;
+        $isPlatformAdmin = Auth::hasRole('owner', 'admin');
+        if ($review === null || (!$isReviewOwner && !$isPlatformAdmin)) {
+            http_response_code(403);
+            echo View::render('errors/403', [], 'layouts/auth');
+            exit;
+        }
+        if ($review['status'] !== 'archived') {
+            Session::flash('error', __('reviews.delete_requires_archived'));
+            redirect('/reviews/' . $rid);
+        }
+
+        $title = (string) ($review['title'] ?? '');
+        Review::delete($rid);
+        // Tombstone written AFTER the wipe so it isn't itself swept by
+        // the activity-log cleanup inside Review::delete(). review_id is
+        // left null because the row it would point to no longer exists.
+        ActivityLog::record('review.deleted', [
+            'review_id' => $rid,
+            'title'     => $title,
+        ]);
+        Session::flash('success', __('reviews.deleted_ok'));
+        redirect('/reviews');
+    }
+
     /* ── Helpers ───────────────────────────────────────────────────────── */
 
     private function readInput(): array

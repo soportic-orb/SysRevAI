@@ -53,6 +53,13 @@ $path = match ($iconName ?? '') {
     'archive'   => '<rect x="3" y="4" width="18" height="4" rx="1"></rect>'
                  . '<path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"></path>'
                  . '<path d="M10 12h4"></path>',
+    // Tabler trash — bin with lid and two inner bars, used by destructive
+    // actions like permanently deleting an archived review.
+    'trash'     => '<path d="M4 7h16"></path>'
+                 . '<path d="M10 11v6"></path>'
+                 . '<path d="M14 11v6"></path>'
+                 . '<path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>'
+                 . '<path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>',
 
     // Import-outcome indicators
     'check'     => '<polyline points="20 6 9 17 4 12"></polyline>',

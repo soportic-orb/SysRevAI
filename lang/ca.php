@@ -22,6 +22,7 @@ return [
         'info_button'  => 'Informació sobre aquesta secció',
         'confirm_archive'   => 'Segur que vols arxivar aquesta revisió? Passarà a la llista d\'arxivades i deixarà d\'aparèixer al tauler.',
         'confirm_unarchive' => 'Restaurar aquesta revisió a la llista activa?',
+        'confirm_delete_review' => 'Eliminar definitivament aquesta revisió? Es perdran totes les referències, decisions, textos complets, extraccions i arxius associats. Aquesta acció no es pot desfer.',
     ],
 
     'nav' => [
@@ -764,6 +765,9 @@ return [
         'archived'           => 'Arxivades',
         'archived_ok'        => 'Revisió arxivada.',
         'unarchived_ok'      => 'Revisió restaurada.',
+        'delete'             => 'Eliminar',
+        'deleted_ok'         => 'Revisió eliminada definitivament.',
+        'delete_requires_archived' => 'Només es poden eliminar revisions arxivades. Arxiva-la primer.',
         'status_active'      => 'Activa',
         'status_archived'    => 'Arxivada',
         'status_completed'   => 'Completada',

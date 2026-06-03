@@ -82,6 +82,26 @@ $links = [
                 </form>
             <?php endif; ?>
 
+            <?php
+            // Permanent delete is destructive and irreversible. Only the
+            // review owner and platform admins/owners see it, and only
+            // when the review has been archived first — archiving is the
+            // explicit cooldown step that prevents accidental loss.
+            $canDeleteReview = ($isOwner || Auth::hasRole('owner', 'admin'))
+                && $review['status'] === 'archived';
+            ?>
+            <?php if ($canDeleteReview): ?>
+                <form method="post" action="/reviews/<?= $id ?>/delete"
+                      class="inline-form review-subnav__delete"
+                      onsubmit="return confirm('<?= e(__('common.confirm_delete_review')) ?>');">
+                    <?= csrf_field() ?>
+                    <button class="btn btn--xs btn--danger-solid" type="submit">
+                        <?php $iconName = 'trash'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                        <?= e(__('reviews.delete')) ?>
+                    </button>
+                </form>
+            <?php endif; ?>
+
             <?php if ($canSeeAiSpend): ?>
             <!-- AI-spend badge: live token / EUR totals for this review,
                  linking to the per-call breakdown. Gray surface, lime
