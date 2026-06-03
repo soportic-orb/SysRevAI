@@ -132,6 +132,29 @@ final class SearchController
     }
 
     /**
+     * GET /search/evidencehunt/question?review_id=N — JSON endpoint that
+     * the EvidenceHunt form calls when the user picks a review, so the
+     * textarea can be pre-populated with the derived question. The user
+     * can read / edit it before submitting, avoiding wasted credits on a
+     * malformed query. No EvidenceHunt API call is made here.
+     */
+    public function evidenceHuntQuestion(): void
+    {
+        header('Content-Type: application/json');
+        $reviewId = (int) ($_GET['review_id'] ?? 0);
+        if ($reviewId <= 0 || !Review::userCanAccess($reviewId, (int) Auth::id())) {
+            http_response_code(404);
+            echo json_encode(['question' => '']);
+            return;
+        }
+        $rv = Review::find($reviewId);
+        $q  = is_array($rv)
+            ? EvidenceHuntService::questionFromPico($rv, current_locale())
+            : '';
+        echo json_encode(['question' => $q], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
      * Drive EvidenceHunt. Returns the normalised docs (so the existing
      * external-row markup can paint them) and a meta block with the
      * answer, credits and follow-up output_id.
@@ -148,13 +171,15 @@ final class SearchController
         $reviewId   = (int) ($_GET['review_id']         ?? 0);
         $elaborate  = !empty($_GET['elaborate']);
 
-        // PICO → question with a fixed template (no Claude call). The
-        // user can still override by typing a question; a typed value
-        // wins over the auto-generated one.
+        // Question source priority — see EvidenceHuntService::questionFromPico:
+        //   1. The textarea (user-typed) wins.
+        //   2. Else the review's free-text research question.
+        //   3. Else a PICO sentence assembled in the user's locale.
+        //   4. Else the review title.
         if ($q === '' && $reviewId > 0 && Review::userCanAccess($reviewId, $uid)) {
             $rv = Review::find($reviewId);
             if (is_array($rv)) {
-                $q = EvidenceHuntService::questionFromPico($rv);
+                $q = EvidenceHuntService::questionFromPico($rv, current_locale());
             }
         }
 

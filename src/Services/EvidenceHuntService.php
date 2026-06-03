@@ -298,36 +298,114 @@ final class EvidenceHuntService
     }
 
     /**
-     * Build a free-text question from a review's PICO. Fixed template — no
-     * Claude call, no per-use cost. Skips fields the user left blank so
-     * the produced question is always grammatical.
+     * Derive an EvidenceHunt-ready question from a review's protocol.
+     *
+     * Priority:
+     *   1. The review's free-text research question (`reviews.question`) —
+     *      it's the most authoritative articulation, written by the team
+     *      and already curated, so we send it verbatim.
+     *   2. A clinical-question sentence assembled from PICO, in the
+     *      requested locale so the question reads natively (English /
+     *      Spanish / Catalan; falls back to English for other codes).
+     *   3. The review's title, as a last resort so we never POST an
+     *      empty body.
+     *
+     * The PICO sentence is fully grammatical even when components are
+     * missing — each clause is conditional and the trailing punctuation
+     * is normalised.
      *
      * @param array<string,mixed> $review
      */
-    public static function questionFromPico(array $review): string
+    public static function questionFromPico(array $review, ?string $locale = null): string
     {
-        $pico = Review::pico($review);
-        $pop  = trim((string) ($pico['population']   ?? ''));
-        $itv  = trim((string) ($pico['intervention'] ?? ''));
-        $cmp  = trim((string) ($pico['comparison']   ?? ''));
-        $out  = trim((string) ($pico['outcome']      ?? ''));
+        $researchQ = trim((string) ($review['question'] ?? ''));
+        if ($researchQ !== '') {
+            return $researchQ;
+        }
 
-        // If the protocol is essentially empty, fall back to the review's
-        // research question so we never POST an empty `question`.
-        if ($pop === '' && $itv === '' && $out === '') {
-            $q = trim((string) ($review['question'] ?? ''));
-            if ($q !== '') {
-                return $q;
-            }
+        $pico = Review::pico($review);
+        $pop  = self::trimClause((string) ($pico['population']   ?? ''));
+        $itv  = self::trimClause((string) ($pico['intervention'] ?? ''));
+        $cmp  = self::trimClause((string) ($pico['comparison']   ?? ''));
+        $out  = self::trimClause((string) ($pico['outcome']      ?? ''));
+
+        if ($pop === '' && $itv === '' && $out === '' && $cmp === '') {
             return trim((string) ($review['title'] ?? ''));
         }
 
-        $where = $pop !== '' ? 'In ' . $pop . ', ' : '';
-        $what  = 'what is the effect of ' . ($itv !== '' ? $itv : 'the intervention');
-        $vs    = $cmp !== '' ? ' compared with ' . $cmp : '';
-        $on    = $out !== '' ? ' on ' . $out : '';
+        $lang = self::normaliseLang((string) ($locale ?? 'en'));
+        return self::picoSentence($lang, $pop, $itv, $cmp, $out);
+    }
 
-        return rtrim($where . $what . $vs . $on, ' ?.') . '?';
+    /**
+     * Assemble a clinical question from PICO fragments in the requested
+     * language. Each clause is conditional, so a review with only P and
+     * I still produces a grammatical sentence.
+     */
+    private static function picoSentence(string $lang, string $pop, string $itv, string $cmp, string $out): string
+    {
+        $itv = $itv !== '' ? $itv : match ($lang) {
+            'es' => 'la intervención',
+            'ca' => 'la intervenció',
+            default => 'the intervention',
+        };
+
+        switch ($lang) {
+            case 'es':
+                $parts = [];
+                if ($pop !== '') {
+                    $parts[] = 'En ' . $pop . ',';
+                }
+                $parts[] = '¿qué efecto tiene ' . $itv;
+                if ($cmp !== '') {
+                    $parts[] = 'en comparación con ' . $cmp;
+                }
+                if ($out !== '') {
+                    $parts[] = 'sobre ' . $out;
+                }
+                return rtrim(implode(' ', $parts), ' ?.;,') . '?';
+
+            case 'ca':
+                $parts = [];
+                if ($pop !== '') {
+                    $parts[] = 'En ' . $pop . ',';
+                }
+                $parts[] = 'quin efecte té ' . $itv;
+                if ($cmp !== '') {
+                    $parts[] = 'comparat amb ' . $cmp;
+                }
+                if ($out !== '') {
+                    $parts[] = 'sobre ' . $out;
+                }
+                return rtrim(implode(' ', $parts), ' ?.;,') . '?';
+
+            default:
+                $parts = [];
+                if ($pop !== '') {
+                    $parts[] = 'In ' . $pop . ',';
+                }
+                $parts[] = 'what is the effect of ' . $itv;
+                if ($cmp !== '') {
+                    $parts[] = 'compared with ' . $cmp;
+                }
+                if ($out !== '') {
+                    $parts[] = 'on ' . $out;
+                }
+                return rtrim(implode(' ', $parts), ' ?.;,') . '?';
+        }
+    }
+
+    /**
+     * Normalise a PICO fragment: collapse whitespace, drop trailing
+     * sentence terminators / dangling commas so they don't bleed into
+     * the surrounding template.
+     */
+    private static function trimClause(string $s): string
+    {
+        $s = trim($s);
+        $s = (string) preg_replace('/\s+/u', ' ', $s);
+        $s = rtrim($s, " \t\n\r\0\x0B.,;:?!");
+        return $s;
     }
 
     /** Coerce arbitrary locale strings to a two-letter ISO 639-1 code. */

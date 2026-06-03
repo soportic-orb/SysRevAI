@@ -102,12 +102,13 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
              server and can take several seconds to come back. -->
         <form method="get" action="/search" class="toolbar eh-form" data-ai-action>
             <input type="hidden" name="mode" value="evidencehunt">
-            <textarea class="input eh-form__question" name="q" rows="3"
+            <textarea class="input eh-form__question" id="ehQuestion" name="q" rows="3"
                       placeholder="<?= e(__('search.placeholder_evidencehunt')) ?>"
                       autofocus><?= e($q !== '' ? $q : (string) ($eh['question'] ?? '')) ?></textarea>
             <div class="eh-form__row">
                 <label class="field-label" for="eh_review_id"><?= e(__('search.eh_review_label')) ?></label>
-                <select class="select select--sm" id="eh_review_id" name="review_id">
+                <select class="select select--sm" id="eh_review_id" name="review_id"
+                        data-question-preview-url="/search/evidencehunt/question">
                     <option value=""><?= e(__('search.eh_review_none')) ?></option>
                     <?php foreach ($openReviews as $rv): ?>
                         <option value="<?= (int) $rv['id'] ?>"
@@ -623,6 +624,43 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
             cell.appendChild(clone);
         });
     }
+})();
+</script>
+<?php endif; ?>
+
+<?php if ($isEvidenceHunt): ?>
+<script>
+(function () {
+    'use strict';
+
+    /* When the user picks a review from the dropdown, fetch the derived
+       PICO question and pre-fill the textarea. The user can read and
+       edit it before submitting, so a malformed PICO never burns
+       credits on an EvidenceHunt 400. We only fill the textarea when
+       it's empty so a typed-over question is preserved. */
+    var sel = document.getElementById('eh_review_id');
+    var ta  = document.getElementById('ehQuestion');
+    if (!sel || !ta) return;
+
+    var url = sel.getAttribute('data-question-preview-url');
+    if (!url) return;
+
+    sel.addEventListener('change', function () {
+        var rid = sel.value;
+        if (!rid) return;
+        fetch(url + '?review_id=' + encodeURIComponent(rid), {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data || !data.question) return;
+                if (ta.value.trim() === '') {
+                    ta.value = data.question;
+                }
+            })
+            .catch(function () { /* offline / 404 — leave the textarea alone */ });
+    });
 })();
 </script>
 <?php endif; ?>

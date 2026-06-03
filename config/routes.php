@@ -64,6 +64,7 @@ $router->get('/about', [AboutController::class, 'show']);
 $router->get('/privacy', [LegalController::class, 'privacy']);
 $router->get('/terms', [LegalController::class, 'terms']);
 $router->get('/search', [SearchController::class, 'index'], ['auth']);
+$router->get('/search/evidencehunt/question', [SearchController::class, 'evidenceHuntQuestion'], ['auth']);
 $router->post('/search/import', [SearchController::class, 'importToReview'], ['auth']);
 
 // Citation normaliser — paste, search-results hand-off, and per-review hand-off.
