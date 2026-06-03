@@ -195,6 +195,16 @@ final class SettingsController
         }
         Config::set('biblio_search.consensus.enabled', !empty($_POST['consensus_enabled']), 'bool', 'integrations');
 
+        // EvidenceHunt: AI-assisted PubMed discovery. Lives outside
+        // BiblioSearchService (it's a separate UI mode) so its toggle is
+        // a plain evidencehunt.enabled and the key is stored encrypted.
+        $eh = trim((string) ($_POST['evidencehunt_api_key'] ?? ''));
+        if ($eh !== '') {
+            Config::set('evidencehunt.api_key', $eh, 'encrypted', 'integrations');
+        }
+        Config::set('evidencehunt.enabled', !empty($_POST['evidencehunt_enabled']), 'bool', 'integrations');
+        Config::set('evidencehunt.elaborate_default', !empty($_POST['evidencehunt_elaborate_default']), 'bool', 'integrations');
+
         ActivityLog::record('settings.apis.updated');
     }
 
