@@ -87,22 +87,25 @@ final class EvidenceHuntService
         }
         $question = self::clipToTokens($question, self::MAX_TOKENS);
 
-        // EvidenceHunt's API treats outputId as a conversation identifier:
-        // valid (existing) on follow-ups, otherwise the server assigns one.
-        // We've seen the endpoint return HTTP 400 when an empty string is
-        // sent in place of "no id yet", so omit the key entirely on the
-        // first turn. The followUp flag goes alongside it.
+        // Spec lists every field in the body but only "question" is
+        // explicitly mandatory. We send all of them on every turn so the
+        // server's schema validator (which is what produces HTTP 400) sees
+        // a complete payload — except outputId, which is the conversation
+        // identifier. EvidenceHunt 400s on an empty / unknown outputId,
+        // so we only attach it on a genuine follow-up where we have the
+        // id captured from a previous output_done event.
         $followUp = (bool) ($opts['followUp'] ?? false);
         $outputId = trim((string) ($opts['outputId'] ?? ''));
+        $isFollowUp = $followUp && $outputId !== '';
 
         $body = [
             'question'          => $question,
             'sources'           => $opts['sources']     ?? ['pubmed'],
             'userLanguage'      => self::normaliseLang((string) ($opts['userLanguage'] ?? 'en')),
             'chatElaborateMode' => (bool) ($opts['elaborate'] ?? false),
+            'followUp'          => $isFollowUp,
         ];
-        if ($followUp && $outputId !== '') {
-            $body['followUp'] = true;
+        if ($isFollowUp) {
             $body['outputId'] = $outputId;
         }
 

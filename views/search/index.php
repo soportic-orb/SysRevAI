@@ -182,7 +182,20 @@ $outcomeFor = static function (array $r) use ($outcomeMap): ?string {
             $ehMsg = __('search.eh_error_generic');
         }
     ?>
-        <div class="alert alert--error"><?= e($ehMsg) ?></div>
+        <div class="alert alert--error">
+            <?= e($ehMsg) ?>
+            <?php if (!empty($eh['response_excerpt'])): ?>
+                <details class="eh-error-details">
+                    <summary><?= e(__('search.eh_error_details_summary')) ?></summary>
+                    <p class="muted">
+                        <?php if (!empty($eh['http_status'])): ?>
+                            HTTP <?= (int) $eh['http_status'] ?> ·
+                        <?php endif; ?>
+                        <code><?= e((string) $eh['response_excerpt']) ?></code>
+                    </p>
+                </details>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 
     <?php if ($isEvidenceHunt && !empty($eh['answer'])): ?>
