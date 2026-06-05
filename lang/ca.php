@@ -507,6 +507,7 @@ return [
         'unknown_format' => 'No s\'ha pogut detectar el format. Selecciona\'l manualment.',
         'too_large'     => 'El fitxer és massa gran (màx. 20 MB).',
         'result'        => 'Importades %d referències — %d duplicats exactes marcats, %d candidats difusos.',
+        'result_with_failures' => 'Importades %d referències (%d duplicats exactes, %d candidats difusos). %d files s\'han descartat per errors; consulta el registre d\'importació.',
         'ai_no_key'     => 'La importació amb IA necessita una clau d\'API de Claude. Demana-la a un administrador a Configuració → Claude.',
         'ai_disabled'   => 'L\'extracció amb IA està desactivada a la configuració.',
         'ai_budget'     => 'S\'ha esgotat el pressupost mensual de IA del lloc.',

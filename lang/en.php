@@ -506,6 +506,7 @@ return [
         'unknown_format' => 'Could not detect the format. Please select it manually.',
         'too_large'     => 'The file is too large (max 20 MB).',
         'result'        => 'Imported %d references — %d exact duplicates marked, %d fuzzy candidates.',
+        'result_with_failures' => 'Imported %d references (%d exact duplicates, %d fuzzy candidates). %d rows were skipped due to errors — check the import log.',
         'ai_no_key'     => 'AI import needs a Claude API key. Ask an admin to set it under Settings → Claude.',
         'ai_disabled'   => 'AI extraction is disabled in admin settings.',
         'ai_budget'     => 'The monthly AI budget has been reached for this site.',
