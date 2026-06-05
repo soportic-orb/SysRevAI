@@ -265,7 +265,7 @@ $qs = static function (array $extra) use ($status, $search): string {
              from the toolbar. The body counter is filled in by JS from
              the selected ids (or the total-in-review if scope=filtered)
              before the dialog appears. -->
-        <dialog class="info-modal" id="deleteBulkModal">
+        <dialog class="info-modal info-modal--confirm" id="deleteBulkModal">
             <div class="info-modal__inner">
                 <button type="button" class="info-modal__close"
                         data-info-close
@@ -290,7 +290,7 @@ $qs = static function (array $extra) use ($status, $search): string {
              dismissed by the close button / backdrop click. Picking a
              style and hitting Confirm writes the selected style into the
              hidden input on #referencesConvertForm and submits it. -->
-        <dialog class="info-modal" id="convertModal">
+        <dialog class="info-modal info-modal--confirm" id="convertModal">
             <div class="info-modal__inner">
                 <button type="button" class="info-modal__close"
                         data-info-close
