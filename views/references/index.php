@@ -133,18 +133,30 @@ $qs = static function (array $extra) use ($status, $search): string {
                         <?= e(__('references.delete_btn')) ?>
                     </button>
                 <?php endif; ?>
-                <!-- Trigger the manual dedup pass. It marks exact dupes
-                     and creates pending fuzzy candidates, then drops the
-                     user on the Duplicates page so they can wipe what
-                     was flagged in bulk. -->
-                <form method="post" action="/reviews/<?= $id ?>/references/find-duplicates" style="display:inline" data-ai-action>
-                    <?= csrf_field() ?>
-                    <button type="submit" class="btn btn--ghost btn--sm"
-                            data-busy-label="<?= e(__('common.working')) ?>">
-                        <?= e(__('references.find_duplicates_btn')) ?>
-                    </button>
-                </form>
+                <!-- "Find duplicates" button targets a sibling form via
+                     form="…" rather than wrapping a nested <form> here —
+                     nested forms are invalid HTML and the browser would
+                     drop the inner one, causing this click to silently
+                     submit the outer convert form instead. -->
+                <button type="submit" form="referencesFindDupsForm"
+                        class="btn btn--ghost btn--sm"
+                        data-busy-label="<?= e(__('common.working')) ?>">
+                    <?= e(__('references.find_duplicates_btn')) ?>
+                </button>
             </div>
+        </form>
+
+        <!-- Sibling form for the find-duplicates action. Lives outside
+             #referencesConvertForm so the submit button above can target
+             it without nesting forms. data-ai-action raises the
+             "Treballant, espera…" overlay because the dedup pass on a
+             large review can take several seconds. -->
+        <form method="post"
+              action="/reviews/<?= $id ?>/references/find-duplicates"
+              id="referencesFindDupsForm"
+              data-ai-action
+              style="display:none">
+            <?= csrf_field() ?>
         </form>
 
         <?php if ($canDelete): ?>
