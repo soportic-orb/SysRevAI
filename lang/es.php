@@ -1171,9 +1171,11 @@ return [
     'copilot' => [
         'title'        => 'Copilot Científico',
         'subtitle'     => 'Ayuda metodológica y consultas sobre esta revisión',
+        'subtitle_global' => 'Ayuda con la plataforma SysRevAI y metodología de investigación',
         'toggle_aria'  => 'Abrir el Copilot Científico',
         'toggle_title' => '¿Necesitas ayuda? Pregunta al Copilot',
         'greeting'     => '¡Hola! Soy tu Copilot Científico para esta revisión. Pregúntame sobre metodología, PRISMA, el protocolo, criterios de cribado, o cómo interpretar las referencias que estás revisando.',
+        'greeting_global' => '¡Hola! Soy tu Copilot Científico. Pregúntame cómo usar cualquier función de SysRevAI (importar referencias, cribar, EvidenceHunt, equipo, exportaciones…) o consultas generales de metodología de investigación (PRISMA, PICO, riesgo de sesgo, GRADE…). Para preguntas sobre una revisión concreta, abre primero esa revisión y vuelve a abrirme.',
         'placeholder'  => 'Pregunta lo que quieras sobre esta revisión…',
         'send'         => 'Enviar',
         'close'        => 'Cerrar',

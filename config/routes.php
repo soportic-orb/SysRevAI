@@ -22,6 +22,7 @@ use SysRevAI\Controllers\AiUsageController;
 use SysRevAI\Controllers\LegalController;
 use SysRevAI\Controllers\AuthController;
 use SysRevAI\Controllers\CommentsController;
+use SysRevAI\Controllers\CopilotController;
 use SysRevAI\Controllers\DashboardController;
 use SysRevAI\Controllers\DuplicatesController;
 use SysRevAI\Controllers\FullTextRetrievalController;
@@ -90,6 +91,13 @@ $router->get('/reviews/{id}/ai-usage', [AiUsageController::class, 'index'], ['au
 $router->get('/reviews/{id}/copilot/history', [ReviewsController::class, 'copilotHistory'], ['auth']);
 $router->post('/reviews/{id}/copilot/clear', [ReviewsController::class, 'copilotClear'], ['auth']);
 $router->post('/reviews/{id}/copilot', [ReviewsController::class, 'copilot'], ['auth']);
+
+// Global Copilot — same widget, no review context. Used on every other
+// authenticated page so the user can ask "how do I import a CSV?" or
+// "what's PICO?" without having to be inside a review.
+$router->get('/copilot/history', [CopilotController::class, 'history'], ['auth']);
+$router->post('/copilot/clear', [CopilotController::class, 'clear'], ['auth']);
+$router->post('/copilot', [CopilotController::class, 'send'], ['auth']);
 
 // Team / collaboration on a review.
 $router->get('/reviews/{id}/team', [MembersController::class, 'index'], ['auth']);
