@@ -1222,6 +1222,16 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
    form (or the original filename) — clamp long values so the table
    stays scannable without wrapping into multiple lines. */
 .refs-source { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+/* Abstract-present badge under the "AI summary" button — small muted
+   chip with a doc-text icon. Sits below the action row so the link
+   layout stays the same when no abstract is present. */
+.ref-actions__abstract {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 6px;
+    color: var(--c-muted); font-size: 12px;
+}
+.ref-actions__abstract-icon { color: var(--c-muted); }
+.ref-actions__abstract-label { line-height: 1; }
 
 /* Tables */
 .table-wrap { overflow-x: auto; }

@@ -573,6 +573,12 @@ return [
     'references' => [
         'title'        => 'Referencias',
         'all_statuses' => 'Todos los estados',
+        'abstract_filter_label' => 'Filtrar por resumen',
+        'abstract_any'          => 'Resumen: cualquiera',
+        'abstract_with'         => 'Con resumen',
+        'abstract_without'      => 'Sin resumen',
+        'has_abstract'          => 'La referencia tiene resumen',
+        'has_abstract_short'    => 'Con resumen',
         'search'       => 'Buscar',
         'none'         => 'Todavía no hay referencias. Importa para empezar.',
         'col_study'    => 'Estudio',

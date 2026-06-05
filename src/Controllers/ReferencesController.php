@@ -23,11 +23,14 @@ final class ReferencesController
         $review = $this->memberOrDeny((int) $id);
         $rid = (int) $id;
 
-        $status = (string) ($_GET['status'] ?? '');
-        $search = trim((string) ($_GET['q'] ?? ''));
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $status   = (string) ($_GET['status'] ?? '');
+        $search   = trim((string) ($_GET['q'] ?? ''));
+        $page     = max(1, (int) ($_GET['page'] ?? 1));
+        $abstract = in_array(($_GET['abstract'] ?? ''), ['with', 'without'], true)
+            ? (string) $_GET['abstract']
+            : '';
 
-        $result = Reference::forReview($rid, $status, $search, $page);
+        $result = Reference::forReview($rid, $status, $search, $page, 25, $abstract);
 
         echo View::render('references/index', [
             'review'        => $review,
@@ -37,6 +40,7 @@ final class ReferencesController
             'perPage'       => 25,
             'status'        => $status,
             'search'        => $search,
+            'abstract'      => $abstract,
             'statuses'      => Reference::STATUSES,
             'metrics'       => Review::metrics($rid),
             'pendingDups'   => Duplicate::pendingCount($rid),
@@ -128,9 +132,12 @@ final class ReferencesController
 
         $scope = (string) ($_POST['scope'] ?? '');
         if ($scope === 'filtered') {
-            $status = (string) ($_POST['status'] ?? '');
-            $search = trim((string) ($_POST['q'] ?? ''));
-            $ids = Reference::idsForReview($rid, $status, $search);
+            $status   = (string) ($_POST['status'] ?? '');
+            $search   = trim((string) ($_POST['q'] ?? ''));
+            $abstract = in_array(($_POST['abstract'] ?? ''), ['with', 'without'], true)
+                ? (string) $_POST['abstract']
+                : '';
+            $ids = Reference::idsForReview($rid, $status, $search, $abstract);
         } else {
             $raw = (array) ($_POST['reference_ids'] ?? []);
             $ids = array_values(array_unique(array_map('intval', $raw)));
