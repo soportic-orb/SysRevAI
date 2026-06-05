@@ -1214,10 +1214,17 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .btn--danger-solid { background: #dc2626; border-color: #dc2626; color: #fff; }
 .btn--danger-solid:hover { background: #b91c1c; border-color: #b91c1c; }
 
-/* Per-row action cluster on the references table — keeps the summary
-   button and the delete cross side by side without wrapping. */
-.ref-actions { white-space: nowrap; }
-.ref-actions form { margin-left: 6px; }
+/* Per-row action stack on the references table. Buttons render one
+   below the other (Recuperar above, Resumen below) so the user can
+   scan the column without horizontal eye sweeps; .ref-actions__btn
+   is full-width inside the cell to keep the click targets aligned. */
+.ref-actions {
+    display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+    white-space: nowrap;
+}
+.ref-actions form,
+.ref-actions__btn-form { margin: 0; }
+.ref-actions__btn { justify-content: center; width: 100%; }
 /* Source-of-import cell: free-text label the user set on the import
    form (or the original filename) — clamp long values so the table
    stays scannable without wrapping into multiple lines. */
@@ -1227,7 +1234,6 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
    layout stays the same when no abstract is present. */
 .ref-actions__abstract {
     display: inline-flex; align-items: center; gap: 4px;
-    margin-top: 6px;
     color: var(--c-muted); font-size: 12px;
 }
 .ref-actions__abstract-icon { color: var(--c-muted); }
