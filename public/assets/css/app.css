@@ -668,10 +668,56 @@ a:hover { text-decoration: underline; }
 .info-modal__body ul, .info-modal__body ol { margin: 0 0 10px 18px; padding: 0; }
 .info-modal__body li { margin: 3px 0; }
 .info-modal__body em { color: var(--c-muted); }
-/* Centred confirmation modal — replaces the native confirm() prompt. */
-.info-modal--confirm .info-modal__inner { max-width: 480px; padding: 22px 24px; }
-.info-modal--confirm h3 { margin: 0 0 10px; font-size: 18px; }
-.confirm-modal__body { margin: 0 0 16px; line-height: 1.55; white-space: pre-line; }
+/* Centred confirmation modal — visually rhymes with the "AI is working"
+   overlay so prompts and progress share the same vocabulary. The close
+   button is absolutely positioned out of the flow so the title, body
+   and actions stack on the modal's vertical centre line. */
+.info-modal--confirm {
+    border: 0; padding: 0; background: transparent;
+    max-width: 460px; width: calc(100vw - 32px);
+}
+.info-modal--confirm .info-modal__inner {
+    position: relative;
+    background: var(--c-surface); color: var(--c-text);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 48px rgba(0,0,0,.35);
+    align-items: center;
+    text-align: center;
+    padding: 36px 40px 28px;
+    gap: 14px;
+    overflow: visible;
+}
+.info-modal--confirm h3 {
+    margin: 0; font-size: 22px; font-weight: 700; line-height: 1.25;
+}
+.info-modal--confirm p,
+.info-modal--confirm .confirm-modal__body {
+    margin: 0; color: var(--c-text);
+    font-size: 15px; line-height: 1.55;
+    white-space: pre-line;
+}
+.info-modal--confirm p.muted { color: var(--c-muted); font-size: 13.5px; }
+/* Form rows inside a confirm modal (the citation-style picker) read
+   left-aligned even on a centred card — labels above their input. */
+.info-modal--confirm .field { width: 100%; text-align: left; margin-top: 4px; }
+.info-modal--confirm .actions {
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+.info-modal--confirm .info-modal__close {
+    position: absolute;
+    top: 10px; right: 10px;
+    color: var(--c-muted);
+    background: transparent;
+}
+.info-modal--confirm .info-modal__close:hover {
+    background: color-mix(in srgb, var(--c-text) 8%, transparent);
+    color: var(--c-text);
+}
 .btn.is-busy, .btn[disabled] { cursor: progress; opacity: .75; }
 .btn--sm { padding: 7px 12px; font-size: 13px; }
 .btn--xs { padding: 4px 10px; font-size: 12.5px; border-radius: 6px; }

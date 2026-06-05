@@ -93,7 +93,7 @@ $id = (int) $review['id'];
             </form>
         </section>
 
-        <dialog class="info-modal" id="dupDeleteModal">
+        <dialog class="info-modal info-modal--confirm" id="dupDeleteModal">
             <div class="info-modal__inner">
                 <button type="button" class="info-modal__close" data-info-close
                         aria-label="<?= e(__('common.close')) ?>">&times;</button>
