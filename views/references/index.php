@@ -241,19 +241,29 @@ $qs = static function (array $extra) use ($status, $search, $abstract): string {
                                         <span class="<?= e($icon['class']) ?>" title="<?= e($icon['label']) ?>"></span>
                                         <?php if ($statusRow !== null && (int) $statusRow['has_fulltext'] === 1 && !empty($statusRow['fulltext_url'])): ?>
                                             <a class="link-ext" href="<?= e((string) $statusRow['fulltext_url']) ?>" target="_blank" rel="noopener noreferrer"><?= e(__('fulltext.view')) ?></a>
-                                        <?php elseif (!$queued): ?>
-                                            <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/full-text" style="display:inline">
-                                                <?= csrf_field() ?>
-                                                <button class="btn btn--ghost btn--sm"
-                                                        data-busy-label="<?= e(__('common.working')) ?>">
-                                                    <?= e(__('fulltext.retrieve')) ?>
-                                                </button>
-                                            </form>
                                         <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
                                 <td class="ref-actions">
-                                    <a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a>
+                                    <?php
+                                    // Full-text "Retrieve" sits at the top of the action stack
+                                    // when the column is enabled and the file hasn't been
+                                    // fetched yet (and isn't already queued). The status dot
+                                    // stays in its own column as the at-a-glance indicator.
+                                    $canRetrieveFt = $ftEnabled && !$queued
+                                        && !($statusRow !== null && (int) $statusRow['has_fulltext'] === 1);
+                                    if ($canRetrieveFt):
+                                    ?>
+                                        <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/full-text"
+                                              class="ref-actions__btn-form">
+                                            <?= csrf_field() ?>
+                                            <button class="btn btn--ghost btn--sm ref-actions__btn"
+                                                    data-busy-label="<?= e(__('common.working')) ?>">
+                                                <?= e(__('fulltext.retrieve')) ?>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <a class="btn btn--ghost btn--sm ref-actions__btn" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a>
                                     <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
                                         <div class="ref-actions__abstract"
                                              title="<?= e(__('references.has_abstract')) ?>"
