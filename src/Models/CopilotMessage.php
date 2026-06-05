@@ -7,14 +7,16 @@ namespace SysRevAI\Models;
 use SysRevAI\Core\Database;
 
 /**
- * Persistent transcript of a researcher's Scientific Copilot conversation
- * inside one review. Scoped per (review_id, user_id) so the bot remembers
- * what was said to whom — and the user can come back from another device.
+ * Persistent Copilot transcript. Each row is one turn (user or assistant)
+ * for a (review, user) pair when the user is inside a review, or for the
+ * (NULL, user) pair when they're chatting with the global assistant from
+ * outside any review. Storing server-side lets the user pick the
+ * conversation back up from any device.
  */
 final class CopilotMessage
 {
-    /** Append one turn (user or assistant) to the thread. */
-    public static function add(int $reviewId, int $userId, string $role, string $content): int
+    /** Append one turn. Pass $reviewId=null for the global thread. */
+    public static function add(?int $reviewId, int $userId, string $role, string $content): int
     {
         if (!in_array($role, ['user', 'assistant'], true)) {
             return 0;
@@ -27,22 +29,33 @@ final class CopilotMessage
     }
 
     /**
-     * Full chat history for one researcher in one review, oldest first.
+     * Full chat history for one user in one thread, oldest first. Pass
+     * $reviewId=null for the user's global thread.
      *
      * @return array<int,array{role:string,content:string,created_at:string}>
      */
-    public static function history(int $reviewId, int $userId, int $limit = 200): array
+    public static function history(?int $reviewId, int $userId, int $limit = 200): array
     {
         $table = Database::table('copilot_messages');
         $limit = max(1, min($limit, 1000));
         try {
-            $rows = Database::select(
-                "SELECT role, content, created_at FROM `{$table}`
-                 WHERE review_id = ? AND user_id = ?
-                 ORDER BY id ASC
-                 LIMIT {$limit}",
-                [$reviewId, $userId]
-            );
+            if ($reviewId === null) {
+                $rows = Database::select(
+                    "SELECT role, content, created_at FROM `{$table}`
+                     WHERE review_id IS NULL AND user_id = ?
+                     ORDER BY id ASC
+                     LIMIT {$limit}",
+                    [$userId]
+                );
+            } else {
+                $rows = Database::select(
+                    "SELECT role, content, created_at FROM `{$table}`
+                     WHERE review_id = ? AND user_id = ?
+                     ORDER BY id ASC
+                     LIMIT {$limit}",
+                    [$reviewId, $userId]
+                );
+            }
         } catch (\Throwable) {
             return [];
         }
@@ -53,10 +66,16 @@ final class CopilotMessage
         ], $rows);
     }
 
-    /** Wipe one researcher's transcript in one review. */
-    public static function clear(int $reviewId, int $userId): int
+    /** Wipe one user's transcript in one thread. */
+    public static function clear(?int $reviewId, int $userId): int
     {
         $table = Database::table('copilot_messages');
+        if ($reviewId === null) {
+            return Database::affecting(
+                "DELETE FROM `{$table}` WHERE review_id IS NULL AND user_id = ?",
+                [$userId]
+            );
+        }
         return Database::affecting(
             "DELETE FROM `{$table}` WHERE review_id = ? AND user_id = ?",
             [$reviewId, $userId]

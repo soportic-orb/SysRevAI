@@ -158,6 +158,18 @@ $nav = [
 
 <?php require config('paths.base') . '/views/partials/confirm_modal.php'; ?>
 
+<?php
+// Copilot widget — also available on admin pages so help is one click
+// away even while configuring the platform. Same global mode as the
+// regular layout; hidden entirely when the admin has turned the
+// feature off.
+$_copilotEnabled = (bool) (setting('claude.feature.copilot') ?? true);
+$reviewSubnav = null;
+if ($_copilotEnabled):
+    require config('paths.base') . '/views/partials/copilot_widget.php';
+endif;
+?>
+
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
 </html>

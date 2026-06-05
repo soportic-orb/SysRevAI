@@ -1172,9 +1172,11 @@ return [
     'copilot' => [
         'title'        => 'Copilot Científic',
         'subtitle'     => 'Ajuda metodològica i consultes sobre aquesta revisió',
+        'subtitle_global' => 'Ajuda amb la plataforma SysRevAI i metodologia d\'investigació',
         'toggle_aria'  => 'Obrir el Copilot Científic',
         'toggle_title' => 'Necessites ajuda? Pregunta al Copilot',
         'greeting'     => 'Hola! Sóc el teu Copilot Científic per a aquesta revisió. Pregunta\'m sobre metodologia, PRISMA, el protocol, criteris de cribratge, o com interpretar les referències que estàs revisant.',
+        'greeting_global' => 'Hola! Sóc el teu Copilot Científic. Pregunta\'m com fer servir qualsevol funció de SysRevAI (importar referències, cribrar, EvidenceHunt, equip, exportacions…) o consultes generals de metodologia d\'investigació (PRISMA, PICO, risc de biaix, GRADE…). Per a preguntes d\'una revisió concreta, obre primer aquesta revisió i torna a obrir-me.',
         'placeholder'  => 'Pregunta el que vulguis sobre aquesta revisió…',
         'send'         => 'Enviar',
         'close'        => 'Tancar',

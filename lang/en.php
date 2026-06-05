@@ -1171,9 +1171,11 @@ return [
     'copilot' => [
         'title'        => 'Scientific Copilot',
         'subtitle'     => 'Methodology help and review-specific Q&A',
+        'subtitle_global' => 'SysRevAI how-to and research methodology help',
         'toggle_aria'  => 'Open the Scientific Copilot',
         'toggle_title' => 'Need a hand? Ask the Copilot',
         'greeting'     => 'Hi! I\'m your Scientific Copilot for this review. Ask me about methodology, PRISMA, the protocol, screening criteria, or how to interpret your screened references.',
+        'greeting_global' => 'Hi! I\'m your Scientific Copilot. Ask me how to use any SysRevAI feature (importing references, screening, EvidenceHunt, team, exports…) or anything on research methodology (PRISMA, PICO, risk of bias, GRADE…). For review-specific questions, open that review first and call me again.',
         'placeholder'  => 'Ask anything about this review…',
         'send'         => 'Send',
         'close'        => 'Close',

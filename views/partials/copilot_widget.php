@@ -4,22 +4,39 @@ declare(strict_types=1);
 
 /**
  * Floating Scientific Copilot — a chat bubble in the bottom-right corner,
- * rendered by layouts/app.php whenever the user is on a /reviews/{id}/...
- * page and the admin hasn't disabled the feature. The transcript lives in
- * the `copilot_messages` table; the panel hydrates from
- * GET /reviews/{id}/copilot/history on first open and writes every turn
- * through POST /reviews/{id}/copilot.
+ * available on every authenticated page when the admin hasn't disabled the
+ * feature. Two modes share the same widget:
  *
- * @var array $reviewSubnav  The current review row.
+ *   - Review-scoped: when $reviewSubnav is set (user is on /reviews/{id}/*).
+ *     Routes through /reviews/{id}/copilot/* so the model receives the
+ *     protocol context and the optional page snapshot.
+ *   - Global: when $reviewSubnav is null (everywhere else). Routes through
+ *     /copilot/* and the model answers platform how-to + methodology
+ *     questions; it defers review-specific questions until the user opens
+ *     the review.
+ *
+ * The transcript for each mode lives in the same `copilot_messages` table
+ * keyed on (review_id, user_id) — NULL review_id for the global thread.
+ *
+ * @var ?array $reviewSubnav  Current review row, or null when off-review.
  */
-$copilotReviewId = (int) $reviewSubnav['id'];
+$copilotReviewId = is_array($reviewSubnav ?? null) ? (int) $reviewSubnav['id'] : 0;
+$copilotIsGlobal = $copilotReviewId === 0;
+$copilotBaseUrl  = $copilotIsGlobal ? '/copilot' : '/reviews/' . $copilotReviewId . '/copilot';
+$copilotSubtitle = $copilotIsGlobal
+    ? __('copilot.subtitle_global')
+    : __('copilot.subtitle');
+$copilotGreeting = $copilotIsGlobal
+    ? __('copilot.greeting_global')
+    : __('copilot.greeting');
 ?>
 <div class="copilot" id="copilot"
-     data-url="/reviews/<?= $copilotReviewId ?>/copilot"
-     data-history-url="/reviews/<?= $copilotReviewId ?>/copilot/history"
-     data-clear-url="/reviews/<?= $copilotReviewId ?>/copilot/clear"
+     data-url="<?= e($copilotBaseUrl) ?>"
+     data-history-url="<?= e($copilotBaseUrl) ?>/history"
+     data-clear-url="<?= e($copilotBaseUrl) ?>/clear"
      data-csrf="<?= e(csrf_token()) ?>"
-     data-expand-key="sysrevai.copilot.expanded">
+     data-expand-key="sysrevai.copilot.expanded"
+     data-scope="<?= $copilotIsGlobal ? 'global' : 'review' ?>">
     <button class="copilot__toggle" id="copilotToggle" type="button"
             aria-label="<?= e(__('copilot.toggle_aria')) ?>"
             title="<?= e(__('copilot.toggle_title')) ?>"
@@ -40,7 +57,7 @@ $copilotReviewId = (int) $reviewSubnav['id'];
         <header class="copilot__head">
             <div>
                 <h2 class="copilot__title"><?= e(__('copilot.title')) ?></h2>
-                <p class="copilot__subtitle"><?= e(__('copilot.subtitle')) ?></p>
+                <p class="copilot__subtitle"><?= e($copilotSubtitle) ?></p>
             </div>
             <div class="copilot__head-actions">
                 <button type="button" class="copilot__icon-btn" id="copilotClear"
@@ -83,7 +100,7 @@ $copilotReviewId = (int) $reviewSubnav['id'];
         </header>
         <div class="copilot__messages" id="copilotMessages" aria-live="polite">
             <div class="copilot__greeting" id="copilotGreeting">
-                <p><?= e(__('copilot.greeting')) ?></p>
+                <p><?= e($copilotGreeting) ?></p>
             </div>
         </div>
         <form class="copilot__form" id="copilotForm">

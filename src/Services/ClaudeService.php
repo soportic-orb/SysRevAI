@@ -588,6 +588,55 @@ final class ClaudeService
             : ['ok' => false, 'error' => $res['error']];
     }
 
+    /**
+     * Global Copilot — same chat surface, no review context. Use this when
+     * the user is anywhere on the platform that isn't a /reviews/{id}/*
+     * page. The system prompt steers the model toward platform how-to
+     * answers and general research-methodology questions, and asks it to
+     * defer review-specific questions until the user opens the review.
+     *
+     * @param array<int,array{role:string,content:string}> $history
+     * @return array{ok:bool,reply?:string,error?:string}
+     */
+    public function assistantChat(array $history, string $userMessage): array
+    {
+        if ($e = $this->guard('copilot')) {
+            return $e;
+        }
+
+        $system = "You are SysRevAI's Scientific Copilot, available platform-wide. Your role outside of "
+            . "a specific review:\n"
+            . " • Explain how to use SysRevAI features: creating a review, importing references "
+            . "(CSV / RIS / PubMed exports), screening (single, double-blind, third-reviewer), full-text "
+            . "retrieval, risk-of-bias tools, data extraction, exports (PRISMA flow, CSV, citations), "
+            . "team invitations, EvidenceHunt mode, Copilot itself.\n"
+            . " • Answer general research-methodology questions: PRISMA, Cochrane, PICO formulation, "
+            . "search strategies, study design appraisal, RoB tools (RoB 2, ROBINS-I, Newcastle-Ottawa, "
+            . "JBI), meta-analysis basics, GRADE.\n"
+            . " • If the user asks about a SPECIFIC review they're working on, ask them to open that "
+            . "review first so the Copilot can load its protocol context (PICO, criteria, metrics).\n\n"
+            . "Tone: warm but professional, concise, evidence-aware. Reply in the same language as the "
+            . "user's question. Use plain prose with short paragraphs; bullet lists only when really "
+            . "helpful. Never invent facts — if you don't know, say so and propose how to find out.";
+
+        $messages = [];
+        $tail = array_slice($history, -16);
+        foreach ($tail as $h) {
+            $role = ($h['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user';
+            $content = (string) ($h['content'] ?? '');
+            if ($content === '') {
+                continue;
+            }
+            $messages[] = ['role' => $role, 'content' => $content];
+        }
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        $res = $this->request($this->modelLight, $system, $messages, 800, 'copilot', null, false);
+        return $res['ok']
+            ? ['ok' => true, 'reply' => (string) $res['text']]
+            : ['ok' => false, 'error' => $res['error']];
+    }
+
     public function checkSemanticDuplicate(array $refA, array $refB, ?int $reviewId = null): array
     {
         if ($e = $this->guard('dedup')) {
