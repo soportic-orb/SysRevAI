@@ -59,23 +59,21 @@ final class Reference
     }
 
     /**
-     * Paginated list for a review with optional status filter and search.
+     * Paginated list for a review with optional status, search and
+     * abstract-presence filters.
+     *
+     * @param string $abstract '' for any, 'with' for rows that carry an
+     *                         abstract, 'without' for rows that don't.
+     *                         The MEDIUMTEXT column itself is never
+     *                         selected — we only expose a precomputed
+     *                         `has_abstract` flag to the view.
+     *
      * @return array{rows:array,total:int}
      */
-    public static function forReview(int $reviewId, string $status = '', string $search = '', int $page = 1, int $perPage = 25): array
+    public static function forReview(int $reviewId, string $status = '', string $search = '', int $page = 1, int $perPage = 25, string $abstract = ''): array
     {
         $table = Database::table('references');
-        $where = "review_id = ?";
-        $params = [$reviewId];
-        if ($status !== '' && in_array($status, self::STATUSES, true)) {
-            $where .= " AND status = ?";
-            $params[] = $status;
-        }
-        if ($search !== '') {
-            $where .= " AND (title LIKE ? OR abstract LIKE ?)";
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-        }
+        [$where, $params] = self::buildFilter($reviewId, $status, $search, $abstract);
 
         $countRow = Database::selectOne("SELECT COUNT(*) AS c FROM `{$table}` WHERE {$where}", $params);
         $total = (int) ($countRow['c'] ?? 0);
@@ -83,7 +81,8 @@ final class Reference
         $perPage = max(1, min($perPage, 100));
         $offset = max(0, ($page - 1) * $perPage);
         $rows = Database::select(
-            "SELECT id, title, authors_json, year, journal, doi, pmid, status
+            "SELECT id, title, authors_json, year, journal, doi, pmid, status,
+                    (abstract IS NOT NULL AND CHAR_LENGTH(abstract) > 0) AS has_abstract
              FROM `{$table}` WHERE {$where} ORDER BY id DESC LIMIT {$perPage} OFFSET {$offset}",
             $params
         );
@@ -141,22 +140,40 @@ final class Reference
      * Every reference id matching the same filter as the paginated
      * index — used by the "select all across pages" bulk-delete flow.
      */
-    public static function idsForReview(int $reviewId, string $status = '', string $search = ''): array
+    public static function idsForReview(int $reviewId, string $status = '', string $search = '', string $abstract = ''): array
     {
-        $table  = Database::table('references');
-        $where  = "review_id = ?";
+        $table = Database::table('references');
+        [$where, $params] = self::buildFilter($reviewId, $status, $search, $abstract);
+        $rows = Database::select("SELECT id FROM `{$table}` WHERE {$where}", $params);
+        return array_map(static fn (array $r): int => (int) $r['id'], $rows);
+    }
+
+    /**
+     * Common WHERE builder used by forReview() and idsForReview() so the
+     * paginated table and the bulk-delete "filtered scope" share the same
+     * predicate.
+     *
+     * @return array{0:string,1:array<int,mixed>}
+     */
+    private static function buildFilter(int $reviewId, string $status, string $search, string $abstract): array
+    {
+        $where  = 'review_id = ?';
         $params = [$reviewId];
         if ($status !== '' && in_array($status, self::STATUSES, true)) {
-            $where .= " AND status = ?";
+            $where .= ' AND status = ?';
             $params[] = $status;
         }
         if ($search !== '') {
-            $where .= " AND (title LIKE ? OR abstract LIKE ?)";
+            $where .= ' AND (title LIKE ? OR abstract LIKE ?)';
             $params[] = '%' . $search . '%';
             $params[] = '%' . $search . '%';
         }
-        $rows = Database::select("SELECT id FROM `{$table}` WHERE {$where}", $params);
-        return array_map(static fn (array $r): int => (int) $r['id'], $rows);
+        if ($abstract === 'with') {
+            $where .= ' AND abstract IS NOT NULL AND CHAR_LENGTH(abstract) > 0';
+        } elseif ($abstract === 'without') {
+            $where .= ' AND (abstract IS NULL OR CHAR_LENGTH(abstract) = 0)';
+        }
+        return [$where, $params];
     }
 
     /**

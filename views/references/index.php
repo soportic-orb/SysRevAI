@@ -11,6 +11,7 @@ use SysRevAI\Core\Session;
 /** @var int $perPage */
 /** @var string $status */
 /** @var string $search */
+/** @var string $abstract  '' | 'with' | 'without' */
 /** @var string[] $statuses */
 /** @var array $metrics */
 /** @var int $pendingDups */
@@ -21,6 +22,7 @@ use SysRevAI\Core\Session;
 $id = (int) $review['id'];
 $pages = (int) ceil($total / $perPage);
 $inFlight = array_flip($ftInFlight ?? []);
+$abstract = $abstract ?? '';
 
 $ftIcon = static function (?array $row, bool $queued): array {
     if ($queued) {
@@ -35,8 +37,11 @@ $ftIcon = static function (?array $row, bool $queued): array {
     }
     return ['class' => 'ft-dot ft-dot--none', 'label' => __('fulltext.dot_none')];
 };
-$qs = static function (array $extra) use ($status, $search): string {
-    return http_build_query(array_merge(['status' => $status, 'q' => $search], $extra));
+$qs = static function (array $extra) use ($status, $search, $abstract): string {
+    return http_build_query(array_merge(
+        ['status' => $status, 'q' => $search, 'abstract' => $abstract],
+        $extra
+    ));
 };
 ?>
 <div class="page">
@@ -84,11 +89,18 @@ $qs = static function (array $extra) use ($status, $search): string {
     <?php endif; ?>
 
     <form method="get" action="/reviews/<?= $id ?>/references" class="toolbar">
-        <select class="select select--sm" name="status" onchange="this.form.submit()">
+        <select class="select select--sm" name="status" onchange="this.form.submit()"
+                aria-label="<?= e(__('references.col_status')) ?>">
             <option value=""><?= e(__('references.all_statuses')) ?></option>
             <?php foreach ($statuses as $s): ?>
                 <option value="<?= $s ?>" <?= $status === $s ? 'selected' : '' ?>><?= e(__('references.st_' . $s)) ?></option>
             <?php endforeach; ?>
+        </select>
+        <select class="select select--sm" name="abstract" onchange="this.form.submit()"
+                aria-label="<?= e(__('references.abstract_filter_label')) ?>">
+            <option value=""><?= e(__('references.abstract_any')) ?></option>
+            <option value="with"    <?= $abstract === 'with'    ? 'selected' : '' ?>><?= e(__('references.abstract_with')) ?></option>
+            <option value="without" <?= $abstract === 'without' ? 'selected' : '' ?>><?= e(__('references.abstract_without')) ?></option>
         </select>
         <input class="input" name="q" value="<?= e($search) ?>" placeholder="<?= e(__('references.search')) ?>">
         <button class="btn btn--ghost btn--sm"><?= e(__('references.search')) ?></button>
@@ -173,6 +185,7 @@ $qs = static function (array $extra) use ($status, $search): string {
                 <input type="hidden" name="scope" id="deleteBulkScope" value="ids">
                 <input type="hidden" name="status" value="<?= e($status) ?>">
                 <input type="hidden" name="q" value="<?= e($search) ?>">
+                <input type="hidden" name="abstract" value="<?= e($abstract) ?>">
                 <input type="hidden" name="back" value="/reviews/<?= $id ?>/references?<?= e($qs([])) ?>">
             </form>
         <?php endif; ?>
@@ -236,6 +249,14 @@ $qs = static function (array $extra) use ($status, $search): string {
                                 <?php endif; ?>
                                 <td class="ref-actions">
                                     <a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a>
+                                    <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
+                                        <div class="ref-actions__abstract"
+                                             title="<?= e(__('references.has_abstract')) ?>"
+                                             aria-label="<?= e(__('references.has_abstract')) ?>">
+                                            <?php $iconName = 'abstract'; $iconClass = 'ref-actions__abstract-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                            <span class="ref-actions__abstract-label"><?= e(__('references.has_abstract_short')) ?></span>
+                                        </div>
+                                    <?php endif; ?>
                                     <?php
                                     // Delete is offered only while the reference hasn't yet
                                     // been pulled into any reviewer's decision history. We

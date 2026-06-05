@@ -569,6 +569,12 @@ return [
     'references' => [
         'title'        => 'References',
         'all_statuses' => 'All statuses',
+        'abstract_filter_label' => 'Filter by abstract',
+        'abstract_any'          => 'Abstract: any',
+        'abstract_with'         => 'With abstract',
+        'abstract_without'      => 'Without abstract',
+        'has_abstract'          => 'Reference has an abstract',
+        'has_abstract_short'    => 'Has abstract',
         'search'       => 'Search',
         'none'         => 'No references yet. Import some to get started.',
         'col_study'    => 'Study',
