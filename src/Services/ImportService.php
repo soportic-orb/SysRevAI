@@ -12,7 +12,7 @@ namespace SysRevAI\Services;
  */
 final class ImportService
 {
-    public const FORMATS = ['ris', 'bibtex', 'csv', 'pubmed', 'endnote', 'freetext'];
+    public const FORMATS = ['ris', 'bibtex', 'csv', 'pubmed', 'pubmed_text', 'endnote', 'freetext'];
 
     /** Guess the format from filename + content; null if unknown. */
     public static function detectFormat(string $filename, string $content): ?string
@@ -32,11 +32,21 @@ final class ImportService
         if (str_contains($head, '<records>') || str_contains($head, '<xml>') || str_contains($head, 'EndNote')) {
             return 'endnote';
         }
+        // PubMed "Abstract (text)" export. Distinct from CSV by its
+        // characteristic trailing PMID: line and absence of comma-delimited
+        // headers — the same regex works on the .txt the user downloaded
+        // from PubMed via "Save → All results → Format: Abstract → File".
+        if (preg_match('/^PMID:\s*\d+/m', $content) && preg_match('/^\d+[\.\:]\s/m', $content)) {
+            return 'pubmed_text';
+        }
         if ($ext === 'csv' || str_contains($head, ',')) {
             return 'csv';
         }
         if ($ext === 'xml') {
             return str_contains($content, 'PubmedArticle') ? 'pubmed' : 'endnote';
+        }
+        if ($ext === 'txt' && str_contains($content, 'PMID')) {
+            return 'pubmed_text';
         }
         return null;
     }
@@ -45,12 +55,13 @@ final class ImportService
     public static function parse(string $content, string $format): array
     {
         return match ($format) {
-            'ris'     => self::parseRis($content),
-            'bibtex'  => self::parseBibtex($content),
-            'csv'     => self::parseCsv($content),
-            'pubmed'  => self::parsePubmed($content),
-            'endnote' => self::parseEndnote($content),
-            default   => ['refs' => [], 'errors' => ['Unknown format']],
+            'ris'         => self::parseRis($content),
+            'bibtex'      => self::parseBibtex($content),
+            'csv'         => self::parseCsv($content),
+            'pubmed'      => self::parsePubmed($content),
+            'pubmed_text' => self::parsePubmedText($content),
+            'endnote'     => self::parseEndnote($content),
+            default       => ['refs' => [], 'errors' => ['Unknown format']],
         };
     }
 
@@ -299,6 +310,201 @@ final class ImportService
         }
         return ['refs' => array_map([self::class, 'normalize'], $refs),
                 'errors' => $refs === [] ? ['No PubMed articles found.'] : []];
+    }
+
+    /* ── PubMed Abstract (text) ──────────────────────────────────────────
+     *
+     * Multi-paragraph text export produced by PubMed when the user
+     * picks "Save → All results → Format: Abstract → File". One record
+     * looks roughly like:
+     *
+     *   1: J Eval Clin Pract. 2023 Aug;29(5):793-803. doi: 10.1111/jep.13838.
+     *
+     *   Title of the article on one or more lines.
+     *
+     *   Smith J(1), Jones K(2), Brown L(1).
+     *
+     *   Author information:
+     *   (1)Department X, University Y.
+     *
+     *   Abstract / Background / Methods / Results / Conclusions paragraphs.
+     *
+     *   DOI: 10.1111/jep.13838
+     *   PMCID: PMC1234567
+     *   PMID: 36868880 [Indexed for MEDLINE]
+     *
+     * Records are separated by a blank line followed by "<n>:" or
+     * "<n>.". The parser is deliberately tolerant — the field order
+     * shifts slightly between PubMed versions and account languages, so
+     * we extract DOI / PMID by line-anchored regex first, then peel the
+     * remaining paragraphs into journal-header, title, authors, abstract.
+     */
+    private static function parsePubmedText(string $content): array
+    {
+        $content = (string) preg_replace("/\r\n|\r/", "\n", $content);
+
+        // Split records on either "<blank line><digits><.|:><space>" (the
+        // record header) or "PMID: …" lines so an export without leading
+        // numbers (rare but possible) still chunks correctly.
+        $chunks = preg_split('/\n\s*\n(?=\d+[.:]\s)/', $content) ?: [];
+        if (count($chunks) <= 1) {
+            // Fallback: split on blank line right after a PMID: line.
+            $chunks = preg_split('/^PMID:\s*\d+.*$\n\s*\n/m', $content, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        }
+
+        $refs = [];
+        $errors = [];
+        foreach ($chunks as $chunk) {
+            $ref = self::parsePubmedTextRecord(trim($chunk));
+            if ($ref !== null) {
+                $refs[] = $ref;
+            }
+        }
+        if ($refs === []) {
+            $errors[] = 'No PubMed text records found.';
+        }
+        return [
+            'refs'   => array_map([self::class, 'normalize'], $refs),
+            'errors' => $errors,
+        ];
+    }
+
+    private static function parsePubmedTextRecord(string $chunk): ?array
+    {
+        if ($chunk === '') {
+            return null;
+        }
+        $ref = self::blank();
+
+        // PMID — last line of every record in this format.
+        if (preg_match('/^PMID:\s*(\d+)/mi', $chunk, $m)) {
+            $ref['pmid'] = $m[1];
+        }
+        // DOI — either an explicit "DOI: …" line near the bottom, or
+        // inline in the journal header ("…; doi: 10.x/y. Epub…").
+        if (preg_match('/^DOI:\s*(\S+)/mi', $chunk, $m)) {
+            $ref['doi'] = rtrim($m[1], '.');
+        } elseif (preg_match('/\bdoi:\s*(10\.\S+?)(?=[\s.]|$)/i', $chunk, $m)) {
+            $ref['doi'] = rtrim($m[1], '.');
+        }
+        // Keywords — explicit "Keywords:" line.
+        if (preg_match('/^Keywords?:\s*(.+?)$/mi', $chunk, $m)) {
+            $ref['keywords'] = array_values(array_filter(
+                array_map('trim', preg_split('/[;,]/', $m[1]) ?: []),
+                static fn (string $s): bool => $s !== ''
+            ));
+        }
+
+        // Drop the leading record marker ("1: " or "1. ") if any.
+        $chunk = (string) preg_replace('/^\s*\d+[.:]\s+/', '', $chunk);
+
+        // Break into paragraphs and prune the boilerplate trailers we
+        // already pulled the identifiers from, so what's left is article
+        // metadata.
+        $paragraphs = preg_split('/\n\s*\n/', $chunk) ?: [];
+        $paragraphs = array_map(
+            static fn (string $p): string => trim((string) preg_replace('/\s+/u', ' ', $p)),
+            $paragraphs
+        );
+        $paragraphs = array_values(array_filter($paragraphs, static fn (string $p): bool => $p !== ''));
+
+        // 1. Journal header — first paragraph, usually contains "<Journal>. <Year> ..."
+        if ($paragraphs !== []) {
+            $header = (string) array_shift($paragraphs);
+            if (preg_match('/^(.+?)\.\s+(\d{4})/u', $header, $m)) {
+                $ref['journal'] = trim($m[1]);
+                $ref['year']    = (int) $m[2];
+            } elseif (preg_match('/^(.+?)\./u', $header, $m)) {
+                $ref['journal'] = trim($m[1]);
+            }
+        }
+
+        // 2. Title — first non-trailer paragraph that doesn't look like
+        //    an authors block (single-line, ends in ".", mostly capitalised
+        //    surnames). The check is intentionally loose: title text
+        //    contains spaces too so we just take the first paragraph that
+        //    isn't a known trailer.
+        while ($paragraphs !== []) {
+            $p = $paragraphs[0];
+            if (self::isPubmedTrailer($p)) {
+                array_shift($paragraphs);
+                continue;
+            }
+            $ref['title'] = (string) array_shift($paragraphs);
+            break;
+        }
+
+        // 3. Authors — next paragraph if it parses as a comma-separated
+        //    list of names (with optional affiliation markers "(1)").
+        if ($paragraphs !== [] && self::looksLikeAuthorList($paragraphs[0])) {
+            $authorsStr = (string) array_shift($paragraphs);
+            // Strip affiliation markers like "(1)" / "(1,2)".
+            $authorsStr = (string) preg_replace('/\([\d,\s]+\)/', '', $authorsStr);
+            $authorsStr = trim(rtrim($authorsStr, '.'));
+            $authors = preg_split('/,\s*(?=\S)/', $authorsStr) ?: [];
+            $authors = array_map('trim', $authors);
+            $authors = array_values(array_filter($authors, static fn (string $a): bool => $a !== ''));
+            $ref['authors'] = $authors;
+        }
+
+        // 4. Abstract — the rest, minus known trailers (affiliations,
+        //    copyright, comments, identifier blocks, etc.).
+        $abstract = [];
+        foreach ($paragraphs as $p) {
+            if (self::isPubmedTrailer($p)) {
+                continue;
+            }
+            $abstract[] = $p;
+        }
+        if ($abstract !== []) {
+            $ref['abstract'] = implode("\n\n", $abstract);
+        }
+
+        // Reject empty rows — needs at least one identifying field so
+        // the dedup key has something to grip.
+        if ($ref['title'] === '' && $ref['pmid'] === '' && $ref['doi'] === '') {
+            return null;
+        }
+        return $ref;
+    }
+
+    /** Paragraph patterns we strip before treating the rest as abstract. */
+    private static function isPubmedTrailer(string $p): bool
+    {
+        return (bool) preg_match(
+            '/^(Author information|Author Contributions|Comment in|Comment on|Erratum in|Erratum for|Update of|Update in|Conflict of interest|Funding|Copyright|©|DOI:|PMCID?:|PMID:|MeSH|Substances|EID|PII|\[)/i',
+            $p
+        );
+    }
+
+    /**
+     * A paragraph "looks like" an author list when it's a single-line,
+     * comma-separated string of capitalised names — optionally annotated
+     * with affiliation markers — that ends in a period.
+     */
+    private static function looksLikeAuthorList(string $p): bool
+    {
+        if (mb_strlen($p) > 800) {
+            return false;
+        }
+        if (!str_ends_with(rtrim($p), '.')) {
+            return false;
+        }
+        if (!str_contains($p, ',')) {
+            // A single-author record still passes if it starts with a capital
+            // and has a short token count (Lastname Initials.).
+            return (bool) preg_match('/^\p{Lu}[\p{L}\'-]+\s+\p{Lu}/u', $p) && mb_strlen($p) < 80;
+        }
+        // Authors are short comma-separated tokens; an abstract usually
+        // has long sentences. Reject if any single token between commas
+        // is longer than ~60 chars (likely prose).
+        $tokens = array_map('trim', explode(',', $p));
+        foreach ($tokens as $t) {
+            if (mb_strlen($t) > 60) {
+                return false;
+            }
+        }
+        return (bool) preg_match('/^\p{Lu}/u', $p);
     }
 
     /* ── EndNote XML ─────────────────────────────────────────────────────── */

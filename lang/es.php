@@ -494,6 +494,7 @@ return [
         'fmt_bibtex'    => 'BibTeX',
         'fmt_csv'       => 'CSV',
         'fmt_pubmed'    => 'PubMed XML',
+        'fmt_pubmed_text' => 'PubMed Abstract (texto)',
         'fmt_endnote'   => 'EndNote XML',
         'fmt_freetext'  => 'Texto libre (IA)',
         'file'          => 'Archivo',
