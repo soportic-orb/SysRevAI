@@ -594,6 +594,24 @@ return [
         'convert_modal_title'   => 'Convertir las referencias seleccionadas',
         'convert_modal_intro'   => 'Elige el estilo de cita al que quieres convertir las referencias seleccionadas. El normalizador de IA se abre con la conversión preparada para ejecutarse.',
         'convert_modal_confirm' => 'Convertir',
+        // Bulk selection / deletion across pages.
+        'select_page'                => 'Seleccionar página',
+        'select_all_in_review'       => 'Seleccionar TODAS las referencias de la revisión (%d)',
+        'select_scope_filtered'      => 'Se eliminarán todas las referencias que coinciden con el filtro actual (%d).',
+        'delete_btn'                 => 'Eliminar seleccionadas',
+        'delete_all_btn'             => 'Eliminar todas',
+        'delete_bulk_modal_title'    => 'Eliminar referencias',
+        'delete_bulk_modal_intro'    => 'Esta acción no se puede deshacer. Las referencias con decisiones de revisores se conservarán y no se contarán como eliminadas.',
+        'delete_bulk_confirm'        => 'Sí, eliminar',
+        'delete_bulk_count'          => 'Se eliminarán %d referencias.',
+        'delete_bulk_none'           => 'No has seleccionado ninguna referencia para eliminar.',
+        'delete_bulk_ok'             => '%d referencias eliminadas.',
+        'delete_bulk_partial'        => '%d eliminadas, %d bloqueadas por decisiones de revisores, %d con error.',
+        'delete_bulk_all_locked'     => 'No se ha eliminado ninguna referencia: %d ya tienen decisiones de revisores y se conservan por el registro de auditoría.',
+        // Find duplicates.
+        'find_duplicates_btn'        => 'Buscar duplicadas',
+        'dedup_done'                 => 'Búsqueda de duplicados completada: %d duplicados exactos marcados y %d candidatos difusos pendientes de revisión.',
+        'dedup_failed'               => 'No se ha podido ejecutar la búsqueda de duplicados. Inténtalo de nuevo.',
     ],
 
     'duplicates' => [
@@ -610,6 +628,10 @@ return [
         'ai_no'     => 'NO es duplicado',
         'ai_result' => 'IA: %s (confianza %s%%). %s',
         'ai_failed' => 'La IA no pudo evaluar el par (revisa la configuración).',
+        // Bloque de duplicados confirmados con eliminación en bloque.
+        'confirmed_title' => 'Duplicadas listas para eliminar',
+        'confirmed_intro' => 'Referencias que el sistema ya ha marcado como duplicadas exactas. Marca las que quieras borrar o usa "Eliminar todas" para borrar de golpe todas las duplicadas marcadas.',
+        'confirmed_none'  => 'No hay duplicadas confirmadas.',
     ],
 
     'team' => [

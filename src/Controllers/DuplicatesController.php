@@ -21,9 +21,16 @@ final class DuplicatesController
     public function index(string $id): void
     {
         $review = $this->memberOrDeny((int) $id);
+        $uid = (int) Auth::id();
+        $canDelete = (int) $review['owner_id'] === $uid || Auth::hasRole('owner', 'admin');
         echo View::render('duplicates/index', [
             'review'     => $review,
             'duplicates' => Duplicate::pendingForReview((int) $id),
+            // References auto-flagged by the dedup pass — listed here so
+            // the user can wipe the confirmed exact dupes with a single
+            // click instead of opening each one.
+            'confirmedDupes' => Reference::confirmedDuplicates((int) $id),
+            'canDelete'      => $canDelete,
         ]);
     }
 

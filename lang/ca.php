@@ -595,6 +595,24 @@ return [
         'convert_modal_title'   => 'Convertir les referències seleccionades',
         'convert_modal_intro'   => 'Tria l\'estil de citació al qual vols convertir les referències seleccionades. El normalitzador de IA s\'obre amb la conversió preparada per executar.',
         'convert_modal_confirm' => 'Convertir',
+        // Selecció i eliminació en bloc.
+        'select_page'                => 'Seleccionar pàgina',
+        'select_all_in_review'       => 'Seleccionar TOTES les referències de la revisió (%d)',
+        'select_scope_filtered'      => 'S\'eliminaran totes les referències que coincideixen amb el filtre actual (%d).',
+        'delete_btn'                 => 'Eliminar seleccionades',
+        'delete_all_btn'             => 'Eliminar totes',
+        'delete_bulk_modal_title'    => 'Eliminar referències',
+        'delete_bulk_modal_intro'    => 'Aquesta acció no es pot desfer. Les referències amb decisions de revisors es conservaran i no es comptaran com a eliminades.',
+        'delete_bulk_confirm'        => 'Sí, eliminar',
+        'delete_bulk_count'          => 'S\'eliminaran %d referències.',
+        'delete_bulk_none'           => 'No has seleccionat cap referència per eliminar.',
+        'delete_bulk_ok'             => '%d referències eliminades.',
+        'delete_bulk_partial'        => '%d eliminades, %d bloquejades per decisions de revisors, %d amb error.',
+        'delete_bulk_all_locked'     => 'No s\'ha eliminat cap referència: %d ja tenen decisions de revisors i es conserven pel registre d\'auditoria.',
+        // Cerca de duplicats.
+        'find_duplicates_btn'        => 'Cercar duplicades',
+        'dedup_done'                 => 'Cerca de duplicats completada: %d duplicats exactes marcats i %d candidats difusos pendents de revisió.',
+        'dedup_failed'               => 'No s\'ha pogut executar la cerca de duplicats. Torna-ho a provar.',
     ],
 
     'duplicates' => [
@@ -611,6 +629,10 @@ return [
         'ai_no'     => 'NO és duplicat',
         'ai_result' => 'IA: %s (confiança %s%%). %s',
         'ai_failed' => 'La IA no ha pogut avaluar el parell (revisa la configuració).',
+        // Bloc de duplicats confirmats amb eliminació en bloc.
+        'confirmed_title' => 'Duplicats llestos per eliminar',
+        'confirmed_intro' => 'Referències que el sistema ja ha marcat com a duplicats exactes. Marca les que vulguis esborrar o utilitza "Eliminar totes" per esborrar de cop tots els duplicats marcats.',
+        'confirmed_none'  => 'No hi ha duplicats confirmats.',
     ],
 
     'team' => [

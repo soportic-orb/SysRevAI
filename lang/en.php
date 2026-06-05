@@ -594,6 +594,24 @@ return [
         'convert_modal_title'   => 'Convert selected references',
         'convert_modal_intro'   => 'Choose the citation style to convert the selected references to. The AI normaliser opens with the conversion ready to run.',
         'convert_modal_confirm' => 'Convert',
+        // Bulk selection / deletion.
+        'select_page'                => 'Select page',
+        'select_all_in_review'       => 'Select ALL references in the review (%d)',
+        'select_scope_filtered'      => 'Every reference matching the current filter will be deleted (%d).',
+        'delete_btn'                 => 'Delete selected',
+        'delete_all_btn'             => 'Delete all',
+        'delete_bulk_modal_title'    => 'Delete references',
+        'delete_bulk_modal_intro'    => 'This cannot be undone. References that already carry reviewer decisions are kept and don\'t count as deleted.',
+        'delete_bulk_confirm'        => 'Yes, delete',
+        'delete_bulk_count'          => '%d references will be deleted.',
+        'delete_bulk_none'           => 'No references selected for deletion.',
+        'delete_bulk_ok'             => '%d references deleted.',
+        'delete_bulk_partial'        => '%d deleted, %d locked by reviewer decisions, %d failed.',
+        'delete_bulk_all_locked'     => 'No references were deleted: %d already carry reviewer decisions and are kept for the audit trail.',
+        // Find duplicates.
+        'find_duplicates_btn'        => 'Find duplicates',
+        'dedup_done'                 => 'Duplicate search complete: %d exact duplicates flagged and %d fuzzy candidates pending review.',
+        'dedup_failed'               => 'Could not run the duplicate search. Try again.',
     ],
 
     'duplicates' => [
@@ -610,6 +628,10 @@ return [
         'ai_no'     => 'NOT a duplicate',
         'ai_result' => 'AI: %s (confidence %s%%). %s',
         'ai_failed' => 'The AI could not evaluate the pair (check the settings).',
+        // Confirmed (exact) duplicates bulk-delete block.
+        'confirmed_title' => 'Duplicates ready to delete',
+        'confirmed_intro' => 'References the system has already flagged as exact duplicates. Tick the ones you want to wipe, or use "Delete all" to remove every flagged duplicate at once.',
+        'confirmed_none'  => 'No confirmed duplicates flagged.',
     ],
 
     'team' => [

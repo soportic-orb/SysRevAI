@@ -13,6 +13,7 @@ use SysRevAI\Models\Reference;
 use SysRevAI\Models\ReferenceFullText;
 use SysRevAI\Models\Review;
 use SysRevAI\Models\ScreeningDecision;
+use SysRevAI\Services\DeduplicationService;
 use SysRevAI\Services\FileStorage;
 
 final class ReferencesController
@@ -97,6 +98,128 @@ final class ReferencesController
     {
         $uid = (int) Auth::id();
         return (int) $review['owner_id'] === $uid || Auth::hasRole('owner', 'admin');
+    }
+
+    /**
+     * Bulk delete. Accepts two scopes posted from the references page:
+     *
+     *   - `scope=filtered` (with the current status/q hidden inputs) —
+     *     wipe every reference matching the filter the user is looking
+     *     at. Enables the "delete all" toolbar action without paginating.
+     *   - `scope=ids` + `reference_ids[]` — wipe a specific list. Used by
+     *     the per-page "select selected" flow and by the bulk-delete
+     *     button on the Duplicates page.
+     *
+     * Rows that have already accrued screening decisions are skipped
+     * (counted), never deleted — destroying them would leave orphaned
+     * decisions and break the audit trail. The on-disk PDF for each
+     * deleted row is unlinked here because the DB cascade can't reach
+     * the filesystem.
+     */
+    public function deleteBulk(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+
+        if (!$this->canDelete($review)) {
+            Session::flash('error', __('references.delete_forbidden'));
+            redirect('/reviews/' . $rid . '/references');
+        }
+
+        $scope = (string) ($_POST['scope'] ?? '');
+        if ($scope === 'filtered') {
+            $status = (string) ($_POST['status'] ?? '');
+            $search = trim((string) ($_POST['q'] ?? ''));
+            $ids = Reference::idsForReview($rid, $status, $search);
+        } else {
+            $raw = (array) ($_POST['reference_ids'] ?? []);
+            $ids = array_values(array_unique(array_map('intval', $raw)));
+            $ids = array_values(array_filter($ids, static fn (int $i): bool => $i > 0));
+        }
+
+        $back = (string) ($_POST['back'] ?? '/reviews/' . $rid . '/references');
+        // Cap the back URL to in-app destinations so a forged POST can't
+        // redirect to an attacker-controlled site after the bulk op.
+        if (!str_starts_with($back, '/')) {
+            $back = '/reviews/' . $rid . '/references';
+        }
+
+        if ($ids === []) {
+            Session::flash('error', __('references.delete_bulk_none'));
+            redirect($back);
+        }
+
+        @set_time_limit(180);
+        $deleted = 0;
+        $locked  = 0;
+        $errors  = 0;
+        foreach ($ids as $refId) {
+            $ref = Reference::find((int) $refId);
+            if ($ref === null || (int) $ref['review_id'] !== $rid) {
+                continue;
+            }
+            if (ScreeningDecision::hasAnyForReference((int) $refId)) {
+                $locked++;
+                continue;
+            }
+            try {
+                $ft = ReferenceFullText::find((int) $refId);
+                if ($ft !== null && !empty($ft['pdf_path'])) {
+                    FileStorage::delete((string) $ft['pdf_path']);
+                }
+                Reference::delete((int) $refId);
+                $deleted++;
+            } catch (\Throwable) {
+                $errors++;
+            }
+        }
+
+        ActivityLog::record('references.deleted_bulk', [
+            'scope'   => $scope === 'filtered' ? 'filtered' : 'ids',
+            'deleted' => $deleted,
+            'locked'  => $locked,
+            'errors'  => $errors,
+        ], $rid);
+
+        if ($deleted === 0 && $locked > 0) {
+            Session::flash('error', __('references.delete_bulk_all_locked', $locked));
+        } elseif ($locked > 0 || $errors > 0) {
+            Session::flash('success', __('references.delete_bulk_partial', $deleted, $locked, $errors));
+        } else {
+            Session::flash('success', __('references.delete_bulk_ok', $deleted));
+        }
+        redirect($back);
+    }
+
+    /**
+     * Run the deduplication pass on demand from the references toolbar.
+     * Marks exact matches as duplicates and creates pending fuzzy
+     * candidates; the user then lands on the Duplicates page to review
+     * what was flagged and wipe the confirmed dupes in bulk.
+     */
+    public function findDuplicates(string $id): void
+    {
+        $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+
+        @set_time_limit(180);
+        try {
+            $r = DeduplicationService::run($rid);
+        } catch (\Throwable $e) {
+            ActivityLog::record('references.dedup_failed', [
+                'review_id' => $rid,
+                'error'     => $e->getMessage(),
+            ], $rid);
+            Session::flash('error', __('references.dedup_failed'));
+            redirect('/reviews/' . $rid . '/references');
+        }
+
+        ActivityLog::record('references.dedup_run_manual', [
+            'exact' => $r['exact'],
+            'fuzzy' => $r['fuzzy'],
+        ], $rid);
+        Session::flash('success', __('references.dedup_done', $r['exact'], $r['fuzzy']));
+        redirect('/reviews/' . $rid . '/duplicates');
     }
 
     private function memberOrDeny(int $reviewId): array
