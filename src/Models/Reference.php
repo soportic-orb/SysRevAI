@@ -138,6 +138,45 @@ final class Reference
     }
 
     /**
+     * Every reference id matching the same filter as the paginated
+     * index — used by the "select all across pages" bulk-delete flow.
+     */
+    public static function idsForReview(int $reviewId, string $status = '', string $search = ''): array
+    {
+        $table  = Database::table('references');
+        $where  = "review_id = ?";
+        $params = [$reviewId];
+        if ($status !== '' && in_array($status, self::STATUSES, true)) {
+            $where .= " AND status = ?";
+            $params[] = $status;
+        }
+        if ($search !== '') {
+            $where .= " AND (title LIKE ? OR abstract LIKE ?)";
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+        }
+        $rows = Database::select("SELECT id FROM `{$table}` WHERE {$where}", $params);
+        return array_map(static fn (array $r): int => (int) $r['id'], $rows);
+    }
+
+    /**
+     * References currently flagged as duplicates by an earlier dedup
+     * pass — listed on the Duplicates page so the user can wipe the
+     * confirmed dupes in bulk.
+     */
+    public static function confirmedDuplicates(int $reviewId): array
+    {
+        $table = Database::table('references');
+        return Database::select(
+            "SELECT id, title, authors_json, year, journal, doi, pmid
+             FROM `{$table}`
+             WHERE review_id = ? AND status = 'duplicate'
+             ORDER BY id DESC",
+            [$reviewId]
+        );
+    }
+
+    /**
      * Remove a reference. Foreign keys cascade across the schema
      * (screening_decisions, full_text, ai_chat_history, summaries,
      * risk_of_bias, retrieval_queue, duplicates, …), so deleting the

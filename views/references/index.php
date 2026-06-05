@@ -115,7 +115,11 @@ $qs = static function (array $extra) use ($status, $search): string {
             <div class="search-bulk-toolbar">
                 <label class="checkbox search-bulk-toolbar__all">
                     <input type="checkbox" id="refsSelectAll">
-                    <?= e(__('search.select_all')) ?>
+                    <?= e(__('references.select_page')) ?>
+                </label>
+                <label class="checkbox search-bulk-toolbar__all" title="<?= e(__('references.select_all_in_review', $total)) ?>">
+                    <input type="checkbox" id="refsSelectAllInReview">
+                    <?= e(__('references.select_all_in_review', $total)) ?>
                 </label>
                 <span class="muted search-bulk-toolbar__count" id="refsSelectedCount">0</span>
                 <span class="muted import-preview__toolbar-spacer"></span>
@@ -123,8 +127,43 @@ $qs = static function (array $extra) use ($status, $search): string {
                         id="convertOpenBtn" disabled>
                     <?= e(__('references.convert_btn')) ?>
                 </button>
+                <?php if ($canDelete): ?>
+                    <button type="button" class="btn btn--danger btn--sm"
+                            id="deleteBulkOpenBtn" disabled>
+                        <?= e(__('references.delete_btn')) ?>
+                    </button>
+                <?php endif; ?>
+                <!-- Trigger the manual dedup pass. It marks exact dupes
+                     and creates pending fuzzy candidates, then drops the
+                     user on the Duplicates page so they can wipe what
+                     was flagged in bulk. -->
+                <form method="post" action="/reviews/<?= $id ?>/references/find-duplicates" style="display:inline" data-ai-action>
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn btn--ghost btn--sm"
+                            data-busy-label="<?= e(__('common.working')) ?>">
+                        <?= e(__('references.find_duplicates_btn')) ?>
+                    </button>
+                </form>
             </div>
         </form>
+
+        <?php if ($canDelete): ?>
+            <!-- Bulk delete sibling form. Lives outside the table so the
+                 row checkboxes can target it via form="referencesDeleteForm"
+                 in addition to the conversion form (HTML5 form association
+                 keeps the markup flat — no nested forms in the table). The
+                 scope is set by the confirmation modal before submit. -->
+            <form method="post"
+                  action="/reviews/<?= $id ?>/references/delete-bulk"
+                  id="referencesDeleteForm"
+                  style="display:none">
+                <?= csrf_field() ?>
+                <input type="hidden" name="scope" id="deleteBulkScope" value="ids">
+                <input type="hidden" name="status" value="<?= e($status) ?>">
+                <input type="hidden" name="q" value="<?= e($search) ?>">
+                <input type="hidden" name="back" value="/reviews/<?= $id ?>/references?<?= e($qs([])) ?>">
+            </form>
+        <?php endif; ?>
 
         <div class="section-card" style="padding:0; margin-top: 12px">
             <div class="table-wrap">
@@ -219,6 +258,32 @@ $qs = static function (array $extra) use ($status, $search): string {
             </div>
         <?php endif; ?>
 
+        <?php if ($canDelete): ?>
+        <!-- Bulk-delete confirmation modal. Opens centred over the page
+             from the toolbar. The body counter is filled in by JS from
+             the selected ids (or the total-in-review if scope=filtered)
+             before the dialog appears. -->
+        <dialog class="info-modal" id="deleteBulkModal">
+            <div class="info-modal__inner">
+                <button type="button" class="info-modal__close"
+                        data-info-close
+                        aria-label="<?= e(__('common.close')) ?>">&times;</button>
+                <h3><?= e(__('references.delete_bulk_modal_title')) ?></h3>
+                <p><strong id="deleteBulkCount"></strong></p>
+                <p class="muted"><?= e(__('references.delete_bulk_modal_intro')) ?></p>
+                <div class="actions">
+                    <button type="button" class="btn btn--ghost" data-info-close>
+                        <?= e(__('reviews.cancel')) ?>
+                    </button>
+                    <button type="button" class="btn btn--danger-solid" id="deleteBulkConfirmBtn"
+                            data-busy-label="<?= e(__('common.working')) ?>">
+                        <?= e(__('references.delete_bulk_confirm')) ?>
+                    </button>
+                </div>
+            </div>
+        </dialog>
+        <?php endif; ?>
+
         <!-- Citation-style picker modal. Triggered by #convertOpenBtn,
              dismissed by the close button / backdrop click. Picking a
              style and hitting Confirm writes the selected style into the
@@ -260,20 +325,36 @@ $qs = static function (array $extra) use ($status, $search): string {
     'use strict';
 
     var all      = document.getElementById('refsSelectAll');
+    var allReview= document.getElementById('refsSelectAllInReview');
     var counter  = document.getElementById('refsSelectedCount');
     var openBtn  = document.getElementById('convertOpenBtn');
+    var deleteBtn= document.getElementById('deleteBulkOpenBtn');
     var modal    = document.getElementById('convertModal');
     var confirm  = document.getElementById('convertModalConfirm');
     var styleSel = document.getElementById('convertModalStyle');
     var hidden   = document.getElementById('referencesConvertStyle');
     var convertForm = document.getElementById('referencesConvertForm');
+    var deleteForm  = document.getElementById('referencesDeleteForm');
+    var deleteModal = document.getElementById('deleteBulkModal');
+    var deleteCount = document.getElementById('deleteBulkCount');
+    var deleteConfirm = document.getElementById('deleteBulkConfirmBtn');
+    var scopeInput  = document.getElementById('deleteBulkScope');
     var rows     = document.querySelectorAll('.refs-row-check');
+    var totalInReview = <?= (int) $total ?>;
 
-    function recompute() {
+    function pageSelectedCount() {
         var n = 0;
         rows.forEach(function (c) { if (c.checked) n++; });
-        counter.textContent = String(n);
-        openBtn.disabled = n === 0;
+        return n;
+    }
+    function recompute() {
+        var n = pageSelectedCount();
+        // When the cross-page toggle is on, what's "selected" for the
+        // user's purposes is the whole review, not just the visible page.
+        var effective = allReview && allReview.checked ? totalInReview : n;
+        counter.textContent = String(effective);
+        openBtn.disabled = n === 0; // conversion still operates on visible ids
+        if (deleteBtn) deleteBtn.disabled = effective === 0;
     }
 
     all.addEventListener('change', function () {
@@ -286,6 +367,16 @@ $qs = static function (array $extra) use ($status, $search): string {
             recompute();
         });
     });
+    if (allReview) {
+        allReview.addEventListener('change', function () {
+            if (allReview.checked) {
+                // Cross-page intent supersedes per-page selection.
+                rows.forEach(function (c) { c.checked = true; });
+                all.checked = true;
+            }
+            recompute();
+        });
+    }
     recompute();
 
     openBtn.addEventListener('click', function () {
@@ -302,6 +393,54 @@ $qs = static function (array $extra) use ($status, $search): string {
         else { modal.removeAttribute('open'); modal.classList.remove('is-open'); }
         convertForm.requestSubmit();
     });
+
+    // Delete-in-bulk flow. The delete form lives outside the table, so
+    // we copy the checked ids into hidden inputs at submit time —
+    // unless the user picked "select all in review", in which case we
+    // switch the scope to "filtered" and let the controller resolve the
+    // ids server-side from the current filter (status + q).
+    if (deleteBtn && deleteForm) {
+        deleteBtn.addEventListener('click', function () {
+            var crossPage = allReview && allReview.checked;
+            // Clean any inputs leftover from a previous open.
+            deleteForm.querySelectorAll('input[name="reference_ids[]"]').forEach(function (n) { n.remove(); });
+
+            var count;
+            if (crossPage) {
+                scopeInput.value = 'filtered';
+                count = totalInReview;
+            } else {
+                scopeInput.value = 'ids';
+                count = 0;
+                rows.forEach(function (c) {
+                    if (!c.checked) return;
+                    var i = document.createElement('input');
+                    i.type = 'hidden';
+                    i.name = 'reference_ids[]';
+                    i.value = c.value;
+                    deleteForm.appendChild(i);
+                    count++;
+                });
+            }
+            if (count === 0) return;
+
+            deleteCount.textContent =
+                <?= json_encode(__('references.delete_bulk_count', 0), JSON_UNESCAPED_UNICODE) ?>.replace('0', String(count));
+
+            if (typeof deleteModal.showModal === 'function') {
+                deleteModal.showModal();
+            } else {
+                deleteModal.setAttribute('open', '');
+                deleteModal.classList.add('is-open');
+            }
+        });
+
+        deleteConfirm.addEventListener('click', function () {
+            if (typeof deleteModal.close === 'function') deleteModal.close();
+            else { deleteModal.removeAttribute('open'); deleteModal.classList.remove('is-open'); }
+            deleteForm.submit();
+        });
+    }
 })();
 </script>
 <?php endif; ?>
