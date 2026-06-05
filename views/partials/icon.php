@@ -60,6 +60,13 @@ $path = match ($iconName ?? '') {
                  . '<path d="M14 11v6"></path>'
                  . '<path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>'
                  . '<path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>',
+    // Document page with text lines — used to mark references that
+    // already carry an abstract on the references table.
+    'abstract'  => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>'
+                 . '<polyline points="14 3 14 8 19 8"></polyline>'
+                 . '<line x1="8" y1="13" x2="16" y2="13"></line>'
+                 . '<line x1="8" y1="17" x2="16" y2="17"></line>'
+                 . '<line x1="8" y1="9"  x2="11" y2="9"></line>',
 
     // Import-outcome indicators
     'check'     => '<polyline points="20 6 9 17 4 12"></polyline>',

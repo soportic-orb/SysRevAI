@@ -574,6 +574,12 @@ return [
     'references' => [
         'title'        => 'Referències',
         'all_statuses' => 'Tots els estats',
+        'abstract_filter_label' => 'Filtrar per resum',
+        'abstract_any'          => 'Resum: qualsevol',
+        'abstract_with'         => 'Amb resum',
+        'abstract_without'      => 'Sense resum',
+        'has_abstract'          => 'La referència té resum',
+        'has_abstract_short'    => 'Amb resum',
         'search'       => 'Cercar',
         'none'         => 'Encara no hi ha referències. Importa\'n per començar.',
         'col_study'    => 'Estudi',
