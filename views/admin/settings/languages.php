@@ -49,10 +49,25 @@ if ($editGroup !== '' && !in_array($editGroup, $groups, true)) {
     $editGroup = '';
 }
 
+// Free-text filter — case-insensitive substring match against the key
+// path, the platform default and any per-locale value (file or
+// override). Composes with the locale + group selectors so admins can
+// scope a search to one section.
+$editSearch = trim((string) ($_GET['q'] ?? ''));
+$searchLower = mb_strtolower($editSearch);
+
 $rows = [];
 foreach ($fallbackMap as $path => $fallbackValue) {
     if ($editGroup !== '' && !str_starts_with($path, $editGroup . '.') && $path !== $editGroup) {
         continue;
+    }
+    if ($searchLower !== '') {
+        $localeValue = $localeFileMap[$path] ?? '';
+        $overrideValue = $overrideMap[$path] ?? '';
+        $haystack = mb_strtolower($path . "\n" . $fallbackValue . "\n" . $localeValue . "\n" . $overrideValue);
+        if (!str_contains($haystack, $searchLower)) {
+            continue;
+        }
     }
     $localeValue = $localeFileMap[$path] ?? null;
     $override    = $overrideMap[$path] ?? null;
@@ -156,6 +171,19 @@ foreach ($fallbackMap as $path => $fallbackValue) {
                 <option value="<?= e($g) ?>" <?= $editGroup === $g ? 'selected' : '' ?>><?= e($g) ?></option>
             <?php endforeach; ?>
         </select>
+        <input class="input input--sm lang-editor__search" type="search" name="q"
+               value="<?= e($editSearch) ?>"
+               placeholder="<?= e(__('admin.languages.editor_search_placeholder')) ?>"
+               aria-label="<?= e(__('admin.languages.editor_search')) ?>">
+        <button type="submit" class="btn btn--ghost btn--sm">
+            <?= e(__('admin.languages.editor_search_btn')) ?>
+        </button>
+        <?php if ($editSearch !== ''): ?>
+            <a class="btn btn--ghost btn--sm"
+               href="/admin/settings/languages?<?= e(http_build_query(['locale' => $editLocale, 'group' => $editGroup])) ?>">
+                <?= e(__('admin.languages.editor_search_clear')) ?>
+            </a>
+        <?php endif; ?>
         <span class="muted lang-editor__count">
             <?= e(__('admin.languages.editor_count', count($rows))) ?>
         </span>
@@ -165,6 +193,7 @@ foreach ($fallbackMap as $path => $fallbackValue) {
         <?= csrf_field() ?>
         <input type="hidden" name="locale" value="<?= e($editLocale) ?>">
         <input type="hidden" name="group" value="<?= e($editGroup) ?>">
+        <input type="hidden" name="q" value="<?= e($editSearch) ?>">
 
         <?php if ($rows === []): ?>
             <p class="muted"><?= e(__('admin.languages.editor_empty')) ?></p>

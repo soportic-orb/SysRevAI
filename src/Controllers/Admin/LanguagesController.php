@@ -31,6 +31,7 @@ final class LanguagesController
     {
         $locale = trim((string) ($_POST['locale'] ?? ''));
         $group  = trim((string) ($_POST['group'] ?? ''));
+        $search = trim((string) ($_POST['q'] ?? ''));
         if (!self::isKnownLocale($locale)) {
             Session::flash('admin_error', __('admin.languages.unknown_locale'));
             redirect('/admin/settings/languages');
@@ -78,6 +79,7 @@ final class LanguagesController
         redirect('/admin/settings/languages?' . http_build_query([
             'locale' => $locale,
             'group'  => $group,
+            'q'      => $search,
         ]));
     }
 

@@ -1203,6 +1203,7 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .lang-custom-list { margin: 8px 0 0; padding: 0; list-style: none; }
 .lang-custom-list li { padding: 6px 0; }
 .lang-editor__filters { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.lang-editor__search { flex: 1 1 220px; min-width: 180px; max-width: 360px; }
 .lang-editor__count { margin-left: auto; }
 .lang-editor__form { display: flex; flex-direction: column; gap: 12px; }
 .lang-editor__table { table-layout: fixed; font-size: 13.5px; }
