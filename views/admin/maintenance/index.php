@@ -27,7 +27,7 @@ declare(strict_types=1);
         </form>
         <?php if (is_array($updateInfo) && ($updateInfo['ok'] ?? false) && !($updateInfo['up_to_date'] ?? true)): ?>
             <form method="post" action="/admin/maintenance/update-apply"
-                  onsubmit="return confirm('<?= e(__('admin.maintenance.update_confirm')) ?>')">
+                  data-confirm="<?= e(__('admin.maintenance.update_confirm')) ?>">
                 <?= csrf_field() ?>
                 <button class="btn btn--primary"><?= e(__('admin.maintenance.update_now')) ?></button>
             </form>
@@ -157,7 +157,10 @@ declare(strict_types=1);
                             <td><?= e((string) round($b['size'] / 1024)) ?> KB</td>
                             <td class="row-actions">
                                 <a class="btn btn--ghost btn--sm" href="/admin/maintenance/backup/<?= e(rawurlencode($b['name'])) ?>"><?= e(__('admin.maintenance.download')) ?></a>
-                                <form method="post" action="/admin/maintenance/backup-delete" onsubmit="return confirm('?')">
+                                <form method="post" action="/admin/maintenance/backup-delete"
+                                      data-confirm="<?= e(__('admin.maintenance.backup_delete_confirm')) ?>"
+                                      data-confirm-tone="danger"
+                                      data-confirm-button="<?= e(__('admin.maintenance.backup_delete')) ?>">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="name" value="<?= e($b['name']) ?>">
                                     <button class="btn btn--danger btn--sm"><?= e(__('admin.users.delete')) ?></button>

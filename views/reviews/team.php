@@ -81,7 +81,10 @@ Session::forget('_last_invite_link');
                             </td>
                             <td>
                                 <?php if (!$isOwnerRow): ?>
-                                    <form method="post" action="/reviews/<?= $id ?>/team/remove" onsubmit="return confirm('?')">
+                                    <form method="post" action="/reviews/<?= $id ?>/team/remove"
+                                          data-confirm="<?= e(__('team.remove_confirm')) ?>"
+                                          data-confirm-tone="danger"
+                                          data-confirm-button="<?= e(__('team.remove')) ?>">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="user_id" value="<?= (int) $m['id'] ?>">
                                         <button class="btn btn--danger btn--sm"><?= e(__('team.remove')) ?></button>

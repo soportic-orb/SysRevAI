@@ -73,7 +73,7 @@ $links = [
                     : __('common.confirm_archive'); ?>
                 <form method="post" action="/reviews/<?= $id ?>/archive"
                       class="inline-form review-subnav__archive"
-                      onsubmit="return confirm('<?= e($confirmMsg) ?>');">
+                      data-confirm="<?= e($confirmMsg) ?>">
                     <?= csrf_field() ?>
                     <button class="btn btn--xs btn--ghost" type="submit">
                         <?php $iconName = 'archive'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
@@ -93,7 +93,9 @@ $links = [
             <?php if ($canDeleteReview): ?>
                 <form method="post" action="/reviews/<?= $id ?>/delete"
                       class="inline-form review-subnav__delete"
-                      onsubmit="return confirm('<?= e(__('common.confirm_delete_review')) ?>');">
+                      data-confirm="<?= e(__('common.confirm_delete_review')) ?>"
+                      data-confirm-tone="danger"
+                      data-confirm-button="<?= e(__('reviews.delete')) ?>">
                     <?= csrf_field() ?>
                     <button class="btn btn--xs btn--danger-solid" type="submit">
                         <?php $iconName = 'trash'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>

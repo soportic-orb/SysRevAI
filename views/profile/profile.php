@@ -42,7 +42,8 @@ $locales = (array) config('supported_locales', ['ca', 'es', 'en']);
                     </form>
                     <?php if (!empty($user['avatar_path'])): ?>
                         <form method="post" action="/profile/avatar/delete" class="inline-form"
-                              onsubmit="return confirm('<?= e(__('profile.avatar_remove_confirm')) ?>')"
+                              data-confirm="<?= e(__('profile.avatar_remove_confirm')) ?>"
+                              data-confirm-button="<?= e(__('profile.avatar_remove')) ?>"
                               style="margin-top:8px">
                             <?= csrf_field() ?>
                             <button class="btn btn--ghost btn--sm" type="submit">

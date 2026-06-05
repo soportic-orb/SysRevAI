@@ -156,6 +156,8 @@ $nav = [
 
 <?php require config('paths.base') . '/views/partials/toast_stack.php'; ?>
 
+<?php require config('paths.base') . '/views/partials/confirm_modal.php'; ?>
+
 <script src="<?= e(asset('js/app.js')) ?>" defer></script>
 </body>
 </html>

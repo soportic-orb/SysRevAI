@@ -107,7 +107,7 @@ $id = (int) $review['id'];
                  separate destructive action on the References page). -->
             <form method="post" action="/reviews/<?= $id ?>/import/clear-logs"
                   class="import-clear-form"
-                  onsubmit="return confirm('<?= e(__('import.clear_confirm')) ?>');">
+                  data-confirm="<?= e(__('import.clear_confirm')) ?>">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn--ghost btn--sm btn--danger">
                     <?= e(__('import.clear_btn')) ?>

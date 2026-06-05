@@ -23,6 +23,9 @@ return [
         'confirm_archive'   => 'Segur que vols arxivar aquesta revisió? Passarà a la llista d\'arxivades i deixarà d\'aparèixer al tauler.',
         'confirm_unarchive' => 'Restaurar aquesta revisió a la llista activa?',
         'confirm_delete_review' => 'Eliminar definitivament aquesta revisió? Es perdran totes les referències, decisions, textos complets, extraccions i arxius associats. Aquesta acció no es pot desfer.',
+        'confirm_title'    => 'Confirmar acció',
+        'confirm_yes'      => 'Sí, continuar',
+        'cancel'           => 'Cancel·lar',
     ],
 
     'nav' => [
@@ -624,6 +627,7 @@ return [
         'blinded'            => 'Cec',
         'can_resolve'        => 'Pot resoldre conflictes',
         'remove'             => 'Treure',
+        'remove_confirm'     => 'Treure aquest membre de l\'equip de la revisió?',
         'pending'            => 'Invitacions pendents',
         'expires'            => 'Caduca',
         'revoke'             => 'Revocar',
@@ -1107,6 +1111,8 @@ return [
             'size'            => 'Mida',
             'download'        => 'Descarregar',
             'backup_deleted'  => 'Còpia eliminada.',
+            'backup_delete'         => 'Eliminar còpia',
+            'backup_delete_confirm' => 'Eliminar aquesta còpia de seguretat? Aquesta acció no es pot desfer.',
             'backup_missing'  => 'No s\'ha trobat la còpia.',
             'system_info'     => 'Informació del sistema',
             'extensions'      => 'Extensions carregades',

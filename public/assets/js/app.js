@@ -522,3 +522,72 @@
         }
     });
 })();
+
+/* Centred confirm modal. Any <form data-confirm="message"> now routes
+   its submission through #appConfirmModal instead of using the native
+   window.confirm() prompt. The same form continues to submit normally
+   once the user clicks the confirm button, so existing data-ai-action
+   and data-busy-label handlers still kick in afterwards.
+
+   Per-form overrides:
+     data-confirm-title="…"   replaces the modal title
+     data-confirm-button="…"  replaces the "yes" button label
+     data-confirm-tone="danger" colours the "yes" button red
+
+   Registered on the capture phase so it runs before data-busy-label
+   and data-ai-action handlers; those only fire on the post-confirmation
+   re-submission, when the data-confirm attribute is temporarily set
+   aside via form._sraConfirmed. */
+(function () {
+    'use strict';
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form || form.tagName !== 'FORM') return;
+        var msg = form.getAttribute('data-confirm');
+        if (!msg) return;
+        if (form._sraConfirmed) { form._sraConfirmed = false; return; }
+        event.preventDefault();
+        event.stopPropagation();
+
+        var modal = document.getElementById('appConfirmModal');
+        if (!modal) {
+            // Layout didn't include the partial; fall back to native confirm
+            // so the action isn't silently lost.
+            if (window.confirm(msg)) form.submit();
+            return;
+        }
+        var titleEl = document.getElementById('appConfirmTitle');
+        var bodyEl  = document.getElementById('appConfirmBody');
+        var yesBtn  = document.getElementById('appConfirmYes');
+        if (!titleEl || !bodyEl || !yesBtn) return;
+
+        var title = form.getAttribute('data-confirm-title');
+        var label = form.getAttribute('data-confirm-button');
+        var tone  = (form.getAttribute('data-confirm-tone') || '').toLowerCase();
+
+        if (title) titleEl.textContent = title;
+        else titleEl.textContent = titleEl.getAttribute('data-default') || titleEl.textContent;
+        bodyEl.textContent = msg;
+        yesBtn.textContent = label || yesBtn.getAttribute('data-default-label') || 'OK';
+        yesBtn.classList.remove('btn--primary', 'btn--danger-solid');
+        yesBtn.classList.add(tone === 'danger' ? 'btn--danger-solid' : 'btn--primary');
+
+        // Replace the click handler each time so a leftover binding from
+        // a previous open never resubmits a different form.
+        var clone = yesBtn.cloneNode(true);
+        yesBtn.parentNode.replaceChild(clone, yesBtn);
+        clone.addEventListener('click', function () {
+            if (typeof modal.close === 'function') modal.close();
+            else { modal.removeAttribute('open'); modal.classList.remove('is-open'); }
+            form._sraConfirmed = true;
+            // requestSubmit fires the submit event again so data-ai-action
+            // / data-busy-label handlers run as if the user had clicked
+            // through directly.
+            if (typeof form.requestSubmit === 'function') form.requestSubmit();
+            else form.submit();
+        });
+
+        if (typeof modal.showModal === 'function') modal.showModal();
+        else { modal.setAttribute('open', ''); modal.classList.add('is-open'); }
+    }, true);
+})();

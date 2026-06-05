@@ -152,7 +152,7 @@ $total = count($refs);
     <form method="post"
           action="/reviews/<?= $id ?>/import/preview/discard"
           class="import-preview__discard"
-          onsubmit="return confirm('<?= e(__('import.preview_discard_confirm')) ?>');">
+          data-confirm="<?= e(__('import.preview_discard_confirm')) ?>">
         <?= csrf_field() ?>
         <button type="submit" class="btn btn--ghost btn--sm">
             <?= e(__('import.preview_discard_btn')) ?>
