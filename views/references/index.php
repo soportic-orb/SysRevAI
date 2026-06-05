@@ -228,8 +228,29 @@ $qs = static function (array $extra) use ($status, $search, $abstract): string {
                                     </span>
                                 </td>
                                 <td class="muted">
-                                    <?php if (!empty($r['doi'])): ?>DOI: <?= e((string) $r['doi']) ?><br><?php endif; ?>
-                                    <?php if (!empty($r['pmid'])): ?>PMID: <?= e((string) $r['pmid']) ?><?php endif; ?>
+                                    <?php
+                                    // Resolver URLs for the platform's identifiers — same
+                                    // pattern used by the search-results table so the
+                                    // reviewer can jump to the original record in one
+                                    // click. rel="noopener noreferrer" keeps the opener
+                                    // tab isolated from window.opener access on the
+                                    // destination page.
+                                    $doi  = trim((string) ($r['doi']  ?? ''));
+                                    $pmid = trim((string) ($r['pmid'] ?? ''));
+                                    ?>
+                                    <?php if ($doi !== ''): ?>
+                                        DOI:
+                                        <a class="link-ext"
+                                           href="https://doi.org/<?= e(rawurlencode($doi)) ?>"
+                                           target="_blank" rel="noopener noreferrer"><?= e($doi) ?></a>
+                                        <br>
+                                    <?php endif; ?>
+                                    <?php if ($pmid !== ''): ?>
+                                        PMID:
+                                        <a class="link-ext"
+                                           href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode($pmid)) ?>/"
+                                           target="_blank" rel="noopener noreferrer"><?= e($pmid) ?></a>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="muted refs-source">
                                     <?php $src = trim((string) ($r['source_file'] ?? '')); ?>
