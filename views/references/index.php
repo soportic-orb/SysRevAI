@@ -184,6 +184,7 @@ $qs = static function (array $extra) use ($status, $search): string {
                         <th class="search-external-table__check"></th>
                         <th><?= e(__('references.col_study')) ?></th>
                         <th><?= e(__('references.col_ids')) ?></th>
+                        <th><?= e(__('references.col_source')) ?></th>
                         <th><?= e(__('references.col_status')) ?></th>
                         <?php if ($ftEnabled): ?><th><?= e(__('fulltext.col_ft')) ?></th><?php endif; ?>
                         <th></th>
@@ -216,6 +217,10 @@ $qs = static function (array $extra) use ($status, $search): string {
                                 <td class="muted">
                                     <?php if (!empty($r['doi'])): ?>DOI: <?= e((string) $r['doi']) ?><br><?php endif; ?>
                                     <?php if (!empty($r['pmid'])): ?>PMID: <?= e((string) $r['pmid']) ?><?php endif; ?>
+                                </td>
+                                <td class="muted refs-source">
+                                    <?php $src = trim((string) ($r['source_file'] ?? '')); ?>
+                                    <?= $src !== '' ? e($src) : '<span class="muted">—</span>' ?>
                                 </td>
                                 <td><span class="tag tag--soft"><?= e(__('references.st_' . $r['status'])) ?></span></td>
                                 <?php if ($ftEnabled): ?>

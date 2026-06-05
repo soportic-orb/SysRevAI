@@ -83,7 +83,7 @@ final class Reference
         $perPage = max(1, min($perPage, 100));
         $offset = max(0, ($page - 1) * $perPage);
         $rows = Database::select(
-            "SELECT id, title, authors_json, year, journal, doi, pmid, status
+            "SELECT id, title, authors_json, year, journal, doi, pmid, status, source_file
              FROM `{$table}` WHERE {$where} ORDER BY id DESC LIMIT {$perPage} OFFSET {$offset}",
             $params
         );

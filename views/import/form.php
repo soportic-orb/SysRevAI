@@ -38,6 +38,17 @@ $id = (int) $review['id'];
             <span class="field-help"><?= e(__('import.format_help')) ?></span>
         </div>
 
+        <!-- Free-text source label. When set, it's stamped on every
+             reference imported in this batch as the source name, and
+             shown as such in the references table. Defaults to the
+             uploaded filename if the user leaves it blank. -->
+        <div class="field">
+            <label class="field-label" for="source"><?= e(__('import.source')) ?></label>
+            <input class="input" id="source" name="source" type="text" maxlength="255"
+                   placeholder="<?= e(__('import.source_placeholder')) ?>">
+            <span class="field-help"><?= e(__('import.source_help')) ?></span>
+        </div>
+
         <!-- Hidden when the user picks "Free text (AI)" because the file
              upload field doesn't apply to that mode — the textarea below
              is the only valid input. -->

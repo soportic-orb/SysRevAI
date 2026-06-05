@@ -72,6 +72,12 @@ final class ImportController
             redirect('/reviews/' . $rid . '/import');
         }
 
+        // Optional source label posted from the form. Clamped to the
+        // VARCHAR(255) the references and import_logs tables hold; an
+        // empty value falls through to the filename later on so the
+        // existing behaviour stays the default.
+        $source = mb_substr(trim((string) ($_POST['source'] ?? '')), 0, 255);
+
         // Stash the parsed refs and hand off to the preview step. Session
         // storage is intentional: the references never reach the database
         // until the reviewer reviews the list and clicks "Import".
@@ -79,6 +85,7 @@ final class ImportController
             'refs'     => $this->normaliseRefs($result['refs']),
             'filename' => $filename,
             'format'   => $format,
+            'source'   => $source,
             'errors'   => $result['errors'] ?? [],
         ];
 
@@ -143,6 +150,11 @@ final class ImportController
 
         $filename = (string) ($state['filename'] ?? 'imported');
         $format   = (string) ($state['format'] ?? 'unknown');
+        // The user-typed source label wins when set; otherwise we keep
+        // the filename so references imported before this field shipped
+        // still display something meaningful.
+        $source    = trim((string) ($state['source'] ?? ''));
+        $sourceTag = $source !== '' ? $source : $filename;
 
         // Bulk import: a single malformed row (oversized DOI, weird
         // encoding, mid-stream encoding fault) used to throw inside
@@ -159,7 +171,7 @@ final class ImportController
         $failed   = 0;
         foreach ($picked as $i => $ref) {
             try {
-                Reference::create($rid, $ref, $filename, DeduplicationService::dedupKey($ref));
+                Reference::create($rid, $ref, $sourceTag, DeduplicationService::dedupKey($ref));
                 $imported++;
             } catch (\Throwable $e) {
                 $failed++;
@@ -189,7 +201,7 @@ final class ImportController
         ImportLog::record(
             $rid,
             (int) Auth::id(),
-            $filename,
+            $sourceTag,
             $format,
             count($state['refs']),
             $imported,
