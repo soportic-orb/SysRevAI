@@ -144,13 +144,47 @@ final class ImportController
         $filename = (string) ($state['filename'] ?? 'imported');
         $format   = (string) ($state['format'] ?? 'unknown');
 
+        // Bulk import: a single malformed row (oversized DOI, weird
+        // encoding, mid-stream encoding fault) used to throw inside
+        // Reference::create() and 500 the whole request — leaving the
+        // user with "half imported" and no path to retry. We catch and
+        // count per-row failures so the loop always finishes; the
+        // discarded rows land in the activity log for diagnosis.
+        // Long-running imports (hundreds of rows) also need more wall
+        // time than the default 30s, particularly because the dedup pass
+        // is O(n²) inside year buckets.
+        @set_time_limit(180);
+        $errorsPersist = (array) ($state['errors'] ?? []);
         $imported = 0;
-        foreach ($picked as $ref) {
-            Reference::create($rid, $ref, $filename, DeduplicationService::dedupKey($ref));
-            $imported++;
+        $failed   = 0;
+        foreach ($picked as $i => $ref) {
+            try {
+                Reference::create($rid, $ref, $filename, DeduplicationService::dedupKey($ref));
+                $imported++;
+            } catch (\Throwable $e) {
+                $failed++;
+                $errorsPersist[] = [
+                    'row'   => (int) $i + 1,
+                    'title' => mb_substr((string) ($ref['title'] ?? ''), 0, 200),
+                    'error' => $e->getMessage(),
+                ];
+            }
         }
 
-        $dedup = $imported > 0 ? DeduplicationService::run($rid) : ['exact' => 0, 'fuzzy' => 0];
+        // The dedup pass is best-effort: a transient DB blip here must
+        // not erase the rows we just persisted. Counts default to zero
+        // so the import log and flash message still render coherently.
+        $dedup = ['exact' => 0, 'fuzzy' => 0];
+        if ($imported > 0) {
+            try {
+                $dedup = DeduplicationService::run($rid);
+            } catch (\Throwable $e) {
+                ActivityLog::record('references.dedup_failed', [
+                    'review_id' => $rid,
+                    'error'     => $e->getMessage(),
+                ], $rid);
+            }
+        }
 
         ImportLog::record(
             $rid,
@@ -160,15 +194,20 @@ final class ImportController
             count($state['refs']),
             $imported,
             $dedup['exact'],
-            (array) ($state['errors'] ?? [])
+            $errorsPersist
         );
         ActivityLog::record('references.imported', [
-            'format' => $format, 'imported' => $imported, 'duplicates' => $dedup['exact'],
+            'format' => $format, 'imported' => $imported,
+            'duplicates' => $dedup['exact'], 'failed' => $failed,
         ], $rid);
 
         unset($_SESSION['import_preview'][$rid]);
 
-        Session::flash('success', __('import.result', $imported, $dedup['exact'], $dedup['fuzzy']));
+        if ($failed > 0) {
+            Session::flash('success', __('import.result_with_failures', $imported, $dedup['exact'], $dedup['fuzzy'], $failed));
+        } else {
+            Session::flash('success', __('import.result', $imported, $dedup['exact'], $dedup['fuzzy']));
+        }
         redirect('/reviews/' . $rid . '/references');
     }
 

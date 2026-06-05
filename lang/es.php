@@ -506,6 +506,7 @@ return [
         'unknown_format' => 'No se pudo detectar el formato. Selecciónalo manualmente.',
         'too_large'     => 'El archivo es demasiado grande (máx. 20 MB).',
         'result'        => 'Importadas %d referencias — %d duplicados exactos marcados, %d candidatos difusos.',
+        'result_with_failures' => 'Importadas %d referencias (%d duplicados exactos, %d candidatos difusos). %d filas se han descartado por errores; revisa el registro de importación.',
         'ai_no_key'     => 'La importación con IA requiere una clave de API de Claude. Pídela a un administrador en Configuración → Claude.',
         'ai_disabled'   => 'La extracción con IA está desactivada en la configuración.',
         'ai_budget'     => 'Se ha alcanzado el presupuesto mensual de IA del sitio.',
