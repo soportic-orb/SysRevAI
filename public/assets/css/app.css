@@ -1198,6 +1198,21 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .api-block { padding: 14px 0; border-bottom: 1px solid var(--c-border); }
 .api-block:last-of-type { border-bottom: 0; }
 .api-block .section__subtitle { margin: 0 0 10px; }
+
+/* Admin → Languages editor. */
+.lang-custom-list { margin: 8px 0 0; padding: 0; list-style: none; }
+.lang-custom-list li { padding: 6px 0; }
+.lang-editor__filters { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.lang-editor__count { margin-left: auto; }
+.lang-editor__form { display: flex; flex-direction: column; gap: 12px; }
+.lang-editor__table { table-layout: fixed; font-size: 13.5px; }
+.lang-editor__col-key { width: 28%; word-break: break-all; }
+.lang-editor__col-key code { font-size: 12.5px; }
+.lang-editor__col-default { width: 28%; line-height: 1.45; }
+.lang-editor__col-value { width: 44%; }
+.lang-editor__input { width: 100%; font-size: 13.5px; }
+.lang-editor__row--overridden { background: color-mix(in srgb, var(--c-primary) 6%, transparent); }
+.lang-editor__hint { margin: 0; font-size: 12.5px; }
 .api-help {
     margin: -4px 0 12px; padding: 10px 12px;
     background: var(--c-surface-2); border: 1px solid var(--c-border); border-radius: 6px;
