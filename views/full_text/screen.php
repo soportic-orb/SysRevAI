@@ -120,7 +120,7 @@ $pctOf = static function (int $n) use ($denom): int {
                              persisting the decision as an exclude with a stable
                              reason so it shows up correctly in PRISMA. -->
                         <form method="post" action="<?= e($basePath) ?>/decide" class="ft-discard-form"
-                              onsubmit="return confirm('<?= e(__('fulltext.discard_confirm')) ?>');">
+                              data-confirm="<?= e(__('fulltext.discard_confirm')) ?>">
                             <?= csrf_field() ?>
                             <input type="hidden" name="reference_id" value="<?= (int) $reference['id'] ?>">
                             <input type="hidden" name="decision" value="exclude">

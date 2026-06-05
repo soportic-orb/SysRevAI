@@ -196,7 +196,9 @@ $qs = static function (array $extra) use ($status, $search): string {
                                     ?>
                                         <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/delete"
                                               style="display:inline"
-                                              onsubmit="return confirm('<?= e(__('references.delete_confirm')) ?>');">
+                                              data-confirm="<?= e(__('references.delete_confirm')) ?>"
+                                              data-confirm-tone="danger"
+                                              data-confirm-button="<?= e(__('references.delete')) ?>">
                                             <?= csrf_field() ?>
                                             <button type="submit" class="btn btn--ghost btn--sm btn--danger"
                                                     title="<?= e(__('references.delete')) ?>"

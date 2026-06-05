@@ -22,6 +22,9 @@ return [
         'confirm_archive'   => 'Are you sure you want to archive this review? It will move to the archive list and stop appearing in the dashboard.',
         'confirm_unarchive' => 'Restore this review to the active list?',
         'confirm_delete_review' => 'Permanently delete this review? Every reference, decision, full text, extraction and associated file will be erased. This cannot be undone.',
+        'confirm_title'    => 'Confirm action',
+        'confirm_yes'      => 'Yes, continue',
+        'cancel'           => 'Cancel',
     ],
 
     'nav' => [
@@ -622,6 +625,7 @@ return [
         'blinded'            => 'Blinded',
         'can_resolve'        => 'Can resolve conflicts',
         'remove'             => 'Remove',
+        'remove_confirm'     => 'Remove this member from the review team?',
         'pending'            => 'Pending invitations',
         'expires'            => 'Expires',
         'revoke'             => 'Revoke',
@@ -1105,6 +1109,8 @@ return [
             'size'            => 'Size',
             'download'        => 'Download',
             'backup_deleted'  => 'Backup deleted.',
+            'backup_delete'         => 'Delete backup',
+            'backup_delete_confirm' => 'Delete this backup? This cannot be undone.',
             'backup_missing'  => 'Backup not found.',
             'system_info'     => 'System information',
             'extensions'      => 'Loaded extensions',

@@ -22,6 +22,9 @@ return [
         'confirm_archive'   => '¿Seguro que quieres archivar esta revisión? Pasará a la lista de archivadas y dejará de aparecer en el tauler.',
         'confirm_unarchive' => '¿Restaurar esta revisión a la lista activa?',
         'confirm_delete_review' => '¿Eliminar definitivamente esta revisión? Se borrarán todas las referencias, decisiones, textos completos, extracciones y archivos asociados. Esta acción no se puede deshacer.',
+        'confirm_title'    => 'Confirmar acción',
+        'confirm_yes'      => 'Sí, continuar',
+        'cancel'           => 'Cancelar',
     ],
 
     'nav' => [
@@ -622,6 +625,7 @@ return [
         'blinded'            => 'Ciego',
         'can_resolve'        => 'Puede resolver conflictos',
         'remove'             => 'Quitar',
+        'remove_confirm'     => '¿Quitar a este miembro del equipo de la revisión?',
         'pending'            => 'Invitaciones pendientes',
         'expires'            => 'Caduca',
         'revoke'             => 'Revocar',
@@ -1105,6 +1109,8 @@ return [
             'size'            => 'Tamaño',
             'download'        => 'Descargar',
             'backup_deleted'  => 'Copia eliminada.',
+            'backup_delete'         => 'Eliminar copia',
+            'backup_delete_confirm' => '¿Eliminar esta copia de seguridad? Esta acción no se puede deshacer.',
             'backup_missing'  => 'No se ha encontrado la copia.',
             'system_info'     => 'Información del sistema',
             'extensions'      => 'Extensiones cargadas',

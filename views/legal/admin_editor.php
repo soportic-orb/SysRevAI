@@ -99,7 +99,8 @@ $switchLabel = $switchType === 'privacy'
                 <form method="post"
                       action="/admin/legal/<?= e($type) ?>/<?= e($lang) ?>/restore"
                       class="legal-admin__restore"
-                      onsubmit="return confirm('<?= e(__('admin.legal.confirm_restore')) ?>');">
+                      data-confirm="<?= e(__('admin.legal.confirm_restore')) ?>"
+                      data-confirm-button="<?= e(__('admin.legal.restore_default')) ?>">
                     <?= csrf_field() ?>
                     <button type="submit" class="btn btn--ghost btn--sm btn--danger">
                         <?= e(__('admin.legal.restore_default')) ?>

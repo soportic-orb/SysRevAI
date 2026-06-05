@@ -20,7 +20,7 @@ $isOwner = (int) $review['owner_id'] === (int) Auth::id();
         </div>
         <?php if ($isOwner): ?>
             <form method="post" action="/reviews/<?= $id ?>/full-text-queue/cancel-all"
-                  onsubmit="return confirm('<?= e(__('fulltext.confirm_cancel')) ?>')">
+                  data-confirm="<?= e(__('fulltext.confirm_cancel')) ?>">
                 <?= csrf_field() ?>
                 <button class="btn btn--danger btn--sm"><?= e(__('fulltext.cancel_all')) ?></button>
             </form>

@@ -185,7 +185,9 @@ $minLen    = (int) (setting('security.min_password_length') ?? 12);
                         </td>
                         <td>
                             <form method="post" action="/admin/users/<?= (int) $u['id'] ?>/delete"
-                                  onsubmit="return confirm('<?= e(__('admin.users.confirm_delete')) ?>')">
+                                  data-confirm="<?= e(__('admin.users.confirm_delete')) ?>"
+                                  data-confirm-tone="danger"
+                                  data-confirm-button="<?= e(__('admin.users.delete')) ?>">
                                 <?= csrf_field() ?>
                                 <button type="submit" class="btn btn--danger btn--sm"><?= e(__('admin.users.delete')) ?></button>
                             </form>
