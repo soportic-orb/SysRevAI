@@ -61,6 +61,12 @@ $verdictStyles = [
                                 <?php if (!empty($input['title'])): ?>
                                     <strong><?= e((string) $input['title']) ?></strong><br>
                                 <?php endif; ?>
+                                <?php if (!empty($input['translated_title'])): ?>
+                                    <div class="muted verify-table__translated">
+                                        <?= e(__('verification.translated_to')) ?>
+                                        <em>«<?= e((string) $input['translated_title']) ?>»</em>
+                                    </div>
+                                <?php endif; ?>
                                 <span class="muted">
                                     <?php if (!empty($input['year'])): ?><?= (int) $input['year'] ?> · <?php endif; ?>
                                     <?php if (!empty($input['journal'])): ?><em><?= e((string) $input['journal']) ?></em><?php endif; ?>

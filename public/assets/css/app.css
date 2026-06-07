@@ -790,6 +790,7 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .verify-table__input strong { display: inline-block; }
 .verify-table__source { margin: 0 4px 4px 0; font-size: 12px; }
 .verify-table__notes { font-size: 12.5px; }
+.verify-table__translated { font-size: 12.5px; margin: 2px 0 4px; }
 
 /* Peer-review rubric — five 0-100 axes with a coloured bar each, plus
    summary + devil's-advocate blocks. */
@@ -817,7 +818,6 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .peer-review__block p { margin: 0; line-height: 1.55; }
 .peer-review__block--devil { border-left: 3px solid var(--c-warn); }
 .peer-review__rerun { display: flex; gap: 8px; margin-top: 14px; }
-
 /* Black pill in the footer linking to the GitHub repo. Sized to sit
    level with the rest of the footer text (12px) while staying clearly
    tappable; white text + glyph against #000 so the colour-override

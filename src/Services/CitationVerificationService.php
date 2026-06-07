@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SysRevAI\Services;
 
 use SysRevAI\Services\BiblioSearch\BiblioSearchService;
+use SysRevAI\Services\TranslateService;
 
 /**
  * Cross-check a list of references against every enabled bibliographic
@@ -40,10 +41,20 @@ final class CitationVerificationService
     private const MAX_BODY_BYTES = 4 * 1024 * 1024;
 
     private BiblioSearchService $biblio;
+    /** @var callable(string):string Optional translator override (test seam). */
+    private $translator;
 
-    public function __construct(?BiblioSearchService $biblio = null)
+    /**
+     * @param callable(string):string|null $translator Hook used to coerce a
+     *        non-English title to English before search/match. Defaults to
+     *        the platform's TranslateService → Google Translate v3 with
+     *        DB-cached responses. Pass a closure that returns the input
+     *        unchanged to disable translation in tests.
+     */
+    public function __construct(?BiblioSearchService $biblio = null, ?callable $translator = null)
     {
-        $this->biblio = $biblio ?? new BiblioSearchService();
+        $this->biblio     = $biblio ?? new BiblioSearchService();
+        $this->translator = $translator ?? [self::class, 'defaultTranslator'];
     }
 
     /**
@@ -80,6 +91,37 @@ final class CitationVerificationService
         $title = trim((string) ($ref['title'] ?? ''));
         $year  = isset($ref['year']) && is_numeric($ref['year']) ? (int) $ref['year'] : null;
 
+        // Bibliographic databases index titles in their original language
+        // (overwhelmingly English in PubMed-adjacent catalogues). When a
+        // user pastes a reference whose title was translated to another
+        // language — sometimes machine-translated, sometimes manually
+        // adapted — the title-based fallback search and the fuzzy match
+        // both fail. Translating the title back to English first gives
+        // the search and the comparison a fighting chance.
+        $translatedTitle = '';
+        if ($title !== '') {
+            try {
+                $candidate = ($this->translator)($title);
+                if (is_string($candidate) && trim($candidate) !== '' && strcasecmp($candidate, $title) !== 0) {
+                    $translatedTitle = trim($candidate);
+                }
+            } catch (\Throwable) {
+                // Translator failed (Google offline, OAuth refused, custom
+                // implementation threw). Fall through: verification still
+                // runs on the original title.
+            }
+        }
+
+        // The matcher compares the hit's title against any candidate
+        // we have for the input (original + translated), so a
+        // Spanish-titled record still matches its English entry in the
+        // databases as long as the translation is faithful enough to
+        // clear the Jaro-Winkler threshold.
+        $titleCandidates = array_values(array_filter([
+            $title,
+            $translatedTitle,
+        ], static fn (string $s): bool => trim($s) !== ''));
+
         $sourceMatches = [];
 
         // 1) Identifier-first verification. A DOI / PMID is a stable key,
@@ -92,16 +134,20 @@ final class CitationVerificationService
         }
 
         // 2) Fall back to a free-text title search when no identifier is
-        //    available, or when every direct lookup came up empty (the
-        //    user might have a typo in the DOI but a recognisable title).
-        if ($sourceMatches === [] && $title !== '') {
-            $r = $this->biblio->search($title, 5, null);
+        //    available, or when every direct lookup came up empty. The
+        //    translated (English) title is preferred as the query —
+        //    bibliographic databases index in the article's original
+        //    language, which is overwhelmingly English in PubMed-adjacent
+        //    catalogues.
+        $titleForQuery = $translatedTitle !== '' ? $translatedTitle : $title;
+        if ($sourceMatches === [] && $titleForQuery !== '') {
+            $r = $this->biblio->search($titleForQuery, 5, null);
             foreach ($r['references'] as $hit) {
                 $name = self::firstTag($hit);
                 if ($name === null || isset($sourceMatches[$name])) {
                     continue;
                 }
-                if ($this->isMatch($ref, $hit)) {
+                if ($this->isMatch($ref, $hit, $titleCandidates)) {
                     $sourceMatches[$name] = self::extractHit($hit);
                 }
             }
@@ -109,11 +155,12 @@ final class CitationVerificationService
 
         return [
             'input'   => [
-                'title'   => $title,
-                'year'    => $year,
-                'doi'     => $doi,
-                'pmid'    => $pmid,
-                'journal' => trim((string) ($ref['journal'] ?? '')),
+                'title'            => $title,
+                'translated_title' => $translatedTitle,
+                'year'             => $year,
+                'doi'              => $doi,
+                'pmid'             => $pmid,
+                'journal'          => trim((string) ($ref['journal'] ?? '')),
             ],
             'matches' => $sourceMatches,
             'verdict' => $this->verdict($ref, $sourceMatches),
@@ -288,8 +335,15 @@ final class CitationVerificationService
         ];
     }
 
-    /** Decide whether a candidate row from the aggregator matches the input ref. */
-    private function isMatch(array $ref, array $hit): bool
+    /**
+     * Decide whether a candidate row from the aggregator matches the
+     * input ref. DOI / PMID equality wins immediately; otherwise we
+     * Jaro-Winkler each candidate title (original + translated) against
+     * the hit's title and accept if any clears the 0.92 threshold.
+     *
+     * @param list<string> $titleCandidates
+     */
+    private function isMatch(array $ref, array $hit, array $titleCandidates = []): bool
     {
         $inDoi  = self::cleanDoi((string) ($ref['doi']  ?? ''));
         $hitDoi = self::cleanDoi((string) ($hit['doi']  ?? ''));
@@ -301,16 +355,25 @@ final class CitationVerificationService
         if ($inPmid !== '' && $hitPmid !== '' && $inPmid === $hitPmid) {
             return true;
         }
-        // Fall back to a fuzzy title match — Jaro-Winkler exposed by the
-        // existing DeduplicationService keeps the algorithm consistent
-        // with the rest of the platform.
-        $inTitle  = mb_strtolower(trim((string) ($ref['title'] ?? '')));
         $hitTitle = mb_strtolower(trim((string) ($hit['title'] ?? '')));
-        if ($inTitle === '' || $hitTitle === '') {
+        if ($hitTitle === '') {
             return false;
         }
-        $sim = DeduplicationService::jaroWinkler($inTitle, $hitTitle);
-        return $sim >= 0.92;
+        // Make sure the original title is in the candidate list even
+        // when the caller didn't supply one.
+        $candidates = $titleCandidates !== []
+            ? $titleCandidates
+            : [(string) ($ref['title'] ?? '')];
+        foreach ($candidates as $cand) {
+            $cand = mb_strtolower(trim((string) $cand));
+            if ($cand === '') {
+                continue;
+            }
+            if (DeduplicationService::jaroWinkler($cand, $hitTitle) >= 0.92) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -398,5 +461,25 @@ final class CitationVerificationService
     {
         $s = trim($s);
         return (string) preg_replace('#^https?://(?:dx\.)?doi\.org/#i', '', $s);
+    }
+
+    /**
+     * Default translator: routes through the platform's TranslateService
+     * (Google Translate v3, DB-cached). Source language is auto-detected
+     * so an already-English title is returned unchanged. Any failure —
+     * Google not configured, network blip, OAuth refusal — falls back to
+     * the original text so verification keeps working without translation.
+     */
+    private static function defaultTranslator(string $text): string
+    {
+        try {
+            $res = TranslateService::translate($text, 'en', 'auto');
+            if (!empty($res['ok']) && isset($res['text']) && trim((string) $res['text']) !== '') {
+                return (string) $res['text'];
+            }
+        } catch (\Throwable) {
+            // Translation not available — fall through.
+        }
+        return $text;
     }
 }
