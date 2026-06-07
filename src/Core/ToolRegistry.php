@@ -75,8 +75,8 @@ final class ToolRegistry
                 'icon'     => 'check',
                 'labelKey' => 'tools.cite_verify_title',
                 'blurbKey' => 'tools.cite_verify_blurb',
-                'route'    => '#',
-                'status'   => 'coming_soon',
+                'route'    => '/tools/verify-citations',
+                'status'   => 'available',
                 'admin'    => false,
             ],
         ];

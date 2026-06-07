@@ -47,6 +47,7 @@ use SysRevAI\Controllers\RiskOfBiasController;
 use SysRevAI\Controllers\ScreeningController;
 use SysRevAI\Controllers\SearchController;
 use SysRevAI\Controllers\ToolsController;
+use SysRevAI\Controllers\VerificationController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
 
@@ -79,6 +80,8 @@ $router->post('/reviews/{id}/references/convert', [CitationsController::class, '
 
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 $router->get('/tools', [ToolsController::class, 'index'], ['auth']);
+$router->get('/tools/verify-citations', [VerificationController::class, 'index'], ['auth']);
+$router->post('/tools/verify-citations/run', [VerificationController::class, 'run'], ['auth']);
 
 // Reviews (literal paths before the {id} pattern).
 $router->get('/reviews', [ReviewsController::class, 'index'], ['auth']);

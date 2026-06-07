@@ -772,6 +772,14 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
     background: color-mix(in srgb, var(--c-muted) 14%, transparent);
     color: var(--c-muted);
 }
+
+/* Citation verification report — summary pill row + per-row table. */
+.verify-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.verify-summary__pill { font-size: 13px; }
+.verify-summary__back { margin-left: auto; }
+.verify-table__input strong { display: inline-block; }
+.verify-table__source { margin: 0 4px 4px 0; font-size: 12px; }
+.verify-table__notes { font-size: 12.5px; }
 /* Black pill in the footer linking to the GitHub repo. Sized to sit
    level with the rest of the footer text (12px) while staying clearly
    tappable; white text + glyph against #000 so the colour-override
