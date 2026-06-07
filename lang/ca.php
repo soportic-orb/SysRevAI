@@ -1286,6 +1286,8 @@ return [
         'send'         => 'Enviar',
         'close'        => 'Tancar',
         'expand'       => 'Canviar mida del xat',
+        'devil_advocate_title' => 'Mode advocat del diable: la IA critica el teu raonament en comptes d\'afirmar-lo',
+        'devil_advocate_aria'  => 'Activar / desactivar el mode advocat del diable',
         'clear'        => 'Esborrar conversa',
         'clear_confirm'=> 'Esborrar la conversa? Només afecta a aquest dispositiu.',
         'thinking'     => 'Treballant, espera…',

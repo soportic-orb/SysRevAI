@@ -1285,6 +1285,8 @@ return [
         'send'         => 'Enviar',
         'close'        => 'Cerrar',
         'expand'       => 'Cambiar tamaño del chat',
+        'devil_advocate_title' => 'Modo abogado del diablo: la IA critica tu razonamiento en lugar de afirmarlo',
+        'devil_advocate_aria'  => 'Activar / desactivar el modo abogado del diablo',
         'clear'        => 'Borrar conversación',
         'clear_confirm'=> '¿Borrar la conversación? Solo afecta a este dispositivo.',
         'thinking'     => 'Trabajando, espera…',

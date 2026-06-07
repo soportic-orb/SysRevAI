@@ -263,6 +263,7 @@ final class ReviewsController
         // supplied by the front end. Sanitised here so a malicious client
         // can't sneak in fields from other reviews.
         $pageContext = $this->sanitisePageContext($body['page_context'] ?? null, $rid);
+        $mode = ($body['mode'] ?? '') === 'devil_advocate' ? 'devil_advocate' : 'default';
 
         $result = ClaudeService::fromSettings()->copilotChat(
             $review,
@@ -272,6 +273,7 @@ final class ReviewsController
             $message,
             $rid,
             $pageContext,
+            $mode,
         );
 
         if (!$result['ok']) {

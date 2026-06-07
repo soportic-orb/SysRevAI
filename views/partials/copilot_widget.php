@@ -60,6 +60,23 @@ $copilotGreeting = $copilotIsGlobal
                 <p class="copilot__subtitle"><?= e($copilotSubtitle) ?></p>
             </div>
             <div class="copilot__head-actions">
+                <button type="button" class="copilot__icon-btn copilot__icon-btn--toggle" id="copilotDevilAdvocate"
+                        title="<?= e(__('copilot.devil_advocate_title')) ?>"
+                        aria-label="<?= e(__('copilot.devil_advocate_aria')) ?>"
+                        aria-pressed="false">
+                    <!-- Pitchfork — the Devil's Advocate toggle that flips
+                         the system prompt from "helpful affirmation" to
+                         "stress-test the reasoning". Active state surfaces
+                         via aria-pressed + the .is-active class. -->
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22V11"></path>
+                        <path d="M6 7V3"></path>
+                        <path d="M12 7V3"></path>
+                        <path d="M18 7V3"></path>
+                        <path d="M5 7h14a1 1 0 0 1 1 1v2a4 4 0 0 1-8 0 4 4 0 0 1-8 0V8a1 1 0 0 1 1-1z"></path>
+                    </svg>
+                </button>
                 <button type="button" class="copilot__icon-btn" id="copilotClear"
                         title="<?= e(__('copilot.clear')) ?>" aria-label="<?= e(__('copilot.clear')) ?>">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
@@ -128,10 +145,31 @@ $copilotGreeting = $copilotIsGlobal
     var closeBtn = document.getElementById('copilotClose');
     var clearBtn = document.getElementById('copilotClear');
     var expand   = document.getElementById('copilotExpand');
+    var devil    = document.getElementById('copilotDevilAdvocate');
     var msgs     = document.getElementById('copilotMessages');
     var form     = document.getElementById('copilotForm');
     var input    = document.getElementById('copilotInput');
     var greeting = document.getElementById('copilotGreeting');
+
+    /* Devil's-Advocate toggle. State is per-user / per-device so a
+       researcher can flip it once and keep that mode across navigations.
+       Sent to the server as `mode: 'devil_advocate'` on each turn. */
+    var devilKey = 'sysrevai.copilot.devil_advocate';
+    var devilOn  = false;
+    try { devilOn = localStorage.getItem(devilKey) === '1'; } catch (e) {}
+    function applyDevilState() {
+        if (!devil) return;
+        devil.setAttribute('aria-pressed', devilOn ? 'true' : 'false');
+        devil.classList.toggle('is-active', devilOn);
+    }
+    applyDevilState();
+    if (devil) {
+        devil.addEventListener('click', function () {
+            devilOn = !devilOn;
+            try { localStorage.setItem(devilKey, devilOn ? '1' : '0'); } catch (e) {}
+            applyDevilState();
+        });
+    }
 
     var labels = {
         error:    <?= json_encode(__('copilot.error')) ?>,
@@ -209,7 +247,8 @@ $copilotGreeting = $copilotIsGlobal
             body: JSON.stringify({
                 _csrf: csrfToken,
                 message: text,
-                page_context: pageContext
+                page_context: pageContext,
+                mode: devilOn ? 'devil_advocate' : 'default'
             })
         })
         .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })

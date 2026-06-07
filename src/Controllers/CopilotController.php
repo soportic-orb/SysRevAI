@@ -34,6 +34,7 @@ final class CopilotController
             echo json_encode(['ok' => false, 'error' => 'empty_message']);
             return;
         }
+        $mode = ($payload['mode'] ?? '') === 'devil_advocate' ? 'devil_advocate' : 'default';
 
         $history = CopilotMessage::history(null, $uid, 200);
 
@@ -42,7 +43,7 @@ final class CopilotController
         // version's behaviour.
         CopilotMessage::add(null, $uid, 'user', $message);
 
-        $result = ClaudeService::fromSettings()->assistantChat($history, $message);
+        $result = ClaudeService::fromSettings()->assistantChat($history, $message, $mode);
 
         if (!$result['ok']) {
             ActivityLog::record('copilot.global_failed', ['error' => $result['error'] ?? 'unknown']);

@@ -346,6 +346,16 @@ a:hover { text-decoration: underline; }
     background: color-mix(in srgb, var(--c-active-fg) 14%, transparent);
     opacity: 1; outline: none;
 }
+/* Devil's-Advocate toggle: shows its active state with the platform's
+   primary colour so the user can see at a glance that critical mode
+   is on while they're typing. */
+.copilot__icon-btn--toggle.is-active {
+    background: var(--c-primary); color: var(--c-on-primary); opacity: 1;
+}
+.copilot__icon-btn--toggle.is-active:hover,
+.copilot__icon-btn--toggle.is-active:focus-visible {
+    background: var(--c-primary-d);
+}
 .copilot__icon-expand   { display: block; }
 .copilot__icon-collapse { display: none; }
 .copilot.is-expanded .copilot__icon-expand   { display: none; }

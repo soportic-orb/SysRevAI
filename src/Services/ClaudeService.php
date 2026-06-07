@@ -521,7 +521,7 @@ final class ClaudeService
      * @param string                                         $userMessage Latest user message.
      * @return array{ok:bool,reply?:string,error?:string}
      */
-    public function copilotChat(array $review, array $pico, array $metrics, array $history, string $userMessage, ?int $reviewId = null, ?array $pageContext = null): array
+    public function copilotChat(array $review, array $pico, array $metrics, array $history, string $userMessage, ?int $reviewId = null, ?array $pageContext = null, string $mode = 'default'): array
     {
         if ($e = $this->guard('copilot')) {
             return $e;
@@ -564,6 +564,8 @@ final class ClaudeService
                 . json_encode($pageContext, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
 
+        $system .= self::devilAdvocateOverlay($mode);
+
         $messages = [];
         // Keep at most the last 16 turns to stay within token budget while
         // still giving the model meaningful continuity across the thread.
@@ -598,7 +600,7 @@ final class ClaudeService
      * @param array<int,array{role:string,content:string}> $history
      * @return array{ok:bool,reply?:string,error?:string}
      */
-    public function assistantChat(array $history, string $userMessage): array
+    public function assistantChat(array $history, string $userMessage, string $mode = 'default'): array
     {
         if ($e = $this->guard('copilot')) {
             return $e;
@@ -619,6 +621,8 @@ final class ClaudeService
             . "user's question. Use plain prose with short paragraphs; bullet lists only when really "
             . "helpful. Never invent facts — if you don't know, say so and propose how to find out.";
 
+        $system .= self::devilAdvocateOverlay($mode);
+
         $messages = [];
         $tail = array_slice($history, -16);
         foreach ($tail as $h) {
@@ -635,6 +639,33 @@ final class ClaudeService
         return $res['ok']
             ? ['ok' => true, 'reply' => (string) $res['text']]
             : ['ok' => false, 'error' => $res['error']];
+    }
+
+    /**
+     * System-prompt suffix that flips the Copilot from a warm helper to
+     * a critical interlocutor — the "Devil's Advocate" pattern from
+     * imbad0202/academic-research-skills (CC-BY-NC 4.0). Inserts as an
+     * overlay on whatever base prompt the calling method already wrote;
+     * empty string when the mode isn't devil_advocate so default
+     * behaviour is unchanged.
+     */
+    private static function devilAdvocateOverlay(string $mode): string
+    {
+        if ($mode !== 'devil_advocate') {
+            return '';
+        }
+        return "\n\nMODE OVERLAY — Devil's Advocate:\n"
+            . " • Your job is to stress-test the user's reasoning, not affirm it. Look for weak "
+            . "premises, unstated assumptions, alternative explanations and missing evidence.\n"
+            . " • When the user proposes a methodological choice (screening mode, inclusion rule, "
+            . "extraction approach, RoB tool…), surface the strongest counter-argument before you "
+            . "agree.\n"
+            . " • Push back on overconfident statements. Use phrasing like \"That assumes…\", "
+            . "\"A reviewer could object that…\", \"Counter-example: …\".\n"
+            . " • Concede when the user's reasoning is genuinely sound; don't be contrarian for its "
+            . "own sake. Briefly state WHY you concede so the user can audit your reasoning.\n"
+            . " • Stay grounded in PRISMA / Cochrane / GRADE conventions and the supplied review "
+            . "context. Never invent facts to manufacture an objection.";
     }
 
     public function checkSemanticDuplicate(array $refA, array $refB, ?int $reviewId = null): array
