@@ -75,6 +75,10 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
             <?php $iconName = 'dashboard'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.dashboard')) ?>
         </a>
+        <a href="/tools">
+            <?php $iconName = 'protocol'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.tools')) ?>
+        </a>
         <a href="/reviews">
             <?php $iconName = 'reviews'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.reviews')) ?>
@@ -136,6 +140,12 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
             <?= e(__('footer.github')) ?>
         </a>
         · <?= e(__('footer.author')) ?>
+    </span>
+    <span class="appfooter__attrib">
+        <?= e(__('footer.based_on_intro')) ?>
+        <a href="https://github.com/imbad0202/academic-research-skills"
+           target="_blank" rel="noopener noreferrer">academic-research-skills</a>
+        <?= e(__('footer.based_on_license')) ?>
     </span>
     <a href="/privacy"><?= e(__('footer.privacy')) ?></a>
     <a href="/terms"><?= e(__('footer.terms')) ?></a>

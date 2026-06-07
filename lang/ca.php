@@ -30,6 +30,7 @@ return [
 
     'nav' => [
         'dashboard'     => 'Tauler',
+        'tools'         => 'Eines',
         'reviews'       => 'Revisions',
         'search'        => 'Cercar',
         'citations'     => 'Citacions',
@@ -93,6 +94,24 @@ return [
         'support'    => 'Donar suport al projecte',
         'privacy'    => 'Política de Privacitat',
         'terms'      => 'Condicions d\'ús',
+        'based_on_intro'   => 'Inspirat en patrons de',
+        'based_on_license' => '(CC-BY-NC 4.0)',
+    ],
+
+    'tools' => [
+        'title'          => 'Eines',
+        'intro'          => 'SysRevAI integra diverses eines per a investigadors. Tria una per començar.',
+        'coming_soon'    => 'Properament',
+        'reviews_title'  => 'Revisions sistemàtiques',
+        'reviews_blurb'  => 'Planifica, cribra i extreu dades seguint el marc PRISMA, amb suport d\'IA a cada pas.',
+        'search_title'   => 'Cercar referències',
+        'search_blurb'   => 'Consulta les teves referències locals, CrossRef, OpenAlex, Europe PMC i EvidenceHunt en una sola pantalla.',
+        'citations_title' => 'Normalitzar citacions',
+        'citations_blurb' => 'Converteix qualsevol bibliografia enganxada a l\'estil de citació que necessitis (APA, Vancouver, MLA…).',
+        'scoping_title'  => 'Scoping reviews',
+        'scoping_blurb'  => 'Marc PRISMA-ScR / JBI per mapejar evidència amb extracció descriptiva (charting table).',
+        'cite_verify_title' => 'Verificació de citacions',
+        'cite_verify_blurb' => 'Creua cada referència contra Semantic Scholar, OpenAlex, CrossRef i arXiv i reporta discrepàncies.',
     ],
 
     'errors' => [

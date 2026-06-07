@@ -29,6 +29,7 @@ return [
 
     'nav' => [
         'dashboard'     => 'Dashboard',
+        'tools'         => 'Tools',
         'reviews'       => 'Reviews',
         'search'        => 'Search',
         'citations'     => 'Citations',
@@ -92,6 +93,24 @@ return [
         'support'    => 'Support the project',
         'privacy'    => 'Privacy Policy',
         'terms'      => 'Terms of Use',
+        'based_on_intro'   => 'Inspired by patterns from',
+        'based_on_license' => '(CC-BY-NC 4.0)',
+    ],
+
+    'tools' => [
+        'title'          => 'Tools',
+        'intro'          => 'SysRevAI bundles several tools for researchers. Pick one to get started.',
+        'coming_soon'    => 'Coming soon',
+        'reviews_title'  => 'Systematic reviews',
+        'reviews_blurb'  => 'Plan, screen and extract following the PRISMA framework, with AI support at every step.',
+        'search_title'   => 'Search references',
+        'search_blurb'   => 'Query your own corpus, CrossRef, OpenAlex, Europe PMC and EvidenceHunt from one screen.',
+        'citations_title' => 'Normalise citations',
+        'citations_blurb' => 'Convert any pasted bibliography to the citation style you need (APA, Vancouver, MLA…).',
+        'scoping_title'  => 'Scoping reviews',
+        'scoping_blurb'  => 'PRISMA-ScR / JBI framework to map evidence with descriptive charting tables.',
+        'cite_verify_title' => 'Citation verification',
+        'cite_verify_blurb' => 'Cross-check each reference against Semantic Scholar, OpenAlex, CrossRef and arXiv and report discrepancies.',
     ],
 
     'errors' => [

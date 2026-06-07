@@ -29,6 +29,7 @@ return [
 
     'nav' => [
         'dashboard'     => 'Panel',
+        'tools'         => 'Herramientas',
         'reviews'       => 'Revisiones',
         'search'        => 'Buscar',
         'citations'     => 'Citas',
@@ -92,6 +93,24 @@ return [
         'support'    => 'Apoyar el proyecto',
         'privacy'    => 'Política de Privacidad',
         'terms'      => 'Condiciones de uso',
+        'based_on_intro'   => 'Inspirado en patrones de',
+        'based_on_license' => '(CC-BY-NC 4.0)',
+    ],
+
+    'tools' => [
+        'title'          => 'Herramientas',
+        'intro'          => 'SysRevAI integra varias herramientas para investigadores. Elige una para empezar.',
+        'coming_soon'    => 'Próximamente',
+        'reviews_title'  => 'Revisiones sistemáticas',
+        'reviews_blurb'  => 'Planifica, criba y extrae datos siguiendo el marco PRISMA, con apoyo de IA en cada paso.',
+        'search_title'   => 'Buscar referencias',
+        'search_blurb'   => 'Consulta tus referencias locales, CrossRef, OpenAlex, Europe PMC y EvidenceHunt en una sola pantalla.',
+        'citations_title' => 'Normalizar citas',
+        'citations_blurb' => 'Convierte cualquier bibliografía pegada al estilo de cita que necesites (APA, Vancouver, MLA…).',
+        'scoping_title'  => 'Scoping reviews',
+        'scoping_blurb'  => 'Marco PRISMA-ScR / JBI para mapear evidencia con extracción descriptiva (charting table).',
+        'cite_verify_title' => 'Verificación de citas',
+        'cite_verify_blurb' => 'Cruza cada referencia contra Semantic Scholar, OpenAlex, CrossRef y arXiv y reporta discrepancias.',
     ],
 
     'errors' => [

@@ -736,6 +736,42 @@ a:hover { text-decoration: underline; }
 }
 .appfooter a { color: var(--c-muted); }
 .appfooter a:hover { color: var(--c-text); }
+.appfooter__attrib { font-size: 12.5px; opacity: .85; }
+
+/* Tools hub — tile grid that lists every research module. Available
+   tiles open the module; coming-soon tiles render muted and aren't
+   clickable. The grid auto-fits between 240 and 360 px so it folds to
+   one column on mobile without needing a media query. */
+.tools-grid {
+    display: grid; gap: 14px; margin-top: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.tools-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 18px;
+    background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    color: inherit; text-decoration: none;
+    transition: border-color .15s, transform .15s;
+}
+a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px); }
+.tools-card__icon {
+    flex: 0 0 auto;
+    width: 40px; height: 40px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--c-primary) 14%, transparent);
+    color: var(--c-primary);
+}
+.tools-card__icon-svg { width: 22px; height: 22px; }
+.tools-card__body { flex: 1 1 auto; min-width: 0; }
+.tools-card__title { margin: 0 0 6px; font-size: 16px; font-weight: 700; line-height: 1.2; }
+.tools-card__tag { margin-left: 6px; font-size: 11px; vertical-align: middle; }
+.tools-card__blurb { margin: 0; font-size: 13.5px; color: var(--c-muted); line-height: 1.5; }
+.tools-card--coming { opacity: .65; cursor: default; }
+.tools-card--coming .tools-card__icon {
+    background: color-mix(in srgb, var(--c-muted) 14%, transparent);
+    color: var(--c-muted);
+}
 /* Black pill in the footer linking to the GitHub repo. Sized to sit
    level with the rest of the footer text (12px) while staying clearly
    tappable; white text + glyph against #000 so the colour-override
