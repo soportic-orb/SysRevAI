@@ -14,10 +14,16 @@ use SysRevAI\Services\BiblioSearch\BiblioSearchService;
  * Inspired by the "deterministic citation verification" pattern in
  * imbad0202/academic-research-skills (CC-BY-NC 4.0).
  *
- * We reuse BiblioSearchService for the network legwork — each ref is
- * searched against the aggregator with the DOI / PMID / title as the
- * query, and the first row that strongly matches the input is recorded
- * as that source's confirmation. The verdict is computed locally:
+ * Identifier-first verification: when the input ref carries a DOI or a
+ * PMID, the service skips the free-text aggregator search and resolves
+ * the identifier directly against each source's canonical endpoint
+ * (CrossRef /works/{doi}, OpenAlex /works/doi:{doi} or /works/pmid:{pmid},
+ * Europe PMC ?query=DOI:"…" / ?query=EXT_ID:…+AND+SRC:MED). Direct
+ * lookups are deterministic and avoid the relevance-ranking noise that
+ * a free-text search introduces. Refs without identifiers fall through
+ * to the existing BiblioSearchService title search.
+ *
+ * The verdict is computed locally:
  *
  *   verified    ≥2 sources confirmed with consistent year (±0)
  *   discrepant  ≥2 sources confirmed but year or title diverges
@@ -30,6 +36,8 @@ use SysRevAI\Services\BiblioSearch\BiblioSearchService;
 final class CitationVerificationService
 {
     public const HARD_CAP = 15;
+    private const TIMEOUT_SECONDS = 8;
+    private const MAX_BODY_BYTES = 4 * 1024 * 1024;
 
     private BiblioSearchService $biblio;
 
@@ -72,25 +80,29 @@ final class CitationVerificationService
         $title = trim((string) ($ref['title'] ?? ''));
         $year  = isset($ref['year']) && is_numeric($ref['year']) ? (int) $ref['year'] : null;
 
-        // Query string priority: DOI is unique and short, PMID next,
-        // free-text title last. If we have none of those there's
-        // nothing to verify.
-        $query = $doi !== '' ? $doi : ($pmid !== '' ? $pmid : $title);
         $sourceMatches = [];
-        if ($query !== '') {
-            $r = $this->biblio->search($query, 5, null);
+
+        // 1) Identifier-first verification. A DOI / PMID is a stable key,
+        //    so we hit each source's canonical resolver endpoint instead
+        //    of asking the aggregator's free-text search. This is both
+        //    more accurate (no relevance-ranking noise) and cheaper
+        //    (single HTTP call per source).
+        if ($doi !== '' || $pmid !== '') {
+            $sourceMatches = $this->lookupByIdentifier($doi, $pmid);
+        }
+
+        // 2) Fall back to a free-text title search when no identifier is
+        //    available, or when every direct lookup came up empty (the
+        //    user might have a typo in the DOI but a recognisable title).
+        if ($sourceMatches === [] && $title !== '') {
+            $r = $this->biblio->search($title, 5, null);
             foreach ($r['references'] as $hit) {
                 $name = self::firstTag($hit);
                 if ($name === null || isset($sourceMatches[$name])) {
                     continue;
                 }
                 if ($this->isMatch($ref, $hit)) {
-                    $sourceMatches[$name] = [
-                        'title'   => trim((string) ($hit['title']   ?? '')),
-                        'year'    => isset($hit['year']) && is_numeric($hit['year']) ? (int) $hit['year'] : null,
-                        'journal' => trim((string) ($hit['journal'] ?? '')),
-                        'doi'     => self::cleanDoi((string) ($hit['doi'] ?? '')),
-                    ];
+                    $sourceMatches[$name] = self::extractHit($hit);
                 }
             }
         }
@@ -106,6 +118,173 @@ final class CitationVerificationService
             'matches' => $sourceMatches,
             'verdict' => $this->verdict($ref, $sourceMatches),
             'diffs'   => $this->diffs($ref, $sourceMatches),
+        ];
+    }
+
+    /**
+     * Direct identifier resolution per source. Each call is gated on the
+     * same biblio_search.{name}.enabled toggle as the aggregator, so an
+     * admin can disable a source in one place and have it disappear from
+     * both the search hub and verification.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    private function lookupByIdentifier(string $doi, string $pmid): array
+    {
+        $matches = [];
+        if ($doi !== '') {
+            if (self::sourceEnabled('crossref')) {
+                $hit = $this->lookupCrossrefDoi($doi);
+                if ($hit !== null) {
+                    $matches['crossref'] = $hit;
+                }
+            }
+            if (self::sourceEnabled('openalex')) {
+                $hit = $this->lookupOpenAlexBy('doi:' . $doi);
+                if ($hit !== null) {
+                    $matches['openalex'] = $hit;
+                }
+            }
+            if (self::sourceEnabled('europepmc')) {
+                $hit = $this->lookupEuropePmc('DOI:"' . $doi . '"');
+                if ($hit !== null) {
+                    $matches['europepmc'] = $hit;
+                }
+            }
+        }
+        if ($pmid !== '') {
+            if (self::sourceEnabled('openalex') && !isset($matches['openalex'])) {
+                $hit = $this->lookupOpenAlexBy('pmid:' . $pmid);
+                if ($hit !== null) {
+                    $matches['openalex'] = $hit;
+                }
+            }
+            if (self::sourceEnabled('europepmc') && !isset($matches['europepmc'])) {
+                $hit = $this->lookupEuropePmc('EXT_ID:' . $pmid . ' AND SRC:MED');
+                if ($hit !== null) {
+                    $matches['europepmc'] = $hit;
+                }
+            }
+        }
+        return $matches;
+    }
+
+    private function lookupCrossrefDoi(string $doi): ?array
+    {
+        $url = 'https://api.crossref.org/works/' . rawurlencode($doi);
+        $data = $this->httpGetJson($url);
+        $work = is_array($data['message'] ?? null) ? $data['message'] : null;
+        if (!is_array($work)) {
+            return null;
+        }
+        $title = '';
+        if (isset($work['title'][0])) {
+            $title = (string) $work['title'][0];
+        }
+        $year = $work['published']['date-parts'][0][0]
+            ?? $work['issued']['date-parts'][0][0]
+            ?? null;
+        $journal = '';
+        if (isset($work['container-title'][0])) {
+            $journal = (string) $work['container-title'][0];
+        }
+        return [
+            'title'   => trim($title),
+            'year'    => is_numeric($year) ? (int) $year : null,
+            'journal' => trim($journal),
+            'doi'     => self::cleanDoi((string) ($work['DOI'] ?? '')),
+        ];
+    }
+
+    private function lookupOpenAlexBy(string $key): ?array
+    {
+        $url = 'https://api.openalex.org/works/' . rawurlencode($key);
+        $work = $this->httpGetJson($url);
+        if (!is_array($work) || empty($work['id'])) {
+            return null;
+        }
+        $doi = self::cleanDoi((string) ($work['doi'] ?? ''));
+        $journal = '';
+        if (isset($work['primary_location']['source']['display_name'])) {
+            $journal = (string) $work['primary_location']['source']['display_name'];
+        } elseif (isset($work['host_venue']['display_name'])) {
+            $journal = (string) $work['host_venue']['display_name'];
+        }
+        $year = $work['publication_year'] ?? null;
+        return [
+            'title'   => trim((string) ($work['title'] ?? '')),
+            'year'    => is_numeric($year) ? (int) $year : null,
+            'journal' => trim($journal),
+            'doi'     => $doi,
+        ];
+    }
+
+    private function lookupEuropePmc(string $query): ?array
+    {
+        $url = 'https://www.ebi.ac.uk/europepmc/webservices/rest/search'
+            . '?format=json&pageSize=1&resultType=lite&query=' . rawurlencode($query);
+        $data = $this->httpGetJson($url);
+        $hit = $data['resultList']['result'][0] ?? null;
+        if (!is_array($hit)) {
+            return null;
+        }
+        $year = $hit['pubYear'] ?? null;
+        return [
+            'title'   => trim((string) ($hit['title'] ?? '')),
+            'year'    => is_numeric($year) ? (int) $year : null,
+            'journal' => trim((string) ($hit['journalTitle'] ?? '')),
+            'doi'     => self::cleanDoi((string) ($hit['doi'] ?? '')),
+        ];
+    }
+
+    /** @return array<string,mixed>|null Decoded JSON body or null on any failure. */
+    private function httpGetJson(string $url): ?array
+    {
+        try {
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL            => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 3,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT        => self::TIMEOUT_SECONDS,
+                CURLOPT_HTTPHEADER     => [
+                    'Accept: application/json',
+                    'User-Agent: SysRevAI/' . (string) config('app.version', '0.1.0-dev'),
+                ],
+            ]);
+            $body = (string) curl_exec($ch);
+            $err  = curl_errno($ch) !== 0;
+            $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($err || $status !== 200 || $body === '') {
+                return null;
+            }
+            if (strlen($body) > self::MAX_BODY_BYTES) {
+                return null;
+            }
+            $data = json_decode($body, true);
+            return is_array($data) ? $data : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /** Mirrors BiblioSearchService::buildEnabledSources(): default ON. */
+    private static function sourceEnabled(string $name): bool
+    {
+        return (bool) (setting('biblio_search.' . $name . '.enabled') ?? true);
+    }
+
+    /** @return array<string,mixed> */
+    private static function extractHit(array $hit): array
+    {
+        return [
+            'title'   => trim((string) ($hit['title']   ?? '')),
+            'year'    => isset($hit['year']) && is_numeric($hit['year']) ? (int) $hit['year'] : null,
+            'journal' => trim((string) ($hit['journal'] ?? '')),
+            'doi'     => self::cleanDoi((string) ($hit['doi'] ?? '')),
         ];
     }
 
