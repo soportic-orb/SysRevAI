@@ -66,8 +66,8 @@ final class ToolRegistry
                 'icon'     => 'protocol',
                 'labelKey' => 'tools.scoping_title',
                 'blurbKey' => 'tools.scoping_blurb',
-                'route'    => '/reviews',
-                'status'   => 'coming_soon',
+                'route'    => '/reviews/new?kind=scoping',
+                'status'   => 'available',
                 'admin'    => false,
             ],
             [

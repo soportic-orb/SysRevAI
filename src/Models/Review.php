@@ -14,6 +14,36 @@ final class Review
 {
     public const SCREENING_MODES = ['double_blind', 'double_blind_third', 'single', 'pilot'];
     public const STATUSES = ['active', 'archived', 'completed'];
+    public const KINDS = ['systematic', 'scoping'];
+
+    /**
+     * Field labels each protocol framework asks for. Systematic reviews
+     * use PICO (Population, Intervention, Comparison, Outcome, Study
+     * design); scoping reviews use PCC (Population, Concept, Context).
+     * Both kinds reuse the same `pico_json` column — only the field
+     * keys we expose to the UI differ — so toggling kind never
+     * destroys what the user already typed.
+     */
+    public const FRAMEWORK_FIELDS = [
+        'systematic' => ['population', 'intervention', 'comparison', 'outcome', 'study_design'],
+        'scoping'    => ['population', 'concept', 'context'],
+    ];
+
+    public static function kind(array $review): string
+    {
+        $k = (string) ($review['kind'] ?? 'systematic');
+        return in_array($k, self::KINDS, true) ? $k : 'systematic';
+    }
+
+    public static function isScoping(array $review): bool
+    {
+        return self::kind($review) === 'scoping';
+    }
+
+    public static function frameworkFields(string $kind): array
+    {
+        return self::FRAMEWORK_FIELDS[$kind] ?? self::FRAMEWORK_FIELDS['systematic'];
+    }
 
     /** Reviews the user owns or collaborates on. */
     public static function forUser(int $userId, ?string $status = 'active'): array
@@ -56,11 +86,13 @@ final class Review
     public static function create(int $ownerId, array $data): int
     {
         $table = Database::table('reviews');
+        $kind = in_array(($data['kind'] ?? 'systematic'), self::KINDS, true)
+            ? $data['kind'] : 'systematic';
         return Database::insert(
             "INSERT INTO `{$table}`
                 (owner_id, title, question, pico_json, inclusion_criteria, exclusion_criteria,
-                 screening_mode, pilot_count, reviewers_required, status)
-             VALUES (?,?,?,?,?,?,?,?,?, 'active')",
+                 screening_mode, pilot_count, reviewers_required, status, kind)
+             VALUES (?,?,?,?,?,?,?,?,?, 'active', ?)",
             [
                 $ownerId,
                 $data['title'],
@@ -71,6 +103,7 @@ final class Review
                 $data['screening_mode'] ?? 'double_blind',
                 (int) ($data['pilot_count'] ?? 50),
                 (int) ($data['reviewers_required'] ?? 2),
+                $kind,
             ]
         );
     }
@@ -78,6 +111,32 @@ final class Review
     public static function update(int $id, array $data): void
     {
         $table = Database::table('reviews');
+        // kind is set on create and only changed if the user explicitly
+        // requested it (e.g. they ticked the "switch to scoping" toggle
+        // on the protocol editor). Missing means "leave it alone".
+        $kindIsSet = isset($data['kind']) && in_array($data['kind'], self::KINDS, true);
+        if ($kindIsSet) {
+            Database::affecting(
+                "UPDATE `{$table}` SET
+                    title = ?, question = ?, pico_json = ?, inclusion_criteria = ?,
+                    exclusion_criteria = ?, screening_mode = ?, pilot_count = ?, reviewers_required = ?,
+                    kind = ?
+                 WHERE id = ?",
+                [
+                    $data['title'],
+                    $data['question'] ?? null,
+                    json_encode($data['pico'] ?? [], JSON_UNESCAPED_UNICODE),
+                    $data['inclusion_criteria'] ?? null,
+                    $data['exclusion_criteria'] ?? null,
+                    $data['screening_mode'] ?? 'double_blind',
+                    (int) ($data['pilot_count'] ?? 50),
+                    (int) ($data['reviewers_required'] ?? 2),
+                    $data['kind'],
+                    $id,
+                ]
+            );
+            return;
+        }
         Database::affecting(
             "UPDATE `{$table}` SET
                 title = ?, question = ?, pico_json = ?, inclusion_criteria = ?,
@@ -189,8 +248,19 @@ final class Review
     {
         $pico = json_decode((string) ($review['pico_json'] ?? ''), true);
         $pico = is_array($pico) ? $pico : [];
+        // Include every framework's keys so the form can flip kind
+        // without losing data the user already filled in for the other
+        // framework's fields. Missing values default to empty strings.
         return array_merge(
-            ['population' => '', 'intervention' => '', 'comparison' => '', 'outcome' => '', 'study_design' => ''],
+            [
+                'population'   => '',
+                'intervention' => '',
+                'comparison'   => '',
+                'outcome'      => '',
+                'study_design' => '',
+                'concept'      => '',
+                'context'      => '',
+            ],
             $pico
         );
     }
