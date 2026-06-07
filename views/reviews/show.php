@@ -37,14 +37,29 @@ $icon = static function (string $name): string {
         . $body . '</svg>';
 };
 
-/** PICO subsections in order — only render the ones that have content. */
-$picoFields = [
-    'population'   => 'population',
-    'intervention' => 'intervention',
-    'comparison'   => 'comparison',
-    'outcome'      => 'outcome',
-    'study_design' => 'design',
+/**
+ * Protocol fields in order — only render the ones that have content.
+ * Picks the framework's field list based on the review's kind so a
+ * scoping review renders the PCC (Population, Concept, Context)
+ * triplet instead of PICO. The icon column intentionally has no
+ * "context"-specific glyph — we fall back to the existing 'design'
+ * icon, which reads as "broader frame" well enough.
+ */
+$picoFieldsByKind = [
+    'systematic' => [
+        'population'   => 'population',
+        'intervention' => 'intervention',
+        'comparison'   => 'comparison',
+        'outcome'      => 'outcome',
+        'study_design' => 'design',
+    ],
+    'scoping' => [
+        'population' => 'population',
+        'concept'    => 'intervention',
+        'context'    => 'design',
+    ],
 ];
+$picoFields = $picoFieldsByKind[\SysRevAI\Models\Review::kind($review)] ?? $picoFieldsByKind['systematic'];
 ?>
 <div class="page">
     <?php if (($flash = Session::pullFlash('success')) !== null): ?>

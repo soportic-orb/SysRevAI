@@ -46,13 +46,16 @@ if ($canSeeAiSpend) {
         : (string) $aiTokens;
 }
 
-/** @var array<int,array{key:string,url:string,label:string,style:string,icon?:string,owner?:bool}> $links */
+/** @var array<int,array{key:string,url:string,label:string,style:string,icon?:string,owner?:bool,kindOnly?:string}> $links */
 $links = [
     ['key' => 'overview',   'url' => "/reviews/{$id}",              'label' => __('reviews.overview'),      'style' => 'ghost'],
     ['key' => 'screening',  'url' => "/reviews/{$id}/screen",       'label' => __('screening.title'),       'style' => 'primary'],
     ['key' => 'fulltext',   'url' => "/reviews/{$id}/full-text",    'label' => __('fulltext.title'),        'style' => 'primary'],
     ['key' => 'extraction', 'url' => "/reviews/{$id}/extraction",   'label' => __('extraction.title'),      'style' => 'primary'],
-    ['key' => 'rob',        'url' => "/reviews/{$id}/risk-of-bias", 'label' => __('rob.title'),             'style' => 'primary'],
+    // Risk-of-bias appraisal is not part of PRISMA-ScR (scoping
+    // reviews map rather than synthesise), so the tab is hidden when
+    // the review's kind is 'scoping'.
+    ['key' => 'rob',        'url' => "/reviews/{$id}/risk-of-bias", 'label' => __('rob.title'),             'style' => 'primary', 'kindOnly' => 'systematic'],
     ['key' => 'exports',    'url' => "/reviews/{$id}/exports",      'label' => __('exports.title'),         'style' => 'ghost', 'icon' => 'export'],
     ['key' => 'references', 'url' => "/reviews/{$id}/references",   'label' => __('references.title'),      'style' => 'ghost', 'icon' => 'references'],
     ['key' => 'team',       'url' => "/reviews/{$id}/team",         'label' => __('team.title'),            'style' => 'ghost', 'icon' => 'team',     'owner' => true],
@@ -67,6 +70,15 @@ $links = [
             </a>
             <a class="review-subnav__name" href="/reviews/<?= $id ?>"><?= e((string) $review['title']) ?></a>
             <span class="tag tag--<?= e((string) $review['status']) ?>"><?= e(__('reviews.status_' . $review['status'])) ?></span>
+            <?php
+            // Kind tag — surfaces whether this is a systematic or scoping
+            // review at every level of the deep nav. Soft style so it
+            // reads as metadata, not as a state badge.
+            $kindLabel = (string) ($review['kind'] ?? 'systematic');
+            ?>
+            <span class="tag tag--soft" title="<?= e(__('reviews.kind')) ?>">
+                <?= e(__('reviews.kind_' . $kindLabel)) ?>
+            </span>
             <?php if ($isOwner): ?>
                 <?php $confirmMsg = $review['status'] === 'archived'
                     ? __('common.confirm_unarchive')
@@ -122,6 +134,7 @@ $links = [
         <div class="review-subnav__actions">
             <?php foreach ($links as $link): ?>
                 <?php if (!empty($link['owner']) && !$isOwner) continue; ?>
+                <?php if (!empty($link['kindOnly']) && (string) ($review['kind'] ?? 'systematic') !== $link['kindOnly']) continue; ?>
                 <?php
                     $isActive = $link['key'] === $activeKey;
                     $classes  = 'btn btn--xs ';

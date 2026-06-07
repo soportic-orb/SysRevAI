@@ -9,11 +9,13 @@ use SysRevAI\Models\Review;
 /** @var array $pico */
 /** @var array $reasons */
 /** @var string $formAction */
-$isEdit = $review !== null;
+$isEdit = $review !== null && !empty($review['id']);
 $title  = (string) ($review['title'] ?? '');
 $mode   = (string) ($review['screening_mode'] ?? 'double_blind');
 $pilot  = (int) ($review['pilot_count'] ?? 50);
 $reqRev = (int) ($review['reviewers_required'] ?? 2);
+$kind   = Review::kind($review ?? []);
+$frameworkFields = Review::frameworkFields($kind);
 
 // AI-extract endpoint: the existing review has its own URL; new-review
 // flow uses the no-id draft endpoint. Either way the response shape is
@@ -42,6 +44,18 @@ $extractUrl = $isEdit
         <?= csrf_field() ?>
 
         <div class="field">
+            <label class="field-label" for="kind"><?= e(__('reviews.kind')) ?></label>
+            <select class="select" id="kind" name="kind" data-review-kind-select>
+                <?php foreach (Review::KINDS as $k): ?>
+                    <option value="<?= e($k) ?>" <?= $kind === $k ? 'selected' : '' ?>>
+                        <?= e(__('reviews.kind_' . $k)) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <span class="field-help"><?= e(__('reviews.kind_help')) ?></span>
+        </div>
+
+        <div class="field">
             <label class="field-label" for="title"><?= e(__('reviews.title')) ?></label>
             <input class="input" id="title" name="title" value="<?= e($title) ?>" required>
         </div>
@@ -52,11 +66,37 @@ $extractUrl = $isEdit
         </div>
 
         <fieldset class="toggles">
-            <legend><?= e(__('reviews.pico')) ?></legend>
-            <?php foreach (['population', 'intervention', 'comparison', 'outcome', 'study_design'] as $f): ?>
-                <div class="field">
+            <legend>
+                <span data-framework-legend="systematic" <?= $kind !== 'systematic' ? 'hidden' : '' ?>>
+                    <?= e(__('reviews.pico')) ?>
+                </span>
+                <span data-framework-legend="scoping" <?= $kind !== 'scoping' ? 'hidden' : '' ?>>
+                    <?= e(__('reviews.pcc')) ?>
+                </span>
+            </legend>
+            <?php
+            // All seven framework fields render in the DOM so the JS
+            // toggle is a pure show/hide — the user can switch kind
+            // without losing data they typed under the other framework's
+            // labels. The hidden inputs still post their values to
+            // readInput(), which silently ignores any irrelevant key.
+            $allFields = ['population', 'intervention', 'comparison', 'outcome', 'study_design', 'concept', 'context'];
+            $fieldFrameworks = [
+                'population'   => ['systematic', 'scoping'],
+                'intervention' => ['systematic'],
+                'comparison'   => ['systematic'],
+                'outcome'      => ['systematic'],
+                'study_design' => ['systematic'],
+                'concept'      => ['scoping'],
+                'context'      => ['scoping'],
+            ];
+            foreach ($allFields as $f):
+                $visibleFor = $fieldFrameworks[$f];
+                $hidden = !in_array($kind, $visibleFor, true);
+            ?>
+                <div class="field" data-framework-field="<?= e(implode(' ', $visibleFor)) ?>" <?= $hidden ? 'hidden' : '' ?>>
                     <label class="field-label" for="<?= $f ?>"><?= e(__('reviews.pico_' . $f)) ?></label>
-                    <input class="input" id="<?= $f ?>" name="<?= $f ?>" value="<?= e((string) $pico[$f]) ?>">
+                    <input class="input" id="<?= $f ?>" name="<?= $f ?>" value="<?= e((string) ($pico[$f] ?? '')) ?>">
                 </div>
             <?php endforeach; ?>
         </fieldset>
@@ -365,5 +405,31 @@ $extractUrl = $isEdit
                 window.SysRevAI && window.SysRevAI.hideAiOverlay && window.SysRevAI.hideAiOverlay();
             });
     });
+})();
+</script>
+
+<script>
+/* Kind toggle: show only the framework fields relevant to the
+   selected review kind (PICO for systematic, PCC for scoping). The
+   other fields stay in the DOM so the user can flip back and forth
+   without losing what they typed. */
+(function () {
+    'use strict';
+    var sel = document.querySelector('[data-review-kind-select]');
+    if (!sel) return;
+    var fields  = document.querySelectorAll('[data-framework-field]');
+    var legends = document.querySelectorAll('[data-framework-legend]');
+
+    function apply(kind) {
+        fields.forEach(function (el) {
+            var keys = (el.getAttribute('data-framework-field') || '').split(/\s+/);
+            el.hidden = keys.indexOf(kind) === -1;
+        });
+        legends.forEach(function (el) {
+            el.hidden = el.getAttribute('data-framework-legend') !== kind;
+        });
+    }
+    sel.addEventListener('change', function () { apply(sel.value); });
+    apply(sel.value);
 })();
 </script>

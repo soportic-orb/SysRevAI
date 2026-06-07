@@ -28,11 +28,18 @@ final class ReviewsController
 
     public function newForm(): void
     {
+        // Allow the Tools hub (and any deep link) to pre-select the kind
+        // via ?kind=scoping so users entering through the Scoping tile
+        // land on a form already configured with PCC labels.
+        $kind = in_array(($_GET['kind'] ?? ''), Review::KINDS, true)
+            ? (string) $_GET['kind']
+            : 'systematic';
         echo View::render('reviews/form', [
-            'review'    => null,
+            'review'    => ['kind' => $kind],
             'pico'      => Review::pico([]),
             'reasons'   => $this->defaultReasons(),
             'formAction' => '/reviews',
+            'isNew'     => true,
         ]);
     }
 
@@ -398,7 +405,13 @@ final class ReviewsController
     {
         $mode = in_array(($_POST['screening_mode'] ?? ''), Review::SCREENING_MODES, true)
             ? $_POST['screening_mode'] : 'double_blind';
+        $kind = in_array(($_POST['kind'] ?? ''), Review::KINDS, true)
+            ? (string) $_POST['kind']
+            : 'systematic';
 
+        // We store every framework's keys in the same pico_json so the
+        // user can switch kind later without losing data they already
+        // typed under the other framework's labels.
         return [
             'title'              => trim((string) ($_POST['title'] ?? '')),
             'question'           => trim((string) ($_POST['question'] ?? '')),
@@ -408,12 +421,15 @@ final class ReviewsController
                 'comparison'    => trim((string) ($_POST['comparison'] ?? '')),
                 'outcome'       => trim((string) ($_POST['outcome'] ?? '')),
                 'study_design'  => trim((string) ($_POST['study_design'] ?? '')),
+                'concept'       => trim((string) ($_POST['concept'] ?? '')),
+                'context'       => trim((string) ($_POST['context'] ?? '')),
             ],
             'inclusion_criteria' => trim((string) ($_POST['inclusion_criteria'] ?? '')),
             'exclusion_criteria' => trim((string) ($_POST['exclusion_criteria'] ?? '')),
             'screening_mode'     => $mode,
             'pilot_count'        => max(1, (int) ($_POST['pilot_count'] ?? 50)),
             'reviewers_required' => max(1, min(5, (int) ($_POST['reviewers_required'] ?? 2))),
+            'kind'               => $kind,
         ];
     }
 
