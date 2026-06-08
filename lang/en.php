@@ -1285,6 +1285,8 @@ return [
         'send'         => 'Send',
         'close'        => 'Close',
         'expand'       => 'Resize chat',
+        'devil_advocate_title' => "Devil's Advocate mode: the AI stress-tests your reasoning instead of affirming it",
+        'devil_advocate_aria'  => "Toggle Devil's Advocate mode",
         'clear'        => 'Clear conversation',
         'clear_confirm'=> 'Clear the conversation? This only affects this device.',
         'thinking'     => 'Working, please wait…',
