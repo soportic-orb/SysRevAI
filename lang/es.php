@@ -292,6 +292,28 @@ return [
         'review_not_found'             => 'Revisión no encontrada.',
     ],
 
+    'peer_review' => [
+        'title'           => 'Revisión por pares (IA)',
+        'button'          => 'Peer review',
+        'empty_intro'     => 'Pide al modelo una evaluación 0-100 en cinco ejes (metodología, claridad, novedad, evidencia, limitaciones), un resumen ejecutivo y un contra-argumento de abogado del diablo. El modelo solo puntúa lo que el texto del PDF respalda.',
+        'empty_no_text'   => 'Esta referencia aún no tiene texto completo extraído. Recupera el PDF y vuelve.',
+        'generate_btn'    => 'Generar evaluación',
+        'rerun_btn'       => 'Regenerar',
+        'rerun_confirm'   => 'Sobrescribir la evaluación actual con una nueva?',
+        'back_btn'        => 'Volver a referencias',
+        'generated_at'    => 'Generada el %s',
+        'h_summary'       => 'Resumen ejecutivo',
+        'h_devils_advocate' => 'Abogado del diablo',
+        'axis_methodology'  => 'Metodología',
+        'axis_clarity'      => 'Claridad',
+        'axis_novelty'      => 'Novedad',
+        'axis_evidence'     => 'Evidencia',
+        'axis_limitations'  => 'Tratamiento de limitaciones',
+        'no_text'         => 'No hay texto extraído del PDF; no se puede evaluar.',
+        'failed'          => 'No se ha podido generar la evaluación. Inténtalo de nuevo.',
+        'generated'       => 'Evaluación generada.',
+    ],
+
     'summary' => [
         'title'           => 'Resumen',
         'abstract'        => 'Resumen (abstract)',
