@@ -293,6 +293,28 @@ return [
         'review_not_found'             => 'Revisió no trobada.',
     ],
 
+    'peer_review' => [
+        'title'           => 'Revisió per parells (IA)',
+        'button'          => 'Peer review',
+        'empty_intro'     => 'Demana al model una avaluació 0-100 en cinc eixos (metodologia, claredat, novetat, evidència, limitacions), un resum executiu i un contraargument d\'advocat del diable. El model només puntua el que el text del PDF avala.',
+        'empty_no_text'   => 'Aquesta referència encara no té text complet extret. Recupera el PDF i torna.',
+        'generate_btn'    => 'Generar avaluació',
+        'rerun_btn'       => 'Regenerar',
+        'rerun_confirm'   => 'Sobreescriure l\'avaluació actual amb una de nova?',
+        'back_btn'        => 'Tornar a referències',
+        'generated_at'    => 'Generada el %s',
+        'h_summary'       => 'Resum executiu',
+        'h_devils_advocate' => 'Advocat del diable',
+        'axis_methodology'  => 'Metodologia',
+        'axis_clarity'      => 'Claredat',
+        'axis_novelty'      => 'Novetat',
+        'axis_evidence'     => 'Evidència',
+        'axis_limitations'  => 'Tractament de limitacions',
+        'no_text'         => 'No hi ha text extret del PDF; no es pot avaluar.',
+        'failed'          => 'No s\'ha pogut generar l\'avaluació. Torna-ho a provar.',
+        'generated'       => 'Avaluació generada.',
+    ],
+
     'summary' => [
         'title'           => 'Resum',
         'abstract'        => 'Resum (abstract)',

@@ -292,6 +292,28 @@ return [
         'review_not_found'             => 'Review not found.',
     ],
 
+    'peer_review' => [
+        'title'           => 'Peer review (AI)',
+        'button'          => 'Peer review',
+        'empty_intro'     => 'Ask the model for a 0-100 evaluation on five axes (methodology, clarity, novelty, evidence, limitations), an executive summary and a devil\'s-advocate counter-argument. Scores reflect only what the PDF text supports.',
+        'empty_no_text'   => 'This reference doesn\'t have extracted full-text yet. Retrieve the PDF and come back.',
+        'generate_btn'    => 'Generate evaluation',
+        'rerun_btn'       => 'Regenerate',
+        'rerun_confirm'   => 'Overwrite the current evaluation with a fresh one?',
+        'back_btn'        => 'Back to references',
+        'generated_at'    => 'Generated on %s',
+        'h_summary'       => 'Executive summary',
+        'h_devils_advocate' => 'Devil\'s advocate',
+        'axis_methodology'  => 'Methodology',
+        'axis_clarity'      => 'Clarity',
+        'axis_novelty'      => 'Novelty',
+        'axis_evidence'     => 'Evidence',
+        'axis_limitations'  => 'Handling of limitations',
+        'no_text'         => 'No text extracted from the PDF; can\'t evaluate.',
+        'failed'          => 'Could not generate the evaluation. Try again.',
+        'generated'       => 'Evaluation generated.',
+    ],
+
     'summary' => [
         'title'           => 'Summary',
         'abstract'        => 'Abstract',

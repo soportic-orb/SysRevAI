@@ -74,6 +74,53 @@ final class ClaudeService
         return $this->jsonResult($res);
     }
 
+    /**
+     * Structured peer-review rubric. Returns five 0-100 scores plus a
+     * narrative summary, an obligatory devil's-advocate counter-argument
+     * and an overall verdict. Used by the per-reference Peer Review view.
+     *
+     * The model is deliberately asked to grade only what the supplied
+     * text supports — no inventing methodology details — and to write
+     * the prose in the user's requested language so the rubric reads
+     * naturally in the platform locale.
+     *
+     * Inspired by the 0-100 multi-perspective rubric from
+     * imbad0202/academic-research-skills (CC-BY-NC 4.0).
+     *
+     * @param array<string,mixed> $reference Reference metadata (title, year, journal, authors)
+     */
+    public function peerReviewRubric(array $reference, string $articleText, string $targetLanguage = 'en', ?int $reviewId = null): array
+    {
+        if ($e = $this->guard('peer_review')) {
+            return $e;
+        }
+        $langName = self::languageName($targetLanguage);
+        $system = "You are a critical scientific peer reviewer. Read the supplied article and score "
+            . "it on a 0-100 scale across five axes. Be honest: high scores must be earned by what "
+            . "the text actually shows. Include a one-paragraph executive summary, a mandatory "
+            . "devil's-advocate counter-argument that surfaces the strongest objection, and an "
+            . "overall verdict (one short sentence). Write every prose field in {$langName}.\n\n"
+            . "Respond ONLY with JSON of this exact shape:\n"
+            . '{'
+            . '"methodology":0, "clarity":0, "novelty":0, "evidence":0, "limitations":0, '
+            . '"methodology_note":"", "clarity_note":"", "novelty_note":"", "evidence_note":"", "limitations_note":"", '
+            . '"summary":"", "devils_advocate":"", "overall":""'
+            . '}.';
+        $payload = json_encode([
+            'reference' => [
+                'title'   => (string) ($reference['title']   ?? ''),
+                'year'    => $reference['year'] ?? null,
+                'journal' => (string) ($reference['journal'] ?? ''),
+                'authors' => (array)  ($reference['authors'] ?? []),
+                'doi'     => (string) ($reference['doi']     ?? ''),
+            ],
+            'article_text' => $this->truncate($articleText, 60000),
+        ], JSON_UNESCAPED_UNICODE);
+        $res = $this->request($this->modelComplex, $system,
+            [['role' => 'user', 'content' => $payload]], $this->maxTokens, 'peer_review', $reviewId, true);
+        return $this->jsonResult($res);
+    }
+
     public function suggestScreeningDecision(array $reference, array $protocol, ?int $reviewId = null, string $targetLanguage = 'en'): array
     {
         if ($e = $this->guard('screening')) {

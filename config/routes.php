@@ -41,6 +41,7 @@ use SysRevAI\Controllers\ExportController;
 use SysRevAI\Controllers\ExtractionController;
 use SysRevAI\Controllers\FullTextScreeningController;
 use SysRevAI\Controllers\SummariesController;
+use SysRevAI\Controllers\PeerReviewController;
 use SysRevAI\Controllers\TranslateController;
 use SysRevAI\Controllers\PdfController;
 use SysRevAI\Controllers\RiskOfBiasController;
@@ -163,6 +164,8 @@ $router->get('/reviews/{id}/references/{refId}/pdf', [PdfController::class, 'ser
 $router->post('/reviews/{id}/references/{refId}/chat', [ChatController::class, 'send'], ['auth']);
 $router->get('/reviews/{id}/references/{refId}/summary', [SummariesController::class, 'show'], ['auth']);
 $router->post('/reviews/{id}/references/{refId}/summary', [SummariesController::class, 'generate'], ['auth']);
+$router->get('/reviews/{id}/references/{refId}/peer-review', [PeerReviewController::class, 'show'], ['auth']);
+$router->post('/reviews/{id}/references/{refId}/peer-review', [PeerReviewController::class, 'generate'], ['auth']);
 
 // Generic translation endpoint (member access). Returns JSON.
 $router->post('/reviews/{id}/translate', [TranslateController::class, 'translate'], ['auth']);

@@ -790,6 +790,34 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .verify-table__input strong { display: inline-block; }
 .verify-table__source { margin: 0 4px 4px 0; font-size: 12px; }
 .verify-table__notes { font-size: 12.5px; }
+
+/* Peer-review rubric — five 0-100 axes with a coloured bar each, plus
+   summary + devil's-advocate blocks. */
+.peer-review__empty { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.peer-review__overall { padding: 18px 20px; border-left: 3px solid var(--c-primary); }
+.peer-review__overall-text { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; }
+.peer-review__meta { margin: 6px 0 0; font-size: 12px; }
+.peer-review__scores { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.peer-review__axis { display: flex; flex-direction: column; gap: 4px; }
+.peer-review__axis-head { display: flex; justify-content: space-between; align-items: baseline; }
+.peer-review__axis-label { font-weight: 600; }
+.peer-review__axis-score { font-variant-numeric: tabular-nums; font-size: 13px; }
+.peer-review__axis-score--success { color: var(--c-ok); }
+.peer-review__axis-score--warn    { color: var(--c-warn); }
+.peer-review__axis-score--fail    { color: var(--c-fail); }
+.peer-review__axis-bar {
+    height: 8px; background: var(--c-border); border-radius: 4px; overflow: hidden;
+}
+.peer-review__axis-bar-fill { display: block; height: 100%; border-radius: 4px; transition: width .2s; }
+.peer-review__axis-bar-fill--success { background: var(--c-ok); }
+.peer-review__axis-bar-fill--warn    { background: var(--c-warn); }
+.peer-review__axis-bar-fill--fail    { background: var(--c-fail); }
+.peer-review__axis-note { margin: 0; font-size: 12.5px; line-height: 1.45; }
+.peer-review__block { padding: 18px 20px; }
+.peer-review__block p { margin: 0; line-height: 1.55; }
+.peer-review__block--devil { border-left: 3px solid var(--c-warn); }
+.peer-review__rerun { display: flex; gap: 8px; margin-top: 14px; }
+
 /* Black pill in the footer linking to the GitHub repo. Sized to sit
    level with the rest of the footer text (12px) while staying clearly
    tappable; white text + glyph against #000 so the colour-override

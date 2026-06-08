@@ -285,6 +285,20 @@ $qs = static function (array $extra) use ($status, $search, $abstract): string {
                                         </form>
                                     <?php endif; ?>
                                     <a class="btn btn--ghost btn--sm ref-actions__btn" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a>
+                                    <?php
+                                    // Peer-review rubric is offered once the full-text has been
+                                    // fetched (status dot is green); the controller re-checks the
+                                    // extracted_text presence on POST so a stale view never leads
+                                    // to a 500. The Reviews module is the only platform tool that
+                                    // currently surfaces this — global Peer-review tool is future
+                                    // work.
+                                    $hasFullText = $statusRow !== null && (int) $statusRow['has_fulltext'] === 1;
+                                    if ($hasFullText):
+                                    ?>
+                                        <a class="btn btn--ghost btn--sm ref-actions__btn" href="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review">
+                                            &#10024; <?= e(__('peer_review.button')) ?>
+                                        </a>
+                                    <?php endif; ?>
                                     <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
                                         <div class="ref-actions__abstract"
                                              title="<?= e(__('references.has_abstract')) ?>"
