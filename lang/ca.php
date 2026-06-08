@@ -215,7 +215,8 @@ return [
 
     'verification' => [
         'title'             => 'Verificació de citacions',
-        'intro'             => 'Creua cada referència contra les bases de dades bibliogràfiques habilitades (CrossRef, OpenAlex, Europe PMC, Consensus) i reporta discrepàncies. Màxim %d referències per execució.',
+        'intro'             => 'Creua cada referència contra les bases de dades bibliogràfiques habilitades (CrossRef, OpenAlex, Europe PMC, Consensus) i reporta discrepàncies. Els títols en qualsevol idioma es tradueixen automàticament a l\'anglès abans de la cerca per encaixar amb l\'idioma original que indexen les bases. Màxim %d referències per execució.',
+        'translated_to'     => 'Cercat com a:',
         'source'            => 'Origen de les referències',
         'source_paste'      => 'Enganxar (una referència per línia)',
         'source_review'     => 'Importar d\'una revisió activa',

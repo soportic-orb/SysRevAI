@@ -214,7 +214,8 @@ return [
 
     'verification' => [
         'title'             => 'Verificación de citas',
-        'intro'             => 'Cruza cada referencia contra las bases de datos bibliográficas habilitadas (CrossRef, OpenAlex, Europe PMC, Consensus) y reporta discrepancias. Máximo %d referencias por ejecución.',
+        'intro'             => 'Cruza cada referencia contra las bases de datos bibliográficas habilitadas (CrossRef, OpenAlex, Europe PMC, Consensus) y reporta discrepancias. Los títulos en cualquier idioma se traducen al inglés antes de la búsqueda para que encajen con el idioma original que indexan las bases. Máximo %d referencias por ejecución.',
+        'translated_to'     => 'Buscado como:',
         'source'            => 'Origen de las referencias',
         'source_paste'      => 'Pegar (una referencia por línea)',
         'source_review'     => 'Importar de una revisión activa',

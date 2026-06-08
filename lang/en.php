@@ -214,7 +214,8 @@ return [
 
     'verification' => [
         'title'             => 'Citation verification',
-        'intro'             => 'Cross-checks each reference against every enabled bibliographic database (CrossRef, OpenAlex, Europe PMC, Consensus) and reports the discrepancies. Up to %d references per run.',
+        'intro'             => 'Cross-checks each reference against every enabled bibliographic database (CrossRef, OpenAlex, Europe PMC, Consensus) and reports the discrepancies. Titles in any language are translated to English before searching so they match the original language the databases index. Up to %d references per run.',
+        'translated_to'     => 'Searched as:',
         'source'            => 'Reference source',
         'source_paste'      => 'Paste (one reference per line)',
         'source_review'     => 'Pick from an active review',
