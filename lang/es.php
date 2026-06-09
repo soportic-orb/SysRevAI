@@ -93,8 +93,6 @@ return [
         'support'    => 'Apoyar el proyecto',
         'privacy'    => 'Política de Privacidad',
         'terms'      => 'Condiciones de uso',
-        'based_on_intro'   => 'Inspirado en patrones de',
-        'based_on_license' => '(CC-BY-NC 4.0)',
     ],
 
     'tools' => [
@@ -1176,6 +1174,8 @@ return [
             'support_title' => 'Apoyar al autor',
             'support_text'  => 'SysRevAI es un proyecto open source mantenido por un investigador en su tiempo libre. Si te resulta útil, puedes apoyarlo con una donación voluntaria.',
             'donate_btn'    => 'Donar',
+            'based_on_intro'   => 'Inspirado en patrones de',
+            'based_on_license' => '(CC-BY-NC 4.0)',
         ],
         'legal' => [
             'privacy_title'         => 'Política de Privacidad',

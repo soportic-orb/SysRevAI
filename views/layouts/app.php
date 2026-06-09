@@ -141,12 +141,6 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
         </a>
         · <?= e(__('footer.author')) ?>
     </span>
-    <span class="appfooter__attrib">
-        <?= e(__('footer.based_on_intro')) ?>
-        <a href="https://github.com/imbad0202/academic-research-skills"
-           target="_blank" rel="noopener noreferrer">academic-research-skills</a>
-        <?= e(__('footer.based_on_license')) ?>
-    </span>
     <a href="/privacy"><?= e(__('footer.privacy')) ?></a>
     <a href="/terms"><?= e(__('footer.terms')) ?></a>
     <?php
