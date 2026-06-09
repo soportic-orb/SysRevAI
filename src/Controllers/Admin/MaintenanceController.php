@@ -31,7 +31,105 @@ final class MaintenanceController
             'updateHistory'    => SystemUpdate::recent(5),
             'updateRepo'       => UpdateService::REPO,
             'updateBranch'     => UpdateService::BRANCH,
+            'composer'         => $this->composerStatus(),
+            'composerOutput'   => Session::pullFlash('composer_output'),
         ], 'layouts/admin');
+    }
+
+    /**
+     * Re-run `composer install` from inside the admin panel so an
+     * operator can pull in dependencies that a code update added
+     * (e.g. dompdf/dompdf for the article-report PDF export) without
+     * shell access. Mirrors the wizard's step-2 logic from
+     * public/install/lib.php so we don't depend on that file at runtime.
+     */
+    public function composerInstall(): void
+    {
+        if (!function_exists('shell_exec')) {
+            Session::flash('admin_error', __('admin.maintenance.composer_no_exec'));
+            redirect('/admin/maintenance');
+        }
+        $bin = $this->detectComposer();
+        if ($bin === null) {
+            Session::flash('admin_error', __('admin.maintenance.composer_missing'));
+            redirect('/admin/maintenance');
+        }
+
+        @set_time_limit(180);
+        $base = (string) config('paths.base');
+        $cmd  = 'cd ' . escapeshellarg($base)
+              . ' && ' . escapeshellcmd($bin)
+              . ' install --no-dev --no-interaction --prefer-dist 2>&1';
+        $output = (string) @shell_exec($cmd);
+
+        $status = $this->composerStatus();
+        $ok = $status['classes_ok'];
+
+        ActivityLog::record('maintenance.composer_install', [
+            'ok'      => $ok,
+            'missing' => $status['missing'],
+        ]);
+        Session::flash('composer_output', $output);
+        Session::flash(
+            $ok ? 'admin_success' : 'admin_error',
+            $ok
+                ? __('admin.maintenance.composer_install_ok')
+                : __('admin.maintenance.composer_install_failed')
+        );
+        redirect('/admin/maintenance');
+    }
+
+    /**
+     * Inspect every Composer dependency we ship with so the
+     * Maintenance page can show what's missing and surface the "install"
+     * button only when there's something to fix. Mirrors
+     * public\install\lib.php::required_classes().
+     *
+     * @return array{present:bool,classes_ok:bool,missing:list<string>,has_composer:bool}
+     */
+    private function composerStatus(): array
+    {
+        $required = [
+            'GuzzleHttp\\Client'                  => 'guzzlehttp/guzzle',
+            'Smalot\\PdfParser\\Parser'           => 'smalot/pdfparser',
+            'PhpOffice\\PhpWord\\PhpWord'         => 'phpoffice/phpword',
+            'PhpOffice\\PhpSpreadsheet\\Spreadsheet' => 'phpoffice/phpspreadsheet',
+            'Dompdf\\Dompdf'                      => 'dompdf/dompdf',
+            'Dotenv\\Dotenv'                      => 'vlucas/phpdotenv',
+            'PHPMailer\\PHPMailer\\PHPMailer'     => 'phpmailer/phpmailer',
+        ];
+        $autoload = (string) config('paths.base') . '/vendor/autoload.php';
+        $present  = is_file($autoload);
+        $missing  = [];
+        if ($present) {
+            foreach ($required as $class => $package) {
+                if (!class_exists($class)) {
+                    $missing[] = $package;
+                }
+            }
+        } else {
+            $missing = array_values($required);
+        }
+        return [
+            'present'      => $present,
+            'classes_ok'   => $present && $missing === [],
+            'missing'      => $missing,
+            'has_composer' => $this->detectComposer() !== null,
+        ];
+    }
+
+    private function detectComposer(): ?string
+    {
+        if (!function_exists('shell_exec')) {
+            return null;
+        }
+        foreach (['composer', 'composer.phar'] as $bin) {
+            $out = @shell_exec(escapeshellcmd($bin) . ' --version 2>/dev/null');
+            if (is_string($out) && stripos($out, 'composer') !== false) {
+                return $bin;
+            }
+        }
+        return null;
     }
 
     public function checkUpdates(): void
