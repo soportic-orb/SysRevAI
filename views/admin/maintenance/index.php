@@ -140,6 +140,42 @@ declare(strict_types=1);
 </div>
 
 <div class="section-card">
+    <h2 class="section__subtitle"><?= e(__('admin.maintenance.composer_title')) ?></h2>
+    <p class="section__intro"><?= e(__('admin.maintenance.composer_intro')) ?></p>
+    <?php if (($composer['missing'] ?? []) === []): ?>
+        <p class="alert alert--success" data-no-toast>
+            <?= e(__('admin.maintenance.composer_all_present')) ?>
+        </p>
+    <?php else: ?>
+        <p class="alert alert--warn" data-no-toast>
+            <?= e(__('admin.maintenance.composer_missing_intro')) ?>
+            <strong><?= e(implode(', ', $composer['missing'])) ?></strong>
+        </p>
+    <?php endif; ?>
+    <?php if (!($composer['has_composer'] ?? false)): ?>
+        <p class="alert alert--error" data-no-toast><?= e(__('admin.maintenance.composer_missing')) ?></p>
+    <?php endif; ?>
+    <form method="post" action="/admin/maintenance/composer-install"
+          data-ai-action
+          data-ai-estimate="60000"
+          data-ai-label="<?= e(__('admin.maintenance.composer_working')) ?>"
+          data-confirm="<?= e(__('admin.maintenance.composer_confirm')) ?>">
+        <?= csrf_field() ?>
+        <button class="btn btn--primary"
+                <?= ($composer['has_composer'] ?? false) ? '' : 'disabled' ?>
+                data-busy-label="<?= e(__('admin.maintenance.composer_working')) ?>">
+            <?= e(__('admin.maintenance.composer_install_btn')) ?>
+        </button>
+    </form>
+    <?php if (!empty($composerOutput)): ?>
+        <details class="composer-output" style="margin-top:12px">
+            <summary><?= e(__('admin.maintenance.composer_output')) ?></summary>
+            <pre style="white-space:pre-wrap;background:var(--c-surface);padding:10px;border:1px solid var(--c-border);border-radius:6px;font-size:12px;max-height:280px;overflow:auto"><?= e((string) $composerOutput) ?></pre>
+        </details>
+    <?php endif; ?>
+</div>
+
+<div class="section-card">
     <h2 class="section__subtitle"><?= e(__('admin.maintenance.backups')) ?></h2>
     <form method="post" action="/admin/maintenance/backup" style="margin-bottom:14px">
         <?= csrf_field() ?><button class="btn btn--primary"><?= e(__('admin.maintenance.backup_now')) ?></button>

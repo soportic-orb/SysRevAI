@@ -303,6 +303,7 @@ $router->post('/admin/maintenance/backup-delete', [MaintenanceController::class,
 $router->get('/admin/maintenance/backup/{name}', [MaintenanceController::class, 'downloadBackup'], $admin);
 $router->post('/admin/maintenance/update-check', [MaintenanceController::class, 'checkUpdates'], $admin);
 $router->post('/admin/maintenance/update-apply', [MaintenanceController::class, 'applyUpdate'], $admin);
+$router->post('/admin/maintenance/composer-install', [MaintenanceController::class, 'composerInstall'], $admin);
 
 // Admin → Reports.
 $router->get('/admin/reports/fulltext-coverage.csv', [ReportsController::class, 'fulltextCoverageCsv'], $admin);
