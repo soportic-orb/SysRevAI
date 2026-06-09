@@ -47,7 +47,12 @@ final class ArticleCriticalReportController
             redirect($back);
         }
 
-        @set_time_limit(180);
+        // Opus emitting a deep multi-section JSON can take several minutes
+        // end-to-end; the inner cURL call is allowed up to 300 s and we
+        // want a small margin on top for sanitisation, persistence and the
+        // redirect so PHP never kills the worker mid-request.
+        @set_time_limit(360);
+        @ini_set('max_execution_time', '360');
         $result = ClaudeService::fromSettings()->articleCriticalReport($article, current_locale());
 
         if (!($result['ok'] ?? false) || !is_array($result['data'] ?? null)) {
