@@ -118,6 +118,9 @@ $id = (int) $article['id'];
         <?php endif; ?>
 
         <div class="article-critical__rerun">
+            <a class="btn btn--primary btn--sm" href="/tools/articles/<?= $id ?>/export">
+                <?= e(__('articles.export.btn')) ?>
+            </a>
             <form method="post" action="/tools/articles/<?= $id ?>/critical-report"
                   data-ai-action
                   data-confirm="<?= e(__('articles.critical.rerun_confirm')) ?>">

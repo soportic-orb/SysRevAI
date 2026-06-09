@@ -313,6 +313,7 @@ function required_classes(): array
         'Smalot\\PdfParser\\Parser'           => 'smalot/pdfparser',
         'PhpOffice\\PhpWord\\PhpWord'         => 'phpoffice/phpword',
         'PhpOffice\\PhpSpreadsheet\\Spreadsheet' => 'phpoffice/phpspreadsheet',
+        'Dompdf\\Dompdf'                      => 'dompdf/dompdf',
         'Dotenv\\Dotenv'                      => 'vlucas/phpdotenv',
         'PHPMailer\\PHPMailer\\PHPMailer'     => 'phpmailer/phpmailer',
     ];

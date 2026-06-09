@@ -33,6 +33,7 @@ $text = (string) ($article['extracted_text'] ?? '');
             <a class="btn btn--primary btn--sm" href="/tools/articles/<?= $id ?>/critical-report">
                 &#10024; <?= e(__('articles.critical.cta')) ?>
             </a>
+            <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/export"><?= e(__('articles.export.btn')) ?></a>
             <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/team"><?= e(__('articles.team_btn')) ?></a>
             <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/download"><?= e(__('articles.download_btn')) ?></a>
             <?php if ($isOwner): ?>

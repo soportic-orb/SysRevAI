@@ -52,6 +52,7 @@ use SysRevAI\Controllers\VerificationController;
 use SysRevAI\Controllers\ArticlesController;
 use SysRevAI\Controllers\ArticleChatController;
 use SysRevAI\Controllers\ArticleCriticalReportController;
+use SysRevAI\Controllers\ArticleExportController;
 use SysRevAI\Controllers\ArticleMembersController;
 use SysRevAI\Controllers\ArticleInvitationsController;
 use SysRevAI\Core\Auth;
@@ -102,6 +103,8 @@ $router->post('/tools/articles/{id}/chat/clear', [ArticleChatController::class, 
 $router->post('/tools/articles/{id}/chat', [ArticleChatController::class, 'send'], ['auth']);
 $router->get('/tools/articles/{id}/critical-report', [ArticleCriticalReportController::class, 'show'], ['auth']);
 $router->post('/tools/articles/{id}/critical-report', [ArticleCriticalReportController::class, 'generate'], ['auth']);
+$router->get('/tools/articles/{id}/export', [ArticleExportController::class, 'index'], ['auth']);
+$router->get('/tools/articles/{id}/export/{format}', [ArticleExportController::class, 'download'], ['auth']);
 $router->get('/tools/articles/{id}/team', [ArticleMembersController::class, 'index'], ['auth']);
 $router->post('/tools/articles/{id}/team/invite', [ArticleMembersController::class, 'invite'], ['auth']);
 $router->post('/tools/articles/{id}/team/remove', [ArticleMembersController::class, 'removeMember'], ['auth']);
