@@ -95,6 +95,14 @@ final class ArticleExportService
     /**
      * @param array<string,mixed> $article
      * @return array{bytes:?string,error:?string}
+     *
+     * Implementation note: the installed PhpWord 1.x ships a Table writer
+     * that emits <w:tblGrid> before <w:tblPr>, violating the OOXML schema
+     * (CT_Tbl requires tblPr → tblGrid → tr+). Both Microsoft Word and
+     * LibreOffice reject documents with that order as "corrupt". So this
+     * writer avoids tables entirely and structures the report with
+     * headings, paragraphs, shaded callouts and native bullet lists —
+     * primitives PhpWord serialises reliably.
      */
     public static function docx(array $article, int $userId, string $scope): array
     {
@@ -111,18 +119,12 @@ final class ArticleExportService
         $doc->setDefaultFontSize(11);
         $doc->getSettings()->setThemeFontLang(new \PhpOffice\PhpWord\Style\Language('es-ES'));
 
-        // Heading styles — used by addTitle($text, $level).
-        $doc->addTitleStyle(1, ['name' => 'Calibri', 'size' => 24, 'bold' => true, 'color' => self::COLOUR_TEXT]);
+        $doc->addTitleStyle(1, ['name' => 'Calibri', 'size' => 22, 'bold' => true, 'color' => self::COLOUR_TEXT],
+            ['spaceBefore' => 0, 'spaceAfter' => 80]);
         $doc->addTitleStyle(2, ['name' => 'Calibri', 'size' => 15, 'bold' => true, 'color' => self::COLOUR_TEXT],
             ['spaceBefore' => 360, 'spaceAfter' => 140, 'borderBottomSize' => 6, 'borderBottomColor' => self::COLOUR_BORDER]);
-        $doc->addTitleStyle(3, ['name' => 'Calibri', 'size' => 12, 'bold' => true, 'color' => self::COLOUR_MUTED, 'allCaps' => true],
+        $doc->addTitleStyle(3, ['name' => 'Calibri', 'size' => 12, 'bold' => true, 'color' => self::COLOUR_MUTED],
             ['spaceBefore' => 240, 'spaceAfter' => 100]);
-
-        // Numbered list style for recommendations.
-        $doc->addNumberingStyle('recList', [
-            'type' => 'multilevel',
-            'levels' => [['format' => 'bullet', 'text' => "\u{2022}", 'left' => 360, 'hanging' => 360]],
-        ]);
 
         $section = $doc->addSection([
             'marginTop' => 1200, 'marginBottom' => 1200,
@@ -132,33 +134,33 @@ final class ArticleExportService
         $article = $data['article'];
         $report  = $data['report'];
 
-        // Header block: article title + subtitle + meta line.
+        // Header block — title + subtitle + generated date.
         $section->addText(
             (string) ($article['title'] ?: '—'),
             ['name' => 'Calibri', 'size' => 22, 'bold' => true, 'color' => self::COLOUR_TEXT],
-            ['spaceAfter' => 80]
+            ['spaceAfter' => 60]
         );
         $section->addText(
             (string) __('articles.export.doc_subtitle'),
             ['name' => 'Calibri', 'size' => 11, 'color' => self::COLOUR_MUTED, 'italic' => true],
-            ['spaceAfter' => 160]
+            ['spaceAfter' => 80]
         );
         if (($data['reportRow'] ?? null) !== null && !empty($data['reportRow']['updated_at'])) {
             $section->addText(
                 (string) __('articles.critical.generated_at', (string) $data['reportRow']['updated_at']),
                 ['name' => 'Calibri', 'size' => 10, 'color' => self::COLOUR_MUTED],
-                ['spaceAfter' => 240]
+                ['spaceAfter' => 200]
             );
         }
 
-        // Overall verdict — shaded callout.
+        // Overall verdict — shaded callout (no table; just a styled paragraph).
         if (!empty($report['overall'])) {
             self::docxCallout($section, (string) $report['overall'], self::COLOUR_BG_LIGHT, self::COLOUR_ACCENT, true);
         }
 
-        // Scores — heading + score table.
+        // Scores — heading + per-axis label/bar/score lines + note paragraph.
         $section->addTitle((string) __('articles.export.h_scores'), 2);
-        self::docxScoreTable($section, $report);
+        self::docxScores($section, $report);
 
         // Executive summary.
         if (!empty($report['summary'])) {
@@ -166,25 +168,25 @@ final class ArticleExportService
             self::docxProse($section, (string) $report['summary']);
         }
 
-        // Strengths / weaknesses — side-by-side coloured boxes.
+        // Strengths and weaknesses — stacked sections (one heading + bullets
+        // each). Visually two coloured cards lose the side-by-side layout
+        // tables would have given but the content is identical.
         $strengths  = (array) ($report['key_strengths']  ?? []);
         $weaknesses = (array) ($report['key_weaknesses'] ?? []);
-        if ($strengths !== [] || $weaknesses !== []) {
-            $section->addTitle((string) __('articles.critical.h_key_strengths') . ' / ' . __('articles.critical.h_key_weaknesses'), 2);
-            self::docxTwoColumnBullets(
-                $section,
-                (string) __('articles.critical.h_key_strengths'),  $strengths,  self::COLOUR_OK,   self::COLOUR_BG_GOOD,
-                (string) __('articles.critical.h_key_weaknesses'), $weaknesses, self::COLOUR_FAIL, self::COLOUR_BG_BAD
-            );
+        if ($strengths !== []) {
+            $section->addTitle((string) __('articles.critical.h_key_strengths'), 2);
+            self::docxBullets($section, $strengths, self::COLOUR_OK);
+        }
+        if ($weaknesses !== []) {
+            $section->addTitle((string) __('articles.critical.h_key_weaknesses'), 2);
+            self::docxBullets($section, $weaknesses, self::COLOUR_FAIL);
         }
 
-        // Methodology critique.
         if (!empty($report['methodology_critique'])) {
             $section->addTitle((string) __('articles.critical.h_methodology_critique'), 2);
             self::docxProse($section, (string) $report['methodology_critique']);
         }
 
-        // Statistical / ethical / reproducibility concerns.
         foreach ([
             ['h_statistical_concerns', $report['statistical_concerns']  ?? []],
             ['h_ethical_concerns',     $report['ethical_concerns']      ?? []],
@@ -195,16 +197,9 @@ final class ArticleExportService
                 continue;
             }
             $section->addTitle((string) __('articles.critical.' . $key), 2);
-            foreach ($items as $it) {
-                $section->addListItem(trim((string) $it), 0,
-                    ['name' => 'Calibri', 'size' => 11],
-                    'recList',
-                    ['spaceAfter' => 60]
-                );
-            }
+            self::docxBullets($section, $items, self::COLOUR_TEXT);
         }
 
-        // Literature positioning + publication outlook.
         if (!empty($report['literature_positioning'])) {
             $section->addTitle((string) __('articles.critical.h_literature_positioning'), 2);
             self::docxProse($section, (string) $report['literature_positioning']);
@@ -214,13 +209,14 @@ final class ArticleExportService
             self::docxProse($section, (string) $report['publication_outlook']);
         }
 
-        // Devil's advocate — amber callout.
         if (!empty($report['devils_advocate'])) {
             $section->addTitle((string) __('articles.critical.h_devils_advocate'), 2);
             self::docxCallout($section, (string) $report['devils_advocate'], self::COLOUR_BG_DEVIL, self::COLOUR_DEVIL, false);
         }
 
-        // Section-by-section recommendations.
+        // Section-by-section recommendations. Each item shows its priority
+        // as a coloured bold prefix inside the same bullet so the line
+        // reads "ALTA — add a power calculation".
         $recs = (array) ($report['recommendations'] ?? []);
         if ($recs !== []) {
             $section->addTitle((string) __('articles.critical.h_recommendations'), 2);
@@ -235,7 +231,7 @@ final class ArticleExportService
             }
         }
 
-        // Chat transcript appendix.
+        // Chat transcript appendix — same paragraph-only treatment.
         if ($data['include_chat'] && $data['chat'] !== []) {
             $section->addPageBreak();
             $section->addTitle((string) __('articles.export.h_chat'), 2);
@@ -309,113 +305,73 @@ final class ArticleExportService
     }
 
     /**
-     * Score table — one row per axis: label, visual bar, score badge.
-     * Multi-paragraph analysis sits on a follow-up row spanning all
-     * three columns. Cell widths are in twips (1440 = 1 inch); the
-     * three columns sum to ~8000 twips, which fits the default A4
-     * usable width.
+     * Score block — one paragraph per axis with the label on the left, a
+     * 10-block unicode bar in the axis tone, and the numeric score on
+     * the right (all in the same line). The multi-sentence analysis
+     * follows in a muted paragraph beneath. No tables — paragraphs only.
      */
-    private static function docxScoreTable(\PhpOffice\PhpWord\Element\Section $section, array $report): void
+    private static function docxScores(\PhpOffice\PhpWord\Element\Section $section, array $report): void
     {
-        $table = $section->addTable(['borderSize' => 0, 'cellMargin' => 80]);
-
-        $labelW = 2400;
-        $barW   = 4400;
-        $scoreW = 1400;
-        $barInnerTotal = $barW - 160; // leave room for cell margins
-
         foreach (ArticleCriticalReport::AXES as $axis) {
             $score = max(0, min(100, (int) ($report[$axis] ?? 0)));
             $note  = (string) ($report[$axis . '_note'] ?? '');
             $tone  = $score >= 80 ? self::COLOUR_OK : ($score >= 50 ? self::COLOUR_WARN : self::COLOUR_FAIL);
             $label = (string) __('articles.critical.axis_' . $axis);
 
-            $row = $table->addRow(null, ['cantSplit' => true]);
+            $filled = (int) round($score / 10);
+            $filled = max(0, min(10, $filled));
+            $bar = str_repeat("\u{2588}", $filled) . str_repeat("\u{2591}", 10 - $filled);
 
-            $labelCell = $row->addCell($labelW, ['valign' => 'center', 'borderTopSize' => 6, 'borderTopColor' => self::COLOUR_BORDER]);
-            $labelCell->addText($label, ['name' => 'Calibri', 'size' => 12, 'bold' => true, 'color' => self::COLOUR_TEXT], ['spaceAfter' => 0]);
-
-            $barCell = $row->addCell($barW, ['valign' => 'center', 'borderTopSize' => 6, 'borderTopColor' => self::COLOUR_BORDER]);
-            $barTable = $barCell->addTable(['borderSize' => 0, 'cellMargin' => 0]);
-            $barRow = $barTable->addRow(140);
-            $filled = max(80, (int) round($score / 100 * $barInnerTotal));
-            $empty  = max(0, $barInnerTotal - $filled);
-            $filledCell = $barRow->addCell($filled, ['bgColor' => $tone]);
-            $filledCell->addText(' ', ['size' => 1], ['spaceAfter' => 0]);
-            if ($empty > 0) {
-                $emptyCell = $barRow->addCell($empty, ['bgColor' => self::COLOUR_BORDER]);
-                $emptyCell->addText(' ', ['size' => 1], ['spaceAfter' => 0]);
-            }
-
-            $scoreCell = $row->addCell($scoreW, ['valign' => 'center', 'borderTopSize' => 6, 'borderTopColor' => self::COLOUR_BORDER]);
-            $scoreCell->addText($score . ' / 100', ['name' => 'Calibri', 'size' => 12, 'bold' => true, 'color' => $tone], ['alignment' => 'right', 'spaceAfter' => 0]);
+            // Header line: bold label, coloured bar, bold coloured score.
+            $line = $section->addTextRun(['spaceBefore' => 120, 'spaceAfter' => 60, 'keepNext' => true]);
+            $line->addText(
+                $label . '  ',
+                ['name' => 'Calibri', 'size' => 12, 'bold' => true, 'color' => self::COLOUR_TEXT]
+            );
+            $line->addText(
+                $bar . '  ',
+                ['name' => 'Consolas', 'size' => 11, 'color' => $tone]
+            );
+            $line->addText(
+                $score . ' / 100',
+                ['name' => 'Calibri', 'size' => 12, 'bold' => true, 'color' => $tone]
+            );
 
             if ($note !== '') {
-                $noteRow  = $table->addRow(null, ['cantSplit' => true]);
-                $noteCell = $noteRow->addCell(null, ['gridSpan' => 3]);
                 foreach (preg_split('/\n{2,}/', trim($note)) ?: [$note] as $chunk) {
                     $chunk = trim((string) $chunk);
-                    if ($chunk !== '') {
-                        $noteCell->addText(
-                            $chunk,
-                            ['name' => 'Calibri', 'size' => 10.5, 'color' => self::COLOUR_MUTED],
-                            ['spaceAfter' => 100, 'lineHeight' => 1.3]
-                        );
+                    if ($chunk === '') {
+                        continue;
                     }
+                    $section->addText(
+                        $chunk,
+                        ['name' => 'Calibri', 'size' => 10.5, 'color' => self::COLOUR_MUTED],
+                        ['spaceAfter' => 100, 'lineHeight' => 1.3, 'indentation' => ['left' => 240]]
+                    );
                 }
             }
         }
     }
 
-    /**
-     * Side-by-side strengths / weaknesses table. Each column has its own
-     * tinted background and coloured top stripe so it reads as a card,
-     * mirroring the web view.
-     */
-    private static function docxTwoColumnBullets(
-        \PhpOffice\PhpWord\Element\Section $section,
-        string $leftTitle, array $leftItems, string $leftColour, string $leftBg,
-        string $rightTitle, array $rightItems, string $rightColour, string $rightBg
-    ): void {
-        $table = $section->addTable(['borderSize' => 0, 'cellMargin' => 160]);
-        $row = $table->addRow(null, ['cantSplit' => true]);
-
-        $renderCol = static function (
-            \PhpOffice\PhpWord\Element\Cell $cell,
-            string $title,
-            array $items,
-            string $colour
-        ): void {
-            $cell->addText(
-                $title,
-                ['name' => 'Calibri', 'size' => 10, 'bold' => true, 'color' => $colour, 'allCaps' => true],
-                ['spaceAfter' => 100]
-            );
-            foreach ($items as $it) {
-                $cell->addListItem(trim((string) $it), 0,
-                    ['name' => 'Calibri', 'size' => 11, 'color' => self::COLOUR_TEXT],
-                    null,
-                    ['spaceAfter' => 60]
-                );
+    /** Native PhpWord bullet list — each item rendered as one paragraph. */
+    private static function docxBullets(\PhpOffice\PhpWord\Element\Section $section, array $items, string $textColour): void
+    {
+        $font = ['name' => 'Calibri', 'size' => 11, 'color' => $textColour];
+        $para = ['spaceAfter' => 60];
+        foreach ($items as $it) {
+            $text = trim((string) $it);
+            if ($text === '') {
+                continue;
             }
-        };
-
-        $leftCell = $row->addCell(4100, [
-            'valign' => 'top',
-            'bgColor' => $leftBg,
-            'borderTopSize' => 18, 'borderTopColor' => $leftColour,
-        ]);
-        $renderCol($leftCell, $leftTitle, $leftItems, $leftColour);
-
-        $rightCell = $row->addCell(4100, [
-            'valign' => 'top',
-            'bgColor' => $rightBg,
-            'borderTopSize' => 18, 'borderTopColor' => $rightColour,
-        ]);
-        $renderCol($rightCell, $rightTitle, $rightItems, $rightColour);
+            $section->addListItem($text, 0, $font, null, $para);
+        }
     }
 
-    /** A single recommendation: priority badge then text on the same row. */
+    /**
+     * A single recommendation rendered as a paragraph with a coloured
+     * bold priority prefix ("ALTA — …"), so the line scans even when
+     * exported as plain Word without any table machinery.
+     */
     private static function docxRecommendation(\PhpOffice\PhpWord\Element\Section $section, mixed $raw): void
     {
         if (is_array($raw)) {
@@ -433,25 +389,17 @@ final class ArticleExportService
             'low'    => '3730A3',
             default  => self::COLOUR_WARN,
         };
-        $bg = match ($priority) {
-            'high'   => 'FEE2E2',
-            'low'    => 'E0E7FF',
-            default  => 'FEF3C7',
-        };
         $label = (string) __('articles.critical.priority_' . $priority);
 
-        $table = $section->addTable(['borderSize' => 0, 'cellMargin' => 80]);
-        $row = $table->addRow(null, ['cantSplit' => true]);
-
-        $badgeCell = $row->addCell(1100, ['valign' => 'top', 'bgColor' => $bg]);
-        $badgeCell->addText(
-            strtoupper($label),
-            ['name' => 'Calibri', 'size' => 8.5, 'bold' => true, 'color' => $colour],
-            ['alignment' => 'center', 'spaceAfter' => 0]
+        $line = $section->addTextRun(['spaceAfter' => 80, 'indentation' => ['left' => 240]]);
+        $line->addText(
+            mb_strtoupper($label) . '  ',
+            ['name' => 'Calibri', 'size' => 10, 'bold' => true, 'color' => $colour]
         );
-
-        $bodyCell = $row->addCell(7100, ['valign' => 'top']);
-        $bodyCell->addText($text, ['name' => 'Calibri', 'size' => 11, 'color' => self::COLOUR_TEXT], ['spaceAfter' => 0]);
+        $line->addText(
+            $text,
+            ['name' => 'Calibri', 'size' => 11, 'color' => self::COLOUR_TEXT]
+        );
     }
 
     /* ── PDF ───────────────────────────────────────────────────────────── */
