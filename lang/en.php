@@ -39,6 +39,9 @@ return [
         'profile'       => 'Profile',
         'logout'        => 'Log out',
         'theme_toggle'  => 'Toggle dark mode',
+        'fullscreen_toggle' => 'Fullscreen',
+        'fullscreen_enter'  => 'Enter fullscreen',
+        'fullscreen_exit'   => 'Exit fullscreen',
     ],
 
     'auth' => [

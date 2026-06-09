@@ -135,21 +135,27 @@ a:hover { text-decoration: underline; }
 
 /* Theme toggle (sun / moon) in the topbar. Only one of the two SVG icons
    is visible at a time, depending on <html data-theme>. */
-.theme-toggle {
+.theme-toggle,
+.fullscreen-toggle {
     /* Bare glyph: no pill, no border. The hit area stays comfortably
        clickable thanks to the icon's intrinsic 18-20px size + padding,
-       but the visual is just the sun / moon. */
+       but the visual is just the sun / moon (or maximize / minimize). */
     border: 0; background: transparent;
     padding: 4px;
     color: var(--c-muted); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: color .12s ease;
 }
-.theme-toggle:hover { color: var(--c-text); }
+.theme-toggle:hover,
+.fullscreen-toggle:hover { color: var(--c-text); }
 .theme-toggle__icon--sun  { display: none; }
 .theme-toggle__icon--moon { display: block; }
 :root[data-theme="dark"] .theme-toggle__icon--sun  { display: block; }
 :root[data-theme="dark"] .theme-toggle__icon--moon { display: none; }
+.fullscreen-toggle__icon--enter { display: block; }
+.fullscreen-toggle__icon--exit  { display: none; }
+body.is-fullscreen .fullscreen-toggle__icon--enter { display: none; }
+body.is-fullscreen .fullscreen-toggle__icon--exit  { display: block; }
 
 /* Persistent secondary nav rendered by layouts/app.php whenever the user
    is browsing pages of a specific review. Visually consistent with the

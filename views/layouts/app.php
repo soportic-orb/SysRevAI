@@ -103,6 +103,7 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
         <?php endif; ?>
     </nav>
     <div class="topbar__user">
+        <?php require config('paths.base') . '/views/partials/fullscreen_toggle.php'; ?>
         <?php require config('paths.base') . '/views/partials/theme_toggle.php'; ?>
         <?php if ($user !== null): ?>
             <?php
