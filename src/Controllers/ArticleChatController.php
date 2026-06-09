@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SysRevAI\Controllers;
 
 use SysRevAI\Core\Auth;
+use SysRevAI\Helpers\Markdown;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Article;
 use SysRevAI\Models\CopilotMessage;
@@ -51,9 +52,14 @@ final class ArticleChatController
             return;
         }
 
-        CopilotMessage::add(null, $uid, 'assistant', (string) $result['reply'], $articleId);
+        $reply = (string) $result['reply'];
+        CopilotMessage::add(null, $uid, 'assistant', $reply, $articleId);
         ActivityLog::record('articles.chat_message', ['article_id' => $articleId]);
-        echo json_encode(['ok' => true, 'reply' => (string) $result['reply']]);
+        echo json_encode([
+            'ok'        => true,
+            'reply'     => $reply,
+            'reply_html' => Markdown::render($reply),
+        ]);
     }
 
     public function history(string $id): void

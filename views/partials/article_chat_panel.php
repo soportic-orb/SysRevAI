@@ -2,8 +2,23 @@
 
 declare(strict_types=1);
 
+use SysRevAI\Helpers\Markdown;
+
 /** @var int   $articleChatId */
 /** @var array $articleHistory */
+
+// Pre-render assistant messages to HTML server-side so the formatting
+// (bold, lists, tables, code) survives the initial page load too.
+$articleHistoryForJs = [];
+foreach ($articleHistory as $m) {
+    $role = (string) ($m['role'] ?? '');
+    $content = (string) ($m['content'] ?? '');
+    $articleHistoryForJs[] = [
+        'role'    => $role,
+        'content' => $content,
+        'html'    => $role === 'assistant' ? Markdown::render($content) : '',
+    ];
+}
 ?>
 <div class="article-chat" id="articleChat"
      data-url="/tools/articles/<?= $articleChatId ?>/chat"
@@ -132,7 +147,7 @@ declare(strict_types=1);
         .then(function (res) {
             typing.remove();
             if (res.body && res.body.ok && res.body.reply) {
-                appendBubble('assistant', res.body.reply);
+                appendBubble('assistant', res.body.reply, res.body.reply_html || '');
                 return;
             }
             appendBubble('assistant', errorMessage((res.body && res.body.error) || ''));
@@ -162,74 +177,73 @@ declare(strict_types=1);
         });
     });
 
-    /* Hydrate from server. */
-    var serverHistory = <?= json_encode(array_map(static fn (array $m): array => ['role' => (string) $m['role'], 'content' => (string) $m['content']], $articleHistory), JSON_UNESCAPED_UNICODE) ?>;
+    /* Hydrate from server. Assistant turns arrive with pre-rendered HTML
+       so bold / lists / tables show without a client-side parser. */
+    var serverHistory = <?= json_encode($articleHistoryForJs, JSON_UNESCAPED_UNICODE) ?>;
     if (serverHistory && serverHistory.length) {
         if (greeting) greeting.hidden = true;
-        serverHistory.forEach(function (m) { appendBubble(m.role, m.content); });
+        serverHistory.forEach(function (m) { appendBubble(m.role, m.content, m.html || ''); });
     }
 
-    function appendBubble(role, content) {
+    function appendBubble(role, content, html) {
         if (greeting) greeting.hidden = true;
         var div = document.createElement('div');
         div.className = 'article-chat__msg article-chat__msg--' + role;
         if (role === 'assistant') {
-            // Split assistant content by blank-line paragraphs; each
-            // paragraph gets its own copy button so the user can lift a
-            // single recommendation without manual selection.
-            var paragraphs = String(content).split(/\n{2,}/);
-            paragraphs.forEach(function (p) {
-                var pTrim = p.trim();
-                if (pTrim === '') return;
-                var wrap = document.createElement('div');
-                wrap.className = 'article-chat__paragraph';
-
-                var body = document.createElement('div');
-                body.className = 'article-chat__paragraph-body';
-                body.textContent = pTrim;
-
-                var copyBtn = document.createElement('button');
-                copyBtn.type = 'button';
-                copyBtn.className = 'article-chat__copy';
-                copyBtn.title = labels.copy;
-                copyBtn.setAttribute('aria-label', labels.copy);
-                copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>';
-                copyBtn.addEventListener('click', function () {
-                    var text = pTrim;
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(text).then(flash).catch(fallback);
-                    } else {
-                        fallback();
-                    }
-                    function fallback() {
-                        var ta = document.createElement('textarea');
-                        ta.value = text; ta.setAttribute('readonly', '');
-                        ta.style.position = 'fixed'; ta.style.left = '-9999px';
-                        document.body.appendChild(ta); ta.select();
-                        try { document.execCommand('copy'); } catch (e) {}
-                        document.body.removeChild(ta);
-                        flash();
-                    }
-                    function flash() {
-                        var was = copyBtn.title;
-                        copyBtn.title = labels.copied;
-                        copyBtn.classList.add('is-copied');
-                        setTimeout(function () {
-                            copyBtn.title = was;
-                            copyBtn.classList.remove('is-copied');
-                        }, 1200);
-                    }
-                });
-
-                wrap.appendChild(body);
-                wrap.appendChild(copyBtn);
-                div.appendChild(wrap);
-            });
+            var body = document.createElement('div');
+            body.className = 'article-chat__body';
+            if (html) {
+                body.innerHTML = html;
+            } else {
+                body.textContent = content;
+            }
+            div.appendChild(body);
+            div.appendChild(buildCopyButton(content));
         } else {
             div.textContent = content;
         }
         msgs.appendChild(div);
         scrollToBottom();
+    }
+
+    /* One copy button per assistant response, placed at the end. Copies
+       the raw markdown reply so users can paste it elsewhere. */
+    function buildCopyButton(text) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'article-chat__copy';
+        btn.title = labels.copy;
+        btn.setAttribute('aria-label', labels.copy);
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>'
+                     + '<span class="article-chat__copy-label">' + labels.copy + '</span>';
+        btn.addEventListener('click', function () {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(flash).catch(fallback);
+            } else {
+                fallback();
+            }
+            function fallback() {
+                var ta = document.createElement('textarea');
+                ta.value = text; ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed'; ta.style.left = '-9999px';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+                flash();
+            }
+            function flash() {
+                btn.classList.add('is-copied');
+                var labelEl = btn.querySelector('.article-chat__copy-label');
+                if (labelEl) labelEl.textContent = labels.copied;
+                btn.title = labels.copied;
+                setTimeout(function () {
+                    btn.classList.remove('is-copied');
+                    if (labelEl) labelEl.textContent = labels.copy;
+                    btn.title = labels.copy;
+                }, 1400);
+            }
+        });
+        return btn;
     }
 
     function appendTyping() {

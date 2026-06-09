@@ -152,6 +152,8 @@ return [
         'deleted'        => 'Article deleted.',
         'text_pane_label' => 'Article text',
         'text_pane_title' => 'Article text',
+        'text_pane_open'  => 'Show article text',
+        'text_pane_close' => 'Hide article text',
         'chat_pane_label' => 'AI chat',
         'chat_title'      => 'AI chat',
         'chat_subtitle'   => 'The AI is reading the article\'s text.',

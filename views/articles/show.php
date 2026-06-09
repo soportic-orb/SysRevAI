@@ -39,18 +39,38 @@ $text = (string) ($article['extracted_text'] ?? '');
         <div class="alert alert--warn"><?= e((string) $warn) ?></div>
     <?php endif; ?>
 
-    <div class="article-workspace">
-        <!-- LEFT: article text — collapsible card capped at viewport height,
-             body itself scrolls so the page never exceeds the screen. -->
-        <details class="article-pane article-pane--text section-card" open
+    <div class="article-workspace" id="articleWorkspace" data-article-id="<?= $id ?>">
+        <!-- Slim re-open button shown only when the text pane is collapsed.
+             Sits on the far left as a black tile with a white article icon. -->
+        <button type="button" class="article-pane__reopen"
+                id="articleTextReopen"
+                title="<?= e(__('articles.text_pane_open')) ?>"
+                aria-label="<?= e(__('articles.text_pane_open')) ?>"
+                aria-controls="articleTextPane"
+                aria-expanded="true"
+                hidden>
+            <?php $iconName = 'abstract'; $iconClass = 'article-pane__reopen-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+        </button>
+
+        <!-- LEFT: article text — full half-width pane while open; the
+             header's collapse button hides it entirely and lets the chat
+             pane span the workspace. -->
+        <section class="article-pane article-pane--text section-card"
+                 id="articleTextPane"
                  aria-label="<?= e(__('articles.text_pane_label')) ?>">
-            <summary class="article-pane__head">
+            <div class="article-pane__head">
                 <h2 class="section__subtitle"><?= e(__('articles.text_pane_title')) ?></h2>
                 <?php if (trim($text) === ''): ?>
                     <span class="tag tag--warn"><?= e(__('articles.no_text_extracted_tag')) ?></span>
                 <?php endif; ?>
-                <span class="article-pane__chevron" aria-hidden="true">&#9662;</span>
-            </summary>
+                <button type="button" class="article-pane__collapse"
+                        id="articleTextCollapse"
+                        title="<?= e(__('articles.text_pane_close')) ?>"
+                        aria-label="<?= e(__('articles.text_pane_close')) ?>"
+                        aria-controls="articleTextPane">
+                    &times;
+                </button>
+            </div>
             <div class="article-pane__text">
 <?php if (trim($text) !== ''): ?>
 <pre class="article-pane__pre"><?= e($text) ?></pre>
@@ -58,10 +78,11 @@ $text = (string) ($article['extracted_text'] ?? '');
                 <p class="muted"><?= e(__('articles.no_text_extracted')) ?></p>
 <?php endif; ?>
             </div>
-        </details>
+        </section>
 
         <!-- RIGHT: chat — same height as the article pane; the messages
-             container scrolls inside, the input row stays pinned. -->
+             container scrolls inside, the input row stays pinned. When
+             the text pane collapses, this section spans the full width. -->
         <section class="article-pane article-pane--chat section-card" aria-label="<?= e(__('articles.chat_pane_label')) ?>">
             <?php
             // Pass needed scope to the partial.
@@ -72,3 +93,33 @@ $text = (string) ($article['extracted_text'] ?? '');
         </section>
     </div>
 </div>
+
+<script>
+(function () {
+    'use strict';
+    var workspace = document.getElementById('articleWorkspace');
+    if (!workspace) return;
+    var pane      = document.getElementById('articleTextPane');
+    var closeBtn  = document.getElementById('articleTextCollapse');
+    var reopenBtn = document.getElementById('articleTextReopen');
+    if (!pane || !closeBtn || !reopenBtn) return;
+
+    var key = 'sysrevai.articles.text_collapsed.' + workspace.getAttribute('data-article-id');
+    var collapsed = false;
+    try { collapsed = localStorage.getItem(key) === '1'; } catch (e) {}
+    apply();
+
+    closeBtn.addEventListener('click', function () { collapsed = true; persist(); apply(); reopenBtn.focus(); });
+    reopenBtn.addEventListener('click', function () { collapsed = false; persist(); apply(); closeBtn.focus(); });
+
+    function apply() {
+        workspace.classList.toggle('is-text-collapsed', collapsed);
+        pane.hidden = collapsed;
+        reopenBtn.hidden = !collapsed;
+        reopenBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    }
+    function persist() {
+        try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch (e) {}
+    }
+})();
+</script>
