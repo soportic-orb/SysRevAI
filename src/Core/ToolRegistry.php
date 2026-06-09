@@ -79,6 +79,15 @@ final class ToolRegistry
                 'status'   => 'available',
                 'admin'    => false,
             ],
+            [
+                'id'       => 'articles',
+                'icon'     => 'abstract',
+                'labelKey' => 'tools.articles_title',
+                'blurbKey' => 'tools.articles_blurb',
+                'route'    => '/tools/articles',
+                'status'   => 'available',
+                'admin'    => false,
+            ],
         ];
     }
 

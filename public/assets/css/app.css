@@ -783,6 +783,88 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
     color: var(--c-muted);
 }
 
+/* Article workspace — split-pane: article text on the left, chat panel on
+   the right. Collapses to a single column on narrow viewports. */
+.article-page { max-width: 100%; }
+.article-workspace {
+    display: grid; gap: 16px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    margin-top: 12px;
+}
+@media (max-width: 960px) {
+    .article-workspace { grid-template-columns: 1fr; }
+}
+.article-pane { padding: 16px 18px; display: flex; flex-direction: column; min-height: 70vh; }
+.article-pane__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.article-pane__text { overflow-y: auto; flex: 1 1 auto; }
+.article-pane__pre {
+    margin: 0; white-space: pre-wrap; word-wrap: break-word;
+    font-family: var(--c-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px; line-height: 1.55;
+}
+.article-chat { display: flex; flex-direction: column; height: 100%; }
+.article-chat__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.article-chat__subtitle { margin: 2px 0 0; font-size: 12.5px; }
+.article-chat__head-actions { display: flex; gap: 2px; }
+.article-chat__icon-btn {
+    background: transparent; border: 0; color: inherit;
+    width: 28px; height: 28px; border-radius: 6px;
+    cursor: pointer; opacity: .82;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.article-chat__icon-btn:hover, .article-chat__icon-btn:focus-visible {
+    background: color-mix(in srgb, var(--c-text) 8%, transparent); opacity: 1; outline: none;
+}
+.article-chat__icon-btn--toggle.is-active {
+    background: var(--c-primary); color: var(--c-on-primary); opacity: 1;
+}
+.article-chat__messages {
+    flex: 1 1 auto; overflow-y: auto;
+    padding: 8px; margin: 4px 0;
+    background: var(--c-surface-2, var(--c-surface)); border-radius: 8px;
+}
+.article-chat__greeting { font-size: 13.5px; color: var(--c-muted); padding: 8px; }
+.article-chat__msg { padding: 8px 10px; margin: 6px 0; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+.article-chat__msg--user { background: color-mix(in srgb, var(--c-primary) 12%, transparent); align-self: flex-end; white-space: pre-wrap; }
+.article-chat__msg--assistant { background: var(--c-surface); border: 1px solid var(--c-border); }
+.article-chat__paragraph {
+    display: flex; align-items: flex-start; gap: 6px;
+    padding: 4px 0;
+}
+.article-chat__paragraph + .article-chat__paragraph {
+    border-top: 1px dashed color-mix(in srgb, var(--c-border) 60%, transparent);
+    margin-top: 4px; padding-top: 8px;
+}
+.article-chat__paragraph-body { flex: 1 1 auto; white-space: pre-wrap; }
+.article-chat__copy {
+    flex: 0 0 auto;
+    background: transparent; border: 1px solid var(--c-border);
+    border-radius: 4px; padding: 2px 6px;
+    cursor: pointer; opacity: .7;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.article-chat__copy:hover { opacity: 1; background: color-mix(in srgb, var(--c-text) 5%, transparent); }
+.article-chat__copy.is-copied { color: var(--c-ok); border-color: var(--c-ok); opacity: 1; }
+.article-chat__form { display: flex; gap: 8px; align-items: flex-end; }
+.article-chat__input { flex: 1 1 auto; resize: vertical; min-height: 50px; }
+.article-chat__dots { display: inline-flex; gap: 4px; }
+.article-chat__dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--c-muted);
+    animation: article-chat-bounce 1.2s infinite ease-in-out;
+}
+.article-chat__dots span:nth-child(2) { animation-delay: .15s; }
+.article-chat__dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes article-chat-bounce {
+    0%, 80%, 100% { opacity: .35; }
+    40%           { opacity: 1; }
+}
+
+.member-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.member-list li { padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--c-border) 60%, transparent); }
+.member-list li:last-child { border-bottom: 0; }
+
 /* Citation verification report — summary pill row + per-row table. */
 .verify-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .verify-summary__pill { font-size: 13px; }

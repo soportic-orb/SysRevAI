@@ -49,6 +49,10 @@ use SysRevAI\Controllers\ScreeningController;
 use SysRevAI\Controllers\SearchController;
 use SysRevAI\Controllers\ToolsController;
 use SysRevAI\Controllers\VerificationController;
+use SysRevAI\Controllers\ArticlesController;
+use SysRevAI\Controllers\ArticleChatController;
+use SysRevAI\Controllers\ArticleMembersController;
+use SysRevAI\Controllers\ArticleInvitationsController;
 use SysRevAI\Core\Auth;
 use SysRevAI\Core\Router;
 
@@ -83,6 +87,24 @@ $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 $router->get('/tools', [ToolsController::class, 'index'], ['auth']);
 $router->get('/tools/verify-citations', [VerificationController::class, 'index'], ['auth']);
 $router->post('/tools/verify-citations/run', [VerificationController::class, 'run'], ['auth']);
+
+// Article analysis tool — upload a paper, AI-grounded chat over its text,
+// critical report (PR #2), team sharing.
+$router->get('/tools/articles', [ArticlesController::class, 'index'], ['auth']);
+$router->get('/tools/articles/new', [ArticlesController::class, 'newForm'], ['auth']);
+$router->post('/tools/articles', [ArticlesController::class, 'store'], ['auth']);
+$router->get('/tools/articles/{id}', [ArticlesController::class, 'show'], ['auth']);
+$router->post('/tools/articles/{id}/delete', [ArticlesController::class, 'destroy'], ['auth']);
+$router->get('/tools/articles/{id}/download', [ArticlesController::class, 'downloadOriginal'], ['auth']);
+$router->get('/tools/articles/{id}/chat/history', [ArticleChatController::class, 'history'], ['auth']);
+$router->post('/tools/articles/{id}/chat/clear', [ArticleChatController::class, 'clear'], ['auth']);
+$router->post('/tools/articles/{id}/chat', [ArticleChatController::class, 'send'], ['auth']);
+$router->get('/tools/articles/{id}/team', [ArticleMembersController::class, 'index'], ['auth']);
+$router->post('/tools/articles/{id}/team/invite', [ArticleMembersController::class, 'invite'], ['auth']);
+$router->post('/tools/articles/{id}/team/remove', [ArticleMembersController::class, 'removeMember'], ['auth']);
+$router->post('/tools/articles/{id}/team/revoke', [ArticleMembersController::class, 'revokeInvitation'], ['auth']);
+$router->get('/articles/invite/{token}', [ArticleInvitationsController::class, 'show']);
+$router->post('/articles/invite/{token}', [ArticleInvitationsController::class, 'accept'], ['auth']);
 
 // Reviews (literal paths before the {id} pattern).
 $router->get('/reviews', [ReviewsController::class, 'index'], ['auth']);

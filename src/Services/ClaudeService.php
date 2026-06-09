@@ -689,6 +689,57 @@ final class ClaudeService
     }
 
     /**
+     * Article-scoped Copilot. The full extracted text of the article is
+     * embedded in the system prompt so the model can ground every reply
+     * in the user's actual paper — quote sections, point to specific
+     * sentences, recommend rewrites. Reuses the Copilot feature toggle
+     * because the surface is the same chat UX.
+     *
+     * @param array<string,mixed>                            $article  Article row from the DB.
+     * @param array<int,array{role:string,content:string}>  $history  Prior turns (oldest first).
+     */
+    public function articleChat(array $article, array $history, string $userMessage, string $mode = 'default'): array
+    {
+        if ($e = $this->guard('copilot')) {
+            return $e;
+        }
+
+        $title = (string) ($article['title'] ?? 'Untitled article');
+        $text  = (string) ($article['extracted_text'] ?? '');
+
+        $system = "You are SysRevAI's Article Copilot — a writing partner for the researcher who has "
+            . "uploaded the article you're about to see. Your job:\n"
+            . " • Ground every answer in the article's actual text. Quote short passages when you can.\n"
+            . " • Help the user understand, critique, improve and revise the manuscript: structure, "
+            . "argumentation, methodology, clarity, citation, language.\n"
+            . " • If asked something the article doesn't cover, say so plainly rather than inventing.\n"
+            . " • Reply in the same language as the user's question. Plain prose, short paragraphs; "
+            . "bullet lists only when really helpful.\n\n"
+            . "ARTICLE TITLE: " . $title . "\n\n"
+            . "ARTICLE TEXT (verbatim, may have been truncated for length):\n"
+            . $this->truncate($text, 60000);
+
+        $system .= self::devilAdvocateOverlay($mode);
+
+        $messages = [];
+        $tail = array_slice($history, -16);
+        foreach ($tail as $h) {
+            $role = ($h['role'] ?? 'user') === 'assistant' ? 'assistant' : 'user';
+            $content = (string) ($h['content'] ?? '');
+            if ($content === '') {
+                continue;
+            }
+            $messages[] = ['role' => $role, 'content' => $content];
+        }
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        $res = $this->request($this->modelLight, $system, $messages, 1200, 'copilot', null, false);
+        return $res['ok']
+            ? ['ok' => true, 'reply' => (string) $res['text']]
+            : ['ok' => false, 'error' => $res['error']];
+    }
+
+    /**
      * System-prompt suffix that flips the Copilot from a warm helper to
      * a critical interlocutor — the "Devil's Advocate" pattern from
      * imbad0202/academic-research-skills (CC-BY-NC 4.0). Inserts as an
