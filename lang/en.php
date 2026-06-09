@@ -1409,6 +1409,7 @@ return [
             'composer_install_ok'    => 'Dependencies installed successfully.',
             'composer_install_failed' => 'Dependency install failed. Check the output.',
             'composer_output'        => 'Composer output',
+            'composer_lock_stale'    => 'composer.lock was out of date; trying composer update',
             'backups'         => 'Backups',
             'backup_now'      => 'Create a backup now',
             'no_backups'      => 'No backups yet.',

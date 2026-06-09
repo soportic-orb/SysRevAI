@@ -1409,6 +1409,7 @@ return [
             'composer_install_ok'    => 'Dependencias instaladas correctamente.',
             'composer_install_failed' => 'La instalación de dependencias ha fallado. Revisa la salida.',
             'composer_output'        => 'Salida de Composer',
+            'composer_lock_stale'    => 'composer.lock estaba desactualizado; intentando composer update',
             'backups'         => 'Copias de seguridad',
             'backup_now'      => 'Crear una copia ahora',
             'no_backups'      => 'Todavía no hay copias de seguridad.',
