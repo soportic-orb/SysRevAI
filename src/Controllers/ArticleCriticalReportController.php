@@ -28,6 +28,7 @@ final class ArticleCriticalReportController
 
         echo View::render('articles/critical_report', [
             'article'   => $article,
+            'isOwner'   => Article::isOwner($article, (int) Auth::id()),
             'report'    => $report,
             'reportRow' => $row,
             'hasText'   => $hasText,

@@ -31,6 +31,7 @@ return [
     'nav' => [
         'dashboard'     => 'Tauler',
         'tools'         => 'Eines',
+        'articles'      => 'Articles',
         'reviews'       => 'Revisions',
         'search'        => 'Cercar',
         'citations'     => 'Citacions',
@@ -143,6 +144,7 @@ return [
         'created'        => 'Article creat.',
         'team_count'     => '%d membres',
         'solo'           => 'Només tu',
+        'workspace_btn'  => 'Article',
         'team_btn'       => 'Equip',
         'download_btn'   => 'Descarregar original',
         'delete_btn'     => 'Eliminar',

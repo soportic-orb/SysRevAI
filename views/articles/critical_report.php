@@ -5,6 +5,7 @@ declare(strict_types=1);
 use SysRevAI\Core\Session;
 
 /** @var array     $article */
+/** @var bool      $isOwner */
 /** @var ?array    $report */
 /** @var ?array    $reportRow */
 /** @var bool      $hasText */
@@ -12,13 +13,18 @@ use SysRevAI\Core\Session;
 $id = (int) $article['id'];
 ?>
 <div class="page article-critical">
-    <div class="page__head">
-        <div class="breadcrumb">
-            <a href="/tools/articles"><?= e(__('articles.index_title')) ?></a> /
-            <a href="/tools/articles/<?= $id ?>"><?= e((string) ($article['title'] ?: '—')) ?></a> /
+    <div class="page__head page__head--row">
+        <div>
+            <h1 class="page__title">
+                <?= e((string) ($article['title'] ?: '—')) ?>
+                <span class="muted">— <?= e(__('articles.critical.title')) ?></span>
+            </h1>
+            <p class="page__subtitle muted"><?= e(__('articles.critical.subtitle')) ?></p>
         </div>
-        <h1 class="page__title"><?= e(__('articles.critical.title')) ?></h1>
-        <p class="page__subtitle muted"><?= e(__('articles.critical.subtitle')) ?></p>
+        <?php
+            $articleActionsActive = 'critical-report';
+            require config('paths.base') . '/views/partials/article_actions.php';
+        ?>
     </div>
 
     <?php if (($flash = Session::pullFlash('success')) !== null): ?>
@@ -32,9 +38,6 @@ $id = (int) $article['id'];
         <div class="section-card article-critical__empty">
             <?php if (!$hasText): ?>
                 <p><?= e(__('articles.critical.empty_no_text')) ?></p>
-                <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>">
-                    <?= e(__('articles.critical.back_btn')) ?>
-                </a>
             <?php else: ?>
                 <p><?= e(__('articles.critical.empty_intro')) ?></p>
                 <form method="post" action="/tools/articles/<?= $id ?>/critical-report" data-ai-action>
@@ -43,9 +46,6 @@ $id = (int) $article['id'];
                             data-busy-label="<?= e(__('common.working')) ?>">
                         &#10024; <?= e(__('articles.critical.generate_btn')) ?>
                     </button>
-                    <a class="btn btn--ghost" href="/tools/articles/<?= $id ?>">
-                        <?= e(__('articles.critical.back_btn')) ?>
-                    </a>
                 </form>
             <?php endif; ?>
         </div>
@@ -118,9 +118,6 @@ $id = (int) $article['id'];
         <?php endif; ?>
 
         <div class="article-critical__rerun">
-            <a class="btn btn--primary btn--sm" href="/tools/articles/<?= $id ?>/export">
-                <?= e(__('articles.export.btn')) ?>
-            </a>
             <form method="post" action="/tools/articles/<?= $id ?>/critical-report"
                   data-ai-action
                   data-confirm="<?= e(__('articles.critical.rerun_confirm')) ?>">
@@ -130,9 +127,6 @@ $id = (int) $article['id'];
                     &#10024; <?= e(__('articles.critical.rerun_btn')) ?>
                 </button>
             </form>
-            <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>">
-                <?= e(__('articles.critical.back_btn')) ?>
-            </a>
         </div>
     <?php endif; ?>
 </div>

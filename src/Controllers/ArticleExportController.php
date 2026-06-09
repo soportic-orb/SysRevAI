@@ -26,6 +26,7 @@ final class ArticleExportController
         $article = $this->loadOrDeny((int) $id);
         echo View::render('articles/export', [
             'article'  => $article,
+            'isOwner'  => Article::isOwner($article, (int) Auth::id()),
             'scopes'   => ArticleExportService::scopes(),
         ]);
     }

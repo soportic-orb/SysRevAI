@@ -30,6 +30,7 @@ return [
     'nav' => [
         'dashboard'     => 'Dashboard',
         'tools'         => 'Tools',
+        'articles'      => 'Articles',
         'reviews'       => 'Reviews',
         'search'        => 'Search',
         'citations'     => 'Citations',
@@ -142,6 +143,7 @@ return [
         'created'        => 'Article created.',
         'team_count'     => '%d members',
         'solo'           => 'Just you',
+        'workspace_btn'  => 'Article',
         'team_btn'       => 'Team',
         'download_btn'   => 'Download original',
         'delete_btn'     => 'Delete',
