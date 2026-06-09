@@ -740,18 +740,20 @@ final class ClaudeService
     }
 
     /**
-     * Structured critical report for an uploaded article. Returns five
-     * 0-100 axis scores (methodology, clarity, novelty, evidence,
-     * limitations), an executive summary, a mandatory devil's-advocate
-     * counter-argument, an overall one-line verdict and an ordered list
-     * of section-by-section recommendations the author can act on.
+     * Structured critical report for an uploaded article. Beyond the
+     * five 0-100 axis scores, the model returns a multi-paragraph
+     * analysis per axis, a 3-5-sentence executive summary, a mandatory
+     * devil's-advocate counter-argument, an overall verdict, ordered
+     * lists of strengths / weaknesses / statistical / ethical /
+     * reproducibility concerns, prose on literature positioning and
+     * publication outlook, and section-by-section recommendations with
+     * a per-item priority flag.
      *
-     * The model is asked to grade only what the supplied text supports
+     * The model is asked to ground every claim in the supplied text
      * (no inventing methodology details) and to write all prose in the
-     * user's locale so the report reads naturally in the platform language.
-     *
-     * Inspired by the multi-perspective critical-review prompt pattern
-     * from imbad0202/academic-research-skills (CC-BY-NC 4.0).
+     * user's locale so the report reads naturally in the platform
+     * language. Inspired by the multi-perspective critical-review
+     * prompt pattern from imbad0202/academic-research-skills (CC-BY-NC 4.0).
      *
      * @param array<string,mixed> $article Article row (title, extracted_text).
      */
@@ -764,29 +766,59 @@ final class ClaudeService
         $text  = (string) ($article['extracted_text'] ?? '');
         $langName = self::languageName($targetLanguage);
 
-        $system = "You are a critical scientific reviewer assessing a manuscript the author has "
-            . "uploaded for self-review. Read the supplied article and score it on a 0-100 scale "
-            . "across five axes. Be honest: high scores must be earned by what the text actually "
-            . "shows. Include a one-paragraph executive summary, a MANDATORY devil's-advocate "
-            . "counter-argument that surfaces the strongest objection a reviewer could raise, an "
-            . "overall verdict (one short sentence) and an ordered list of concrete, actionable "
-            . "recommendations grouped by section (Abstract, Introduction, Methods, Results, "
-            . "Discussion, References, etc. — use only the sections the article actually has). "
-            . "Each recommendation must be short, specific and rewrite-ready. Write every prose "
-            . "field in {$langName}.\n\n"
+        $system = "You are an experienced peer reviewer producing a DEEP, exhaustive critical "
+            . "report on a manuscript the author has uploaded for self-review. Read the supplied "
+            . "article carefully and ground every claim in what the text actually shows — never "
+            . "invent methodology, results or citations. The report must be substantive: short, "
+            . "vague answers are not acceptable.\n\n"
+            . "Required content (write every prose field in {$langName}):\n"
+            . " • Five 0-100 scores (methodology, clarity, novelty, evidence, limitations). High "
+            . "scores must be earned. For EACH axis, write 2-4 sentences (not just one) explaining "
+            . "what specifically the manuscript does well or poorly on that dimension.\n"
+            . " • A 3-5 sentence executive summary that states the contribution, the methods at a "
+            . "high level, the main finding and its significance.\n"
+            . " • An overall verdict — ONE short sentence (max 25 words) capturing the decision a "
+            . "reviewer would reach today.\n"
+            . " • A MANDATORY devil's-advocate paragraph: the strongest single objection a hostile "
+            . "reviewer would raise, written as a coherent counter-argument (not a list).\n"
+            . " • 4-7 specific key strengths and 4-7 specific key weaknesses, as concise bullet "
+            . "points. Quote or paraphrase short evidence from the text where possible.\n"
+            . " • 2-4 paragraphs of methodology critique covering study design, sample, controls, "
+            . "measures, analytical strategy, blinding and any threats to validity.\n"
+            . " • 3-6 statistical concerns: sample size / power, multiple testing, effect sizes, "
+            . "confidence intervals, model assumptions, missing data handling, etc.\n"
+            . " • 2-5 ethical concerns: IRB approval, consent, conflicts of interest, data sharing "
+            . "consent, animal welfare, equity issues. Mark 'none observed' if truly applicable.\n"
+            . " • 3-6 reproducibility notes: data availability, code availability, materials / "
+            . "protocols, statistical scripts, pre-registration, transparent reporting.\n"
+            . " • 2-3 paragraphs on literature positioning — how this work fits into prior research, "
+            . "what it cites and what notable references are missing.\n"
+            . " • 1-2 paragraphs on publication outlook: realistic chance of acceptance, suggested "
+            . "tier / journal type, and the single biggest change needed to publish.\n"
+            . " • Section-by-section recommendations. Use only the sections the manuscript actually "
+            . "has (Abstract, Introduction, Methods, Results, Discussion, Conclusion, References, "
+            . "Figures / Tables, etc.). For each section give 3-8 concrete, rewrite-ready items. "
+            . "Each item has a priority: 'high' (publication blocker), 'medium' (substantive "
+            . "improvement), 'low' (polish / style).\n\n"
             . "Respond ONLY with JSON of this exact shape:\n"
             . '{'
             . '"methodology":0, "clarity":0, "novelty":0, "evidence":0, "limitations":0, '
             . '"methodology_note":"", "clarity_note":"", "novelty_note":"", "evidence_note":"", "limitations_note":"", '
-            . '"summary":"", "devils_advocate":"", "overall":"", '
-            . '"recommendations":[{"section":"","items":["",""]}]'
+            . '"summary":"", "overall":"", "devils_advocate":"", '
+            . '"key_strengths":[""], "key_weaknesses":[""], '
+            . '"methodology_critique":"", '
+            . '"statistical_concerns":[""], "ethical_concerns":[""], "reproducibility_notes":[""], '
+            . '"literature_positioning":"", "publication_outlook":"", '
+            . '"recommendations":[{"section":"","items":[{"text":"","priority":"high"}]}]'
             . '}.';
         $payload = json_encode([
             'article_title' => $title,
             'article_text'  => $this->truncate($text, 60000),
         ], JSON_UNESCAPED_UNICODE);
+        // The report is the main creative output of the tool, so we let
+        // the model use the full token budget rather than capping it.
         $res = $this->request($this->modelComplex, $system,
-            [['role' => 'user', 'content' => $payload]], $this->maxTokens, 'peer_review', null, true);
+            [['role' => 'user', 'content' => $payload]], max(6000, $this->maxTokens), 'peer_review', null, true);
         return $this->jsonResult($res);
     }
 

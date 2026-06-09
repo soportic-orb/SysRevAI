@@ -72,7 +72,10 @@ final class ArticleCriticalReportController
     /**
      * Whitelist + clamp the model's JSON so the view never has to defend
      * against an out-of-range score or a missing key. Recommendations are
-     * normalised into ['section', 'items'] tuples, both strings trimmed.
+     * normalised into ['section', 'items'] tuples; each item is an
+     * ['text', 'priority'] pair (priority is one of high / medium / low).
+     * Plain-string items from older payloads are accepted and default to
+     * 'medium' priority so existing reports keep rendering.
      *
      * @param array<string,mixed> $data
      * @return array<string,mixed>
@@ -82,15 +85,39 @@ final class ArticleCriticalReportController
         $clamp = static function ($v): int {
             return max(0, min(100, (int) (is_numeric($v) ? $v : 0)));
         };
+        $bullets = static function (mixed $raw, int $maxItems, int $maxChars): array {
+            $out = [];
+            foreach ((array) $raw as $entry) {
+                $s = trim((string) (is_array($entry) ? ($entry['text'] ?? '') : $entry));
+                if ($s !== '') {
+                    $out[] = mb_substr($s, 0, $maxChars);
+                    if (count($out) >= $maxItems) {
+                        break;
+                    }
+                }
+            }
+            return $out;
+        };
+
         $clean = [];
         foreach (ArticleCriticalReport::AXES as $axis) {
             $clean[$axis] = $clamp($data[$axis] ?? 0);
             $clean[$axis . '_note'] = trim((string) ($data[$axis . '_note'] ?? ''));
         }
-        $clean['summary']         = trim((string) ($data['summary']         ?? ''));
-        $clean['devils_advocate'] = trim((string) ($data['devils_advocate'] ?? ''));
-        $clean['overall']         = trim((string) ($data['overall']         ?? ''));
+        $clean['summary']               = trim((string) ($data['summary']               ?? ''));
+        $clean['overall']               = trim((string) ($data['overall']               ?? ''));
+        $clean['devils_advocate']       = trim((string) ($data['devils_advocate']       ?? ''));
+        $clean['methodology_critique']  = trim((string) ($data['methodology_critique']  ?? ''));
+        $clean['literature_positioning'] = trim((string) ($data['literature_positioning'] ?? ''));
+        $clean['publication_outlook']   = trim((string) ($data['publication_outlook']   ?? ''));
 
+        $clean['key_strengths']        = $bullets($data['key_strengths']        ?? [], 10, 600);
+        $clean['key_weaknesses']       = $bullets($data['key_weaknesses']       ?? [], 10, 600);
+        $clean['statistical_concerns'] = $bullets($data['statistical_concerns'] ?? [], 10, 600);
+        $clean['ethical_concerns']     = $bullets($data['ethical_concerns']     ?? [], 10, 600);
+        $clean['reproducibility_notes'] = $bullets($data['reproducibility_notes'] ?? [], 10, 600);
+
+        $validPriority = ['high', 'medium', 'low'];
         $recs = [];
         foreach ((array) ($data['recommendations'] ?? []) as $r) {
             if (!is_array($r)) {
@@ -99,16 +126,25 @@ final class ArticleCriticalReportController
             $section = trim((string) ($r['section'] ?? ''));
             $items   = [];
             foreach ((array) ($r['items'] ?? []) as $it) {
-                $s = trim((string) $it);
-                if ($s !== '') {
-                    $items[] = mb_substr($s, 0, 600);
+                if (is_array($it)) {
+                    $text = trim((string) ($it['text'] ?? ''));
+                    $priority = strtolower(trim((string) ($it['priority'] ?? 'medium')));
+                } else {
+                    $text = trim((string) $it);
+                    $priority = 'medium';
+                }
+                if (!in_array($priority, $validPriority, true)) {
+                    $priority = 'medium';
+                }
+                if ($text !== '') {
+                    $items[] = ['text' => mb_substr($text, 0, 600), 'priority' => $priority];
                 }
             }
             if ($section === '' && $items === []) {
                 continue;
             }
             $recs[] = ['section' => mb_substr($section, 0, 200), 'items' => $items];
-            if (count($recs) >= 12) {
+            if (count($recs) >= 14) {
                 break;
             }
         }

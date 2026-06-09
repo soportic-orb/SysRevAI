@@ -81,17 +81,109 @@ $id = (int) $article['id'];
             <?php endforeach; ?>
         </div>
 
+        <?php
+            // Helper: render a paragraph of prose, splitting on blank
+            // lines so the model's multi-paragraph notes keep their shape.
+            $renderProse = static function (string $text): void {
+                foreach (preg_split('/\n{2,}/', trim($text)) ?: [] as $chunk) {
+                    $chunk = trim((string) $chunk);
+                    if ($chunk === '') {
+                        continue;
+                    }
+                    echo '<p>' . nl2br(e($chunk)) . '</p>';
+                }
+            };
+        ?>
+
         <?php if (!empty($report['summary'])): ?>
             <div class="section-card peer-review__block">
                 <h2 class="section__subtitle"><?= e(__('articles.critical.h_summary')) ?></h2>
-                <p><?= e((string) $report['summary']) ?></p>
+                <?php $renderProse((string) $report['summary']); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php
+            $strengths  = (array) ($report['key_strengths']  ?? []);
+            $weaknesses = (array) ($report['key_weaknesses'] ?? []);
+        ?>
+        <?php if ($strengths !== [] || $weaknesses !== []): ?>
+            <div class="section-card article-critical__sw">
+                <div class="article-critical__sw-grid">
+                    <?php if ($strengths !== []): ?>
+                        <div class="article-critical__sw-col article-critical__sw-col--strengths">
+                            <h3 class="article-critical__sw-title"><?= e(__('articles.critical.h_key_strengths')) ?></h3>
+                            <ul>
+                                <?php foreach ($strengths as $it): ?>
+                                    <li><?= e((string) $it) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($weaknesses !== []): ?>
+                        <div class="article-critical__sw-col article-critical__sw-col--weaknesses">
+                            <h3 class="article-critical__sw-title"><?= e(__('articles.critical.h_key_weaknesses')) ?></h3>
+                            <ul>
+                                <?php foreach ($weaknesses as $it): ?>
+                                    <li><?= e((string) $it) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($report['methodology_critique'])): ?>
+            <div class="section-card peer-review__block">
+                <h2 class="section__subtitle"><?= e(__('articles.critical.h_methodology_critique')) ?></h2>
+                <?php $renderProse((string) $report['methodology_critique']); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php
+            $statBullets = (array) ($report['statistical_concerns']  ?? []);
+            $ethBullets  = (array) ($report['ethical_concerns']      ?? []);
+            $repBullets  = (array) ($report['reproducibility_notes'] ?? []);
+        ?>
+        <?php if ($statBullets !== [] || $ethBullets !== [] || $repBullets !== []): ?>
+            <div class="section-card article-critical__concerns">
+                <?php foreach ([
+                    ['title' => 'h_statistical_concerns',  'items' => $statBullets],
+                    ['title' => 'h_ethical_concerns',      'items' => $ethBullets],
+                    ['title' => 'h_reproducibility',       'items' => $repBullets],
+                ] as $block): ?>
+                    <?php if ($block['items'] !== []): ?>
+                        <div class="article-critical__concern">
+                            <h3 class="article-critical__concern-title"><?= e(__('articles.critical.' . $block['title'])) ?></h3>
+                            <ul>
+                                <?php foreach ($block['items'] as $it): ?>
+                                    <li><?= e((string) $it) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($report['literature_positioning'])): ?>
+            <div class="section-card peer-review__block">
+                <h2 class="section__subtitle"><?= e(__('articles.critical.h_literature_positioning')) ?></h2>
+                <?php $renderProse((string) $report['literature_positioning']); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($report['publication_outlook'])): ?>
+            <div class="section-card peer-review__block">
+                <h2 class="section__subtitle"><?= e(__('articles.critical.h_publication_outlook')) ?></h2>
+                <?php $renderProse((string) $report['publication_outlook']); ?>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($report['devils_advocate'])): ?>
             <div class="section-card peer-review__block peer-review__block--devil">
                 <h2 class="section__subtitle"><?= e(__('articles.critical.h_devils_advocate')) ?></h2>
-                <p><?= e((string) $report['devils_advocate']) ?></p>
+                <?php $renderProse((string) $report['devils_advocate']); ?>
             </div>
         <?php endif; ?>
 
@@ -106,8 +198,15 @@ $id = (int) $article['id'];
                             <?php $items = (array) ($rec['items'] ?? []); ?>
                             <?php if ($items !== []): ?>
                                 <ul class="article-critical__rec-items">
-                                    <?php foreach ($items as $it): ?>
-                                        <li><?= e((string) $it) ?></li>
+                                    <?php foreach ($items as $it):
+                                        $text     = is_array($it) ? (string) ($it['text'] ?? '') : (string) $it;
+                                        $priority = is_array($it) ? (string) ($it['priority'] ?? 'medium') : 'medium';
+                                    ?>
+                                        <li class="article-critical__rec-item">
+                                            <span class="article-critical__prio article-critical__prio--<?= e($priority) ?>"
+                                                  title="<?= e(__('articles.critical.priority_' . $priority)) ?>"><?= e(__('articles.critical.priority_' . $priority)) ?></span>
+                                            <span><?= e($text) ?></span>
+                                        </li>
                                     <?php endforeach; ?>
                                 </ul>
                             <?php endif; ?>
