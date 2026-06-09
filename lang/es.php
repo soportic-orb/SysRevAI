@@ -154,6 +154,8 @@ return [
         'deleted'        => 'Artículo eliminado.',
         'text_pane_label' => 'Texto del artículo',
         'text_pane_title' => 'Texto del artículo',
+        'text_pane_open'  => 'Mostrar el texto del artículo',
+        'text_pane_close' => 'Ocultar el texto del artículo',
         'chat_pane_label' => 'Chat con la IA',
         'chat_title'      => 'Chat con la IA',
         'chat_subtitle'   => 'La IA está leyendo el texto del artículo.',

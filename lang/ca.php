@@ -155,6 +155,8 @@ return [
         'deleted'        => 'Article eliminat.',
         'text_pane_label' => 'Text de l\'article',
         'text_pane_title' => 'Text de l\'article',
+        'text_pane_open'  => 'Mostrar el text de l\'article',
+        'text_pane_close' => 'Amagar el text de l\'article',
         'chat_pane_label' => 'Xat amb la IA',
         'chat_title'      => 'Xat amb la IA',
         'chat_subtitle'   => 'La IA està llegint el text de l\'article.',

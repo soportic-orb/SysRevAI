@@ -797,33 +797,53 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
     height: calc(100vh - 220px);
     min-height: 420px;
 }
+/* Text pane collapsed: slim reopen button on the left, chat takes the rest. */
+.article-workspace.is-text-collapsed { grid-template-columns: 48px minmax(0, 1fr); }
 @media (max-width: 960px) {
     .article-workspace { grid-template-columns: 1fr; height: auto; }
+    .article-workspace.is-text-collapsed { grid-template-columns: 48px 1fr; }
     .article-workspace .article-pane { max-height: 70vh; }
 }
 .article-pane {
     padding: 16px 18px;
     display: flex; flex-direction: column;
-    min-height: 0; /* allow internal scroll children to overflow */
+    min-height: 0;
     height: 100%;
     overflow: hidden;
 }
-/* The collapsible text pane uses <details>. When closed it collapses to
-   just the summary; when open it behaves like the chat pane. */
-details.article-pane { display: flex; }
-details.article-pane:not([open]) { height: auto; overflow: visible; }
 .article-pane__head {
     display: flex; justify-content: space-between; align-items: center;
     margin: 0 0 8px; gap: 10px;
-    cursor: pointer; user-select: none;
-    list-style: none;
 }
-.article-pane__head::-webkit-details-marker { display: none; }
-.article-pane__chevron {
-    margin-left: auto; font-size: 14px; color: var(--c-muted);
-    transition: transform .15s ease;
+.article-pane__collapse {
+    margin-left: auto;
+    width: 28px; height: 28px;
+    background: transparent; border: 0; color: var(--c-muted);
+    border-radius: 6px; cursor: pointer;
+    font-size: 22px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
 }
-details.article-pane:not([open]) .article-pane__chevron { transform: rotate(-90deg); }
+.article-pane__collapse:hover, .article-pane__collapse:focus-visible {
+    background: color-mix(in srgb, var(--c-text) 8%, transparent);
+    color: var(--c-text); outline: none;
+}
+/* Black tile with a white article icon — only visible when the text
+   pane is collapsed, sized to fill the slim 48px column. */
+.article-pane__reopen {
+    display: none;
+    width: 100%; height: 100%;
+    border: 0; border-radius: 8px;
+    background: #000; color: #fff;
+    cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: background .15s ease;
+}
+.article-pane__reopen:hover, .article-pane__reopen:focus-visible {
+    background: #1f2937; outline: none;
+}
+.article-pane__reopen[hidden] { display: none; }
+.article-workspace.is-text-collapsed .article-pane__reopen { display: flex; }
+.article-pane__reopen-icon { width: 22px; height: 22px; stroke: #fff; }
 .article-pane__text {
     overflow-y: auto; flex: 1 1 auto;
     min-height: 0;
