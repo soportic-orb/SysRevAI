@@ -39,6 +39,9 @@ return [
         'profile'       => 'Perfil',
         'logout'        => 'Cerrar sesión',
         'theme_toggle'  => 'Cambiar entre modo claro y oscuro',
+        'fullscreen_toggle' => 'Pantalla completa',
+        'fullscreen_enter'  => 'Entrar a pantalla completa',
+        'fullscreen_exit'   => 'Salir de pantalla completa',
     ],
 
     'auth' => [

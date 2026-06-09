@@ -40,6 +40,9 @@ return [
         'profile'       => 'Perfil',
         'logout'        => 'Tancar sessió',
         'theme_toggle'  => 'Canviar entre mode clar i fosc',
+        'fullscreen_toggle' => 'Pantalla completa',
+        'fullscreen_enter'  => 'Entrar a pantalla completa',
+        'fullscreen_exit'   => 'Sortir de pantalla completa',
     ],
 
     'auth' => [
