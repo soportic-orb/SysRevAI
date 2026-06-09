@@ -900,6 +900,37 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .peer-review__block p { margin: 0; line-height: 1.55; }
 .peer-review__block--devil { border-left: 3px solid var(--c-warn); }
 .peer-review__rerun { display: flex; gap: 8px; margin-top: 14px; }
+
+/* Article critical report reuses peer-review primitives for axes / blocks. */
+.article-critical__overall { padding: 18px 20px; border-left: 3px solid var(--c-accent); }
+.article-critical__overall-text { margin: 0; font-size: 15px; line-height: 1.5; font-weight: 600; }
+.article-critical__meta { margin: 8px 0 0; font-size: 12.5px; }
+.article-critical__scores { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.article-critical__empty { padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.article-critical__recs { padding: 18px 20px; }
+.article-critical__rec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+.article-critical__rec {
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: var(--c-surface-2, #fafafa);
+}
+.article-critical__rec-section {
+    margin: 0 0 8px;
+    font-size: 13.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--c-muted, #555);
+}
+.article-critical__rec-items { margin: 0; padding-left: 18px; line-height: 1.5; font-size: 14px; }
+.article-critical__rec-items li + li { margin-top: 6px; }
+.article-critical__rerun { display: flex; gap: 8px; margin-top: 14px; }
+
 /* Black pill in the footer linking to the GitHub repo. Sized to sit
    level with the rest of the footer text (12px) while staying clearly
    tappable; white text + glyph against #000 so the colour-override
