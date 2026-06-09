@@ -25,9 +25,16 @@ declare(strict_types=1);
             <path d="M10 15v2"></path>
             <path d="M14 15v2"></path>
         </svg>
-        <p class="ai-overlay__title"><?= e(__('common.working')) ?></p>
+        <p class="ai-overlay__title" id="aiOverlayTitle"><?= e(__('common.working')) ?></p>
+        <!-- Short tasks: only dots ever show. Long tasks: the JS swaps the
+             dots out and reveals the progress block once the call has been
+             in flight for a couple of seconds. -->
         <div class="ai-overlay__dots" aria-hidden="true">
             <span></span><span></span><span></span>
+        </div>
+        <div class="ai-overlay__progress" aria-hidden="true" hidden>
+            <div class="ai-overlay__bar"><span class="ai-overlay__fill"></span></div>
+            <p class="ai-overlay__percent">0%</p>
         </div>
     </div>
 </div>

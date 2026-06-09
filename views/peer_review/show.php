@@ -42,7 +42,10 @@ $refId = (int) $reference['id'];
                 </a>
             <?php else: ?>
                 <p><?= e(__('peer_review.empty_intro')) ?></p>
-                <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review" data-ai-action>
+                <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review"
+                      data-ai-action
+                      data-ai-estimate="45000"
+                      data-ai-label="<?= e(__('peer_review.working_label')) ?>">
                     <?= csrf_field() ?>
                     <button type="submit" class="btn btn--primary"
                             data-busy-label="<?= e(__('common.working')) ?>">
@@ -100,6 +103,8 @@ $refId = (int) $reference['id'];
         <div class="peer-review__rerun">
             <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review"
                   data-ai-action
+                  data-ai-estimate="45000"
+                  data-ai-label="<?= e(__('peer_review.working_label')) ?>"
                   data-confirm="<?= e(__('peer_review.rerun_confirm')) ?>">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn--ghost btn--sm"
