@@ -163,8 +163,12 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
 // the protocol context and the page snapshot, global mode answers
 // platform how-to and methodology questions. Hidden entirely (no
 // floating button) when the admin has turned the feature off.
+// Pages can opt out of the floating widget by setting
+// $hideCopilotWidget = true before View::render — the Article workspace
+// uses this because it already embeds the chat panel in-page.
 $_copilotEnabled = (bool) (setting('claude.feature.copilot') ?? true);
-if ($_copilotEnabled):
+$_hideCopilot    = !empty($hideCopilotWidget ?? false);
+if ($_copilotEnabled && !$_hideCopilot):
     require config('paths.base') . '/views/partials/copilot_widget.php';
 endif;
 ?>
