@@ -30,6 +30,7 @@ return [
     'nav' => [
         'dashboard'     => 'Dashboard',
         'tools'         => 'Tools',
+        'articles'      => 'Articles',
         'reviews'       => 'Reviews',
         'search'        => 'Search',
         'citations'     => 'Citations',

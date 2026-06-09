@@ -79,6 +79,10 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
             <?php $iconName = 'protocol'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.tools')) ?>
         </a>
+        <a href="/tools/articles">
+            <?php $iconName = 'abstract'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+            <?= e(__('nav.articles')) ?>
+        </a>
         <a href="/reviews">
             <?php $iconName = 'reviews'; $iconClass = 'nav-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
             <?= e(__('nav.reviews')) ?>

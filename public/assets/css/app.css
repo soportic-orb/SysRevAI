@@ -791,19 +791,48 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: stretch;
     margin-top: 12px;
+    /* Cap the whole workspace so panes share viewport height and scroll
+       internally — the page itself never grows past the screen. */
+    height: calc(100vh - 220px);
+    min-height: 420px;
 }
 @media (max-width: 960px) {
-    .article-workspace { grid-template-columns: 1fr; }
+    .article-workspace { grid-template-columns: 1fr; height: auto; }
+    .article-workspace .article-pane { max-height: 70vh; }
 }
-.article-pane { padding: 16px 18px; display: flex; flex-direction: column; min-height: 70vh; }
-.article-pane__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.article-pane__text { overflow-y: auto; flex: 1 1 auto; }
+.article-pane {
+    padding: 16px 18px;
+    display: flex; flex-direction: column;
+    min-height: 0; /* allow internal scroll children to overflow */
+    height: 100%;
+    overflow: hidden;
+}
+/* The collapsible text pane uses <details>. When closed it collapses to
+   just the summary; when open it behaves like the chat pane. */
+details.article-pane { display: flex; }
+details.article-pane:not([open]) { height: auto; overflow: visible; }
+.article-pane__head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 0 0 8px; gap: 10px;
+    cursor: pointer; user-select: none;
+    list-style: none;
+}
+.article-pane__head::-webkit-details-marker { display: none; }
+.article-pane__chevron {
+    margin-left: auto; font-size: 14px; color: var(--c-muted);
+    transition: transform .15s ease;
+}
+details.article-pane:not([open]) .article-pane__chevron { transform: rotate(-90deg); }
+.article-pane__text {
+    overflow-y: auto; flex: 1 1 auto;
+    min-height: 0;
+}
 .article-pane__pre {
     margin: 0; white-space: pre-wrap; word-wrap: break-word;
     font-family: var(--c-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
     font-size: 13px; line-height: 1.55;
 }
-.article-chat { display: flex; flex-direction: column; height: 100%; }
+.article-chat { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .article-chat__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
 .article-chat__subtitle { margin: 2px 0 0; font-size: 12.5px; }
 .article-chat__head-actions { display: flex; gap: 2px; }

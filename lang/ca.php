@@ -31,6 +31,7 @@ return [
     'nav' => [
         'dashboard'     => 'Tauler',
         'tools'         => 'Eines',
+        'articles'      => 'Articles',
         'reviews'       => 'Revisions',
         'search'        => 'Cercar',
         'citations'     => 'Citacions',

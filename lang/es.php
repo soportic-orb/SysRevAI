@@ -30,6 +30,7 @@ return [
     'nav' => [
         'dashboard'     => 'Panel',
         'tools'         => 'Herramientas',
+        'articles'      => 'Artículos',
         'reviews'       => 'Revisiones',
         'search'        => 'Buscar',
         'citations'     => 'Citas',
