@@ -815,10 +815,22 @@ final class ClaudeService
             'article_title' => $title,
             'article_text'  => $this->truncate($text, 60000),
         ], JSON_UNESCAPED_UNICODE);
-        // The report is the main creative output of the tool, so we let
-        // the model use the full token budget rather than capping it.
-        $res = $this->request($this->modelComplex, $system,
-            [['role' => 'user', 'content' => $payload]], max(6000, $this->maxTokens), 'peer_review', null, true);
+        // 6000 tokens of Opus output can take ~120 s to stream, so the
+        // default cURL timeout of 120 s clips the response mid-stream and
+        // the retry loop multiplies the wall time until PHP's
+        // set_time_limit kills the worker. Give this call a 300 s budget,
+        // a single attempt, and a token cap that fits comfortably inside.
+        $res = $this->request(
+            $this->modelComplex,
+            $system,
+            [['role' => 'user', 'content' => $payload]],
+            min(6000, max(4096, $this->maxTokens)),
+            'peer_review',
+            null,
+            true,
+            300,
+            1
+        );
         return $this->jsonResult($res);
     }
 
@@ -898,20 +910,43 @@ final class ClaudeService
     /* ── HTTP + parsing ────────────────────────────────────────────────── */
 
     /**
+     * @param ?int $timeoutSeconds Per-call cURL timeout. Defaults to 120 s;
+     *                             callers generating long JSON (e.g. the
+     *                             article critical report) raise it so a
+     *                             multi-thousand-token Opus reply doesn't
+     *                             get cut mid-stream.
+     * @param ?int $maxAttempts    Override MAX_RETRIES. Long generations
+     *                             pass 1 — a transport timeout in that case
+     *                             almost certainly means the model is still
+     *                             generating, so retrying just doubles the
+     *                             total wall time and pushes PHP past its
+     *                             set_time_limit before any response can
+     *                             be sent to the browser.
      * @return array{ok:bool,text:?string,json:mixed,error:?string}
      */
-    private function request(string $model, string $system, array $messages, int $maxTokens, string $feature, ?int $reviewId, bool $expectJson = false): array
-    {
+    private function request(
+        string $model,
+        string $system,
+        array $messages,
+        int $maxTokens,
+        string $feature,
+        ?int $reviewId,
+        bool $expectJson = false,
+        ?int $timeoutSeconds = null,
+        ?int $maxAttempts = null
+    ): array {
         $body = [
             'model'      => $model,
             'max_tokens' => $maxTokens,
             'system'     => $system,
             'messages'   => $messages,
         ];
+        $timeout  = $timeoutSeconds ?? 120;
+        $attempts = max(1, $maxAttempts ?? self::MAX_RETRIES);
 
         $lastError = 'request failed';
-        for ($attempt = 0; $attempt < self::MAX_RETRIES; $attempt++) {
-            [$status, $raw, $transport] = $this->post($body);
+        for ($attempt = 0; $attempt < $attempts; $attempt++) {
+            [$status, $raw, $transport] = $this->post($body, $timeout);
 
             if ($transport !== null) {
                 $lastError = $transport;
@@ -938,7 +973,7 @@ final class ClaudeService
                 }
             }
             // Exponential backoff: 2s, 4s, 8s.
-            if ($attempt < self::MAX_RETRIES - 1) {
+            if ($attempt < $attempts - 1) {
                 sleep(2 ** ($attempt + 1));
             }
         }
@@ -947,13 +982,14 @@ final class ClaudeService
     }
 
     /** @return array{0:int,1:string,2:?string} */
-    private function post(array $payload): array
+    private function post(array $payload, int $timeoutSeconds = 120): array
     {
         $ch = curl_init(self::ENDPOINT);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 120,
+            CURLOPT_TIMEOUT        => max(30, $timeoutSeconds),
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_HTTPHEADER     => [
                 'x-api-key: ' . $this->apiKey,
                 'anthropic-version: ' . self::API_VERSION,
