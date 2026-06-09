@@ -258,6 +258,12 @@ final class ArticleExportService
         ob_start();
         $writer->save('php://output');
         $bytes = (string) ob_get_clean();
+        // PhpWord 1.x writes pPr/rPr children in insertion order, which
+        // Word treats as a corrupt document for some style combinations
+        // (our shaded callouts in particular). Reorder them to the
+        // canonical CT_PPrBase / CT_RPrBase order so Word accepts the
+        // file. Falls back to the original bytes if anything goes wrong.
+        $bytes = OoxmlNormaliser::normalise($bytes);
         return ['bytes' => $bytes, 'error' => null];
     }
 
