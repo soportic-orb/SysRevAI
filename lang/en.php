@@ -145,6 +145,7 @@ return [
         'created'        => 'Article created.',
         'team_count'     => '%d members',
         'solo'           => 'Just you',
+        'workspace_btn'  => 'Article',
         'team_btn'       => 'Team',
         'download_btn'   => 'Download original',
         'delete_btn'     => 'Delete',

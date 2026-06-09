@@ -26,26 +26,10 @@ $text = (string) ($article['extracted_text'] ?? '');
                 · <?= count($members) > 0 ? e(__('articles.team_count', count($members) + 1)) : e(__('articles.solo')) ?>
             </p>
         </div>
-        <div class="btn-row">
-            <a class="btn btn--primary btn--sm" href="/tools/articles/<?= $id ?>/critical-report">
-                &#10024; <?= e(__('articles.critical.cta')) ?>
-            </a>
-            <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/export"><?= e(__('articles.export.btn')) ?></a>
-            <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/team"><?= e(__('articles.team_btn')) ?></a>
-            <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/download"><?= e(__('articles.download_btn')) ?></a>
-            <?php if ($isOwner): ?>
-                <form method="post" action="/tools/articles/<?= $id ?>/delete"
-                      style="display:inline"
-                      data-confirm="<?= e(__('articles.delete_confirm')) ?>"
-                      data-confirm-tone="danger"
-                      data-confirm-button="<?= e(__('articles.delete_btn')) ?>">
-                    <?= csrf_field() ?>
-                    <button type="submit" class="btn btn--ghost btn--sm btn--danger">
-                        <?= e(__('articles.delete_btn')) ?>
-                    </button>
-                </form>
-            <?php endif; ?>
-        </div>
+        <?php
+            $articleActionsActive = 'workspace';
+            require config('paths.base') . '/views/partials/article_actions.php';
+        ?>
     </div>
 
     <?php if (($flash = Session::pullFlash('success')) !== null): ?>

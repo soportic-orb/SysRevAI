@@ -786,6 +786,7 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 /* Article workspace — split-pane: article text on the left, chat panel on
    the right. Collapses to a single column on narrow viewports. */
 .article-page { max-width: 100%; }
+.article-actions { flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .article-workspace {
     display: grid; gap: 16px;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

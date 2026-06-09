@@ -6,17 +6,23 @@ use SysRevAI\Core\Session;
 use SysRevAI\Services\ArticleExportService;
 
 /** @var array     $article */
+/** @var bool      $isOwner */
 /** @var string[]  $scopes */
 $id = (int) $article['id'];
 ?>
 <div class="page article-export">
-    <div class="page__head">
-        <div class="breadcrumb">
-            <a href="/tools/articles"><?= e(__('articles.index_title')) ?></a> /
-            <a href="/tools/articles/<?= $id ?>"><?= e((string) ($article['title'] ?: '—')) ?></a> /
+    <div class="page__head page__head--row">
+        <div>
+            <h1 class="page__title">
+                <?= e((string) ($article['title'] ?: '—')) ?>
+                <span class="muted">— <?= e(__('articles.export.title')) ?></span>
+            </h1>
+            <p class="page__subtitle muted"><?= e(__('articles.export.subtitle')) ?></p>
         </div>
-        <h1 class="page__title"><?= e(__('articles.export.title')) ?></h1>
-        <p class="page__subtitle muted"><?= e(__('articles.export.subtitle')) ?></p>
+        <?php
+            $articleActionsActive = 'export';
+            require config('paths.base') . '/views/partials/article_actions.php';
+        ?>
     </div>
 
     <?php if (($err = Session::pullFlash('error')) !== null): ?>
@@ -52,9 +58,6 @@ $id = (int) $article['id'];
                         class="btn btn--primary">
                     <?= e(__('articles.export.download_pdf')) ?>
                 </button>
-                <a class="btn btn--ghost" href="/tools/articles/<?= $id ?>">
-                    <?= e(__('articles.export.cancel')) ?>
-                </a>
             </div>
         </fieldset>
     </form>

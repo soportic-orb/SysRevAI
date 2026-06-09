@@ -11,13 +11,18 @@ use SysRevAI\Models\ArticleInvitation;
 /** @var array $invitations */
 $id = (int) $article['id'];
 ?>
-<div class="page page--narrow">
-    <div class="page__head">
-        <div class="breadcrumb">
-            <a href="/tools/articles"><?= e(__('articles.index_title')) ?></a> /
-            <a href="/tools/articles/<?= $id ?>"><?= e((string) ($article['title'] ?: '—')) ?></a> /
+<div class="page">
+    <div class="page__head page__head--row">
+        <div>
+            <h1 class="page__title">
+                <?= e((string) ($article['title'] ?: '—')) ?>
+                <span class="muted">— <?= e(__('articles.team_title')) ?></span>
+            </h1>
         </div>
-        <h1 class="page__title"><?= e(__('articles.team_title')) ?></h1>
+        <?php
+            $articleActionsActive = 'team';
+            require config('paths.base') . '/views/partials/article_actions.php';
+        ?>
     </div>
 
     <?php if (($flash = Session::pullFlash('success')) !== null): ?>
