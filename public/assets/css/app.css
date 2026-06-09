@@ -929,7 +929,15 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 }
 .article-critical__rec-items { margin: 0; padding-left: 18px; line-height: 1.5; font-size: 14px; }
 .article-critical__rec-items li + li { margin-top: 6px; }
-.article-critical__rerun { display: flex; gap: 8px; margin-top: 14px; }
+.article-critical__rerun { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+/* Article export selector — "report only" vs. "report + chat", DOCX or PDF. */
+.article-export__form { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.article-export__fieldset { border: none; padding: 0; margin: 0; }
+.article-export__radio { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; cursor: pointer; }
+.article-export__radio + .article-export__radio { border-top: 1px solid var(--c-border); }
+.article-export__radio input { margin-top: 4px; }
+.article-export__radio-label { display: flex; flex-direction: column; gap: 4px; line-height: 1.4; }
 
 /* Black pill in the footer linking to the GitHub repo. Sized to sit
    level with the rest of the footer text (12px) while staying clearly
