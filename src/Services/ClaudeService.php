@@ -740,6 +740,57 @@ final class ClaudeService
     }
 
     /**
+     * Structured critical report for an uploaded article. Returns five
+     * 0-100 axis scores (methodology, clarity, novelty, evidence,
+     * limitations), an executive summary, a mandatory devil's-advocate
+     * counter-argument, an overall one-line verdict and an ordered list
+     * of section-by-section recommendations the author can act on.
+     *
+     * The model is asked to grade only what the supplied text supports
+     * (no inventing methodology details) and to write all prose in the
+     * user's locale so the report reads naturally in the platform language.
+     *
+     * Inspired by the multi-perspective critical-review prompt pattern
+     * from imbad0202/academic-research-skills (CC-BY-NC 4.0).
+     *
+     * @param array<string,mixed> $article Article row (title, extracted_text).
+     */
+    public function articleCriticalReport(array $article, string $targetLanguage = 'en'): array
+    {
+        if ($e = $this->guard('peer_review')) {
+            return $e;
+        }
+        $title = (string) ($article['title'] ?? 'Untitled article');
+        $text  = (string) ($article['extracted_text'] ?? '');
+        $langName = self::languageName($targetLanguage);
+
+        $system = "You are a critical scientific reviewer assessing a manuscript the author has "
+            . "uploaded for self-review. Read the supplied article and score it on a 0-100 scale "
+            . "across five axes. Be honest: high scores must be earned by what the text actually "
+            . "shows. Include a one-paragraph executive summary, a MANDATORY devil's-advocate "
+            . "counter-argument that surfaces the strongest objection a reviewer could raise, an "
+            . "overall verdict (one short sentence) and an ordered list of concrete, actionable "
+            . "recommendations grouped by section (Abstract, Introduction, Methods, Results, "
+            . "Discussion, References, etc. — use only the sections the article actually has). "
+            . "Each recommendation must be short, specific and rewrite-ready. Write every prose "
+            . "field in {$langName}.\n\n"
+            . "Respond ONLY with JSON of this exact shape:\n"
+            . '{'
+            . '"methodology":0, "clarity":0, "novelty":0, "evidence":0, "limitations":0, '
+            . '"methodology_note":"", "clarity_note":"", "novelty_note":"", "evidence_note":"", "limitations_note":"", '
+            . '"summary":"", "devils_advocate":"", "overall":"", '
+            . '"recommendations":[{"section":"","items":["",""]}]'
+            . '}.';
+        $payload = json_encode([
+            'article_title' => $title,
+            'article_text'  => $this->truncate($text, 60000),
+        ], JSON_UNESCAPED_UNICODE);
+        $res = $this->request($this->modelComplex, $system,
+            [['role' => 'user', 'content' => $payload]], $this->maxTokens, 'peer_review', null, true);
+        return $this->jsonResult($res);
+    }
+
+    /**
      * System-prompt suffix that flips the Copilot from a warm helper to
      * a critical interlocutor — the "Devil's Advocate" pattern from
      * imbad0202/academic-research-skills (CC-BY-NC 4.0). Inserts as an

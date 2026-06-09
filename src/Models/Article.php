@@ -96,6 +96,7 @@ final class Article
         } catch (\Throwable) {
             // Article-scoped column missing in a partial install.
         }
+        ArticleCriticalReport::delete($id);
         $articles = Database::table('articles');
         Database::affecting("DELETE FROM `{$articles}` WHERE id = ?", [$id]);
     }
