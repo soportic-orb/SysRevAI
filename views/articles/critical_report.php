@@ -40,7 +40,10 @@ $id = (int) $article['id'];
                 <p><?= e(__('articles.critical.empty_no_text')) ?></p>
             <?php else: ?>
                 <p><?= e(__('articles.critical.empty_intro')) ?></p>
-                <form method="post" action="/tools/articles/<?= $id ?>/critical-report" data-ai-action>
+                <form method="post" action="/tools/articles/<?= $id ?>/critical-report"
+                      data-ai-action
+                      data-ai-estimate="60000"
+                      data-ai-label="<?= e(__('articles.critical.working_label')) ?>">
                     <?= csrf_field() ?>
                     <button type="submit" class="btn btn--primary"
                             data-busy-label="<?= e(__('common.working')) ?>">
@@ -219,6 +222,8 @@ $id = (int) $article['id'];
         <div class="article-critical__rerun">
             <form method="post" action="/tools/articles/<?= $id ?>/critical-report"
                   data-ai-action
+                  data-ai-estimate="60000"
+                  data-ai-label="<?= e(__('articles.critical.working_label')) ?>"
                   data-confirm="<?= e(__('articles.critical.rerun_confirm')) ?>">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn btn--ghost btn--sm"

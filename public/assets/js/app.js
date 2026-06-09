@@ -150,26 +150,127 @@
         return overlay;
     }
 
-    window.SysRevAI = window.SysRevAI || {};
-    window.SysRevAI.showAiOverlay = function () {
+    /* Per-show state. Reset on every showAiOverlay() so a previous call's
+       timers and explicit progress override never leak into the next. */
+    var state = {
+        barTimer:  null,   // setTimeout that flips dots → progress bar
+        tickTimer: null,   // setInterval that drives the asymptotic fill
+        startedAt: 0,
+        estimate:  30000,
+        explicit:  null    // null = auto curve, number = explicit override
+    };
+
+    function clearState() {
+        if (state.barTimer)  { clearTimeout(state.barTimer);  state.barTimer  = null; }
+        if (state.tickTimer) { clearInterval(state.tickTimer); state.tickTimer = null; }
+        state.explicit = null;
+    }
+
+    function setBarProgress(pct) {
         var el = getOverlay();
         if (!el) return;
+        pct = Math.max(0, Math.min(100, +pct || 0));
+        var fill = el.querySelector('.ai-overlay__fill');
+        var pctEl = el.querySelector('.ai-overlay__percent');
+        if (fill)  fill.style.width = pct.toFixed(1) + '%';
+        if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+    }
+
+    /**
+     * @param {Object} [opts]
+     * @param {string} [opts.label]         Replace the "Working…" headline.
+     * @param {number} [opts.estimate]      Expected duration in ms — the bar
+     *                                      reaches ~85% at this point and then
+     *                                      approaches 100% asymptotically.
+     * @param {number} [opts.showBarAfter]  Delay before the dots are swapped
+     *                                      for the progress bar (ms). Tasks
+     *                                      that finish before this delay never
+     *                                      see the bar.
+     */
+    window.SysRevAI = window.SysRevAI || {};
+    window.SysRevAI.showAiOverlay = function (opts) {
+        var el = getOverlay();
+        if (!el) return;
+        opts = opts || {};
+
+        clearState();
+        state.startedAt = Date.now();
+        state.estimate  = Math.max(2000, +opts.estimate || 30000);
+
+        var titleEl = el.querySelector('#aiOverlayTitle');
+        var dotsEl  = el.querySelector('.ai-overlay__dots');
+        var progEl  = el.querySelector('.ai-overlay__progress');
+
+        if (opts.label && titleEl) titleEl.textContent = String(opts.label);
+        if (dotsEl) dotsEl.hidden = false;
+        if (progEl) progEl.hidden = true;
+        setBarProgress(0);
+
         el.hidden = false;
         el.classList.add('is-visible');
+
+        // After this delay, swap dots for progress bar and start filling it.
+        var showBarAfter = Math.max(0, +opts.showBarAfter || 2500);
+        state.barTimer = setTimeout(function () {
+            if (dotsEl) dotsEl.hidden = true;
+            if (progEl) progEl.hidden = false;
+            state.tickTimer = setInterval(tickProgress, 250);
+            tickProgress();
+        }, showBarAfter);
     };
+
+    /* Asymptotic curve so the bar never reaches 100% from the estimate
+       alone — that 100% jump is reserved for hideAiOverlay() so the user
+       gets a real completion signal. At elapsed = estimate the bar shows
+       ~85%; at 2× estimate ~95%; settles below 99% no matter how long. */
+    function tickProgress() {
+        if (state.explicit !== null) {
+            setBarProgress(state.explicit);
+            return;
+        }
+        var t = (Date.now() - state.startedAt) / state.estimate;
+        var p = (1 - Math.exp(-t * 1.9)) * 99;
+        setBarProgress(Math.min(99, p));
+    }
+
+    /** Callers that know real progress can override the auto curve. */
+    window.SysRevAI.setAiProgress = function (pct) {
+        state.explicit = Math.max(0, Math.min(100, +pct || 0));
+        // Reflect immediately even if the tick loop hasn't started yet.
+        if (state.tickTimer === null) {
+            var el = getOverlay();
+            if (el) {
+                var dotsEl = el.querySelector('.ai-overlay__dots');
+                var progEl = el.querySelector('.ai-overlay__progress');
+                if (dotsEl) dotsEl.hidden = true;
+                if (progEl) progEl.hidden = false;
+                if (state.barTimer) { clearTimeout(state.barTimer); state.barTimer = null; }
+                state.tickTimer = setInterval(tickProgress, 250);
+            }
+        }
+        tickProgress();
+    };
+
     window.SysRevAI.hideAiOverlay = function () {
         var el = getOverlay();
         if (!el) return;
+        clearState();
         el.hidden = true;
         el.classList.remove('is-visible');
     };
 
-    /* Show overlay on any form submission flagged with data-ai-action. */
+    /* Show overlay on any form submission flagged with data-ai-action.
+       Forms can hint at the workload with data-ai-estimate (ms) and
+       data-ai-label (string) so the bar fills at a believable rate. */
     document.addEventListener('submit', function (event) {
         var form = event.target;
         if (!form || form.tagName !== 'FORM') return;
         if (!form.hasAttribute('data-ai-action')) return;
-        window.SysRevAI.showAiOverlay();
+        var opts = {};
+        if (form.dataset.aiEstimate) opts.estimate     = +form.dataset.aiEstimate;
+        if (form.dataset.aiLabel)    opts.label        = form.dataset.aiLabel;
+        if (form.dataset.aiBarAfter) opts.showBarAfter = +form.dataset.aiBarAfter;
+        window.SysRevAI.showAiOverlay(opts);
     }, true);
 
     /* Auto-hide if the user navigates back to this page via bfcache so the
