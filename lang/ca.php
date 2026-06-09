@@ -1410,6 +1410,7 @@ return [
             'composer_install_ok'    => 'Dependències instal·lades correctament.',
             'composer_install_failed' => 'La instal·lació de dependències ha fallat. Revisa la sortida.',
             'composer_output'        => 'Sortida de Composer',
+            'composer_lock_stale'    => 'El composer.lock estava desactualitzat; provant composer update',
             'backups'         => 'Còpies de seguretat',
             'backup_now'      => 'Crear una còpia ara',
             'no_backups'      => 'Encara no hi ha còpies de seguretat.',

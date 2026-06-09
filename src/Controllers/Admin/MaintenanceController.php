@@ -37,11 +37,21 @@ final class MaintenanceController
     }
 
     /**
-     * Re-run `composer install` from inside the admin panel so an
-     * operator can pull in dependencies that a code update added
-     * (e.g. dompdf/dompdf for the article-report PDF export) without
-     * shell access. Mirrors the wizard's step-2 logic from
-     * public/install/lib.php so we don't depend on that file at runtime.
+     * Re-run Composer from the admin panel so an operator can pull in
+     * dependencies that a code update added (e.g. dompdf/dompdf for the
+     * article-report PDF export) without shell access.
+     *
+     * Strategy:
+     *   1. Try `composer install --no-dev`. This is fast and safe — it
+     *      replays whatever's in composer.lock.
+     *   2. If the output reveals composer.lock is out of sync with
+     *      composer.json (typically because a previous PR edited
+     *      composer.json directly), automatically fall back to
+     *      `composer update --no-dev`, which regenerates the lock and
+     *      installs the missing packages.
+     *
+     * The captured stdout/stderr of every step is flashed back so the
+     * operator can diagnose any failure without leaving the browser.
      */
     public function composerInstall(): void
     {
@@ -57,17 +67,27 @@ final class MaintenanceController
 
         @set_time_limit(180);
         $base = (string) config('paths.base');
-        $cmd  = 'cd ' . escapeshellarg($base)
-              . ' && ' . escapeshellcmd($bin)
-              . ' install --no-dev --no-interaction --prefer-dist 2>&1';
-        $output = (string) @shell_exec($cmd);
+        $cd = 'cd ' . escapeshellarg($base) . ' && ' . escapeshellcmd($bin);
+
+        $output = (string) @shell_exec($cd . ' install --no-dev --no-interaction --prefer-dist 2>&1');
+        $usedUpdate = false;
+
+        // composer install refuses to touch anything when the lock is
+        // out of sync; recover automatically by running update so the
+        // lock is rebuilt and the new packages are installed.
+        if ($this->lockOutOfSync($output)) {
+            $usedUpdate = true;
+            $output .= "\n\n--- " . __('admin.maintenance.composer_lock_stale') . " ---\n";
+            $output .= (string) @shell_exec($cd . ' update --no-dev --no-interaction --prefer-dist 2>&1');
+        }
 
         $status = $this->composerStatus();
         $ok = $status['classes_ok'];
 
         ActivityLog::record('maintenance.composer_install', [
-            'ok'      => $ok,
-            'missing' => $status['missing'],
+            'ok'           => $ok,
+            'missing'      => $status['missing'],
+            'used_update'  => $usedUpdate,
         ]);
         Session::flash('composer_output', $output);
         Session::flash(
@@ -77,6 +97,19 @@ final class MaintenanceController
                 : __('admin.maintenance.composer_install_failed')
         );
         redirect('/admin/maintenance');
+    }
+
+    /**
+     * Recognise the canonical "lock file is not up to date" wording
+     * Composer prints when composer.json has been edited without
+     * `composer update`. Falls back to checking for any explicit
+     * "not present in the lock file" line for older / newer Composer
+     * versions that change the phrasing.
+     */
+    private function lockOutOfSync(string $output): bool
+    {
+        return str_contains($output, 'lock file is not up to date')
+            || str_contains($output, 'not present in the lock file');
     }
 
     /**
