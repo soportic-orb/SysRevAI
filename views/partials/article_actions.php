@@ -49,7 +49,7 @@ $iconBtn = static function (string $key, string $href, string $iconName, string 
     <?= $btn(
         'critical-report',
         '/tools/articles/' . $id . '/critical-report',
-        '&#10024; ' . e(__('articles.critical.cta'))
+        e(__('articles.critical.cta'))
     ) ?>
 
     <?php $iconBtn('team',   '/tools/articles/' . $id . '/team',     'team_group',  __('articles.team_btn')); ?>
