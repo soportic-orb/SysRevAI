@@ -212,6 +212,8 @@ return [
             'saving'              => 'Guardando…',
             'unsaved'             => 'Cambios pendientes…',
             'image_too_large'     => 'La imagen supera el límite de 10 MB.',
+            'noscript'            => 'El editor colaborativo necesita JavaScript activado en el navegador.',
+            'cdn_failed'          => 'No se ha podido cargar el editor (red o CDN bloqueada). Puedes seguir viendo y copiando el texto del cuadro de abajo.',
         ],
         'critical' => [
             'cta'           => 'Elaborar informe crítico',
