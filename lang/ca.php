@@ -213,6 +213,8 @@ return [
             'saving'              => 'Desant…',
             'unsaved'             => 'Canvis pendents…',
             'image_too_large'     => 'La imatge supera el límit de 10 MB.',
+            'noscript'            => 'L\'editor col·laboratiu necessita JavaScript activat al navegador.',
+            'cdn_failed'          => 'No s\'ha pogut carregar l\'editor (xarxa o CDN bloquejada). Pots seguir veient i copiant el text del quadre de sota.',
         ],
         'critical' => [
             'cta'           => 'Elaborar informe crític',

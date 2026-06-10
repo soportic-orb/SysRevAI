@@ -212,6 +212,8 @@ return [
             'saving'              => 'Saving…',
             'unsaved'             => 'Unsaved changes…',
             'image_too_large'     => 'Image exceeds the 10 MB limit.',
+            'noscript'            => 'The collaborative editor needs JavaScript enabled.',
+            'cdn_failed'          => 'The editor could not be loaded (network or CDN blocked). You can still read and copy the text from the box below.',
         ],
         'critical' => [
             'cta'           => 'Critical report',
