@@ -5,27 +5,41 @@ declare(strict_types=1);
 namespace SysRevAI\Services;
 
 /**
- * Fix the child-element order of <w:pPr> and <w:rPr> nodes inside a
- * Word2007 .docx payload so it satisfies the OOXML CT_PPrBase /
- * CT_RPrBase content models.
+ * Fix the child-element order of OOXML property nodes inside a
+ * Word2007 .docx payload so it satisfies the ECMA-376 content models.
  *
- * The bundled PhpWord 1.x writer emits paragraph and run properties in
- * insertion order rather than the order ECMA-376 requires. Microsoft
- * Word tolerates that on simple paragraphs but rejects the document
- * ("Word detected an error trying to open the file") when several
- * out-of-order elements stack up — e.g. our shaded callouts combining
- * shd + pBdr + spacing + ind, or any rPr that mixes bold/italic with
- * colour and size.
+ * The bundled PhpWord 1.x writers (Element\Table aside) emit
+ * paragraph, run and style properties in insertion order rather than
+ * the order ECMA-376 requires. Microsoft Word tolerates that on
+ * simple paragraphs but rejects the document ("Word detected an error
+ * trying to open the file") when out-of-order elements stack up — our
+ * shaded callouts combine shd + pBdr + spacing + ind in reverse
+ * order; every styles.xml emits <w:style> children with link before
+ * name, then pPr with spacing before pBdr, then rPr with colour
+ * before bold.
  *
- * We can't reasonably patch PhpWord, so we patch the output: load
- * word/document.xml, walk every pPr/rPr, sort its direct children by
- * the canonical schema position and write it back into the zip.
+ * We can't reasonably patch PhpWord, so we patch the output: open the
+ * zip, walk every <w:pPr>, <w:rPr> and <w:style> in every part under
+ * word/*.xml, sort their direct children by canonical schema position
+ * and write the parts back.
  */
 final class OoxmlNormaliser
 {
+    /** Parts to walk inside the .docx zip. Other parts (theme, comments,
+     *  rels, etc.) don't have these constructs and stay untouched. */
+    private const PARTS = [
+        'word/document.xml',
+        'word/styles.xml',
+        'word/numbering.xml',
+        'word/header1.xml',
+        'word/footer1.xml',
+        'word/footnotes.xml',
+        'word/endnotes.xml',
+    ];
+
     /**
      * Canonical child-element order for w:pPr (CT_PPrBase + CT_PPr extras).
-     * Names without the w: prefix; lookup is local-name based.
+     * Names are local; lookup is local-name based.
      *
      * @var list<string>
      */
@@ -117,11 +131,44 @@ final class OoxmlNormaliser
     ];
 
     /**
-     * Take the raw bytes of a .docx file, rewrite document.xml with
-     * canonical pPr/rPr ordering and return the new bytes. Falls back
-     * to the original payload if anything goes wrong so a normalisation
-     * bug can never replace a "broken but somewhat openable" file with
-     * nothing.
+     * Canonical child-element order for w:style (CT_Style). Words like
+     * link, basedOn etc. have specific schema positions; PhpWord emits
+     * them in whatever order the API was called, which trips Word's
+     * style-table validator.
+     *
+     * @var list<string>
+     */
+    private const STYLE_ORDER = [
+        'name',
+        'aliases',
+        'basedOn',
+        'next',
+        'link',
+        'autoRedefine',
+        'hidden',
+        'uiPriority',
+        'semiHidden',
+        'unhideWhenUsed',
+        'qFormat',
+        'locked',
+        'personal',
+        'personalCompose',
+        'personalReply',
+        'rsid',
+        'pPr',
+        'rPr',
+        'tblPr',
+        'trPr',
+        'tcPr',
+        'tblStylePr',
+    ];
+
+    /**
+     * Take the raw bytes of a .docx file, rewrite every applicable
+     * part with canonical child ordering and return the new bytes.
+     * Falls back to the original payload if anything goes wrong so a
+     * normalisation bug can never replace a "broken but somewhat
+     * openable" file with nothing.
      */
     public static function normalise(string $docxBytes): string
     {
@@ -138,11 +185,14 @@ final class OoxmlNormaliser
         }
 
         try {
-            $xml = $zip->getFromName('word/document.xml');
-            if (is_string($xml) && $xml !== '') {
+            foreach (self::PARTS as $part) {
+                $xml = $zip->getFromName($part);
+                if (!is_string($xml) || $xml === '') {
+                    continue;
+                }
                 $fixed = self::reorderXml($xml);
                 if ($fixed !== null && $fixed !== $xml) {
-                    $zip->addFromString('word/document.xml', $fixed);
+                    $zip->addFromString($part, $fixed);
                 }
             }
             $zip->close();
@@ -154,9 +204,10 @@ final class OoxmlNormaliser
     }
 
     /**
-     * Reorder every <w:pPr> / <w:rPr> direct children list in `$xml`
-     * to canonical schema order. Returns null when the document fails
-     * to parse so the caller can fall back to the original bytes.
+     * Reorder every <w:pPr>, <w:rPr> and <w:style> direct-children
+     * list in `$xml` to canonical schema order. Returns null when the
+     * document fails to parse so the caller can fall back to the
+     * original bytes.
      */
     private static function reorderXml(string $xml): ?string
     {
@@ -172,8 +223,9 @@ final class OoxmlNormaliser
         }
 
         $ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-        self::reorderAll($doc, $ns, 'pPr', self::PPR_ORDER);
-        self::reorderAll($doc, $ns, 'rPr', self::RPR_ORDER);
+        self::reorderAll($doc, $ns, 'pPr',   self::PPR_ORDER);
+        self::reorderAll($doc, $ns, 'rPr',   self::RPR_ORDER);
+        self::reorderAll($doc, $ns, 'style', self::STYLE_ORDER);
 
         return $doc->saveXML();
     }
