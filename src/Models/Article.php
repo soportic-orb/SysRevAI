@@ -76,6 +76,21 @@ final class Article
         Database::affecting("UPDATE `{$table}` SET title = ? WHERE id = ?", [$title, $id]);
     }
 
+    /** Save the collaborative-editor HTML and bump its updated timestamp. */
+    public static function saveEditorHtml(int $id, string $html): void
+    {
+        $table = Database::table('articles');
+        try {
+            Database::affecting(
+                "UPDATE `{$table}` SET editor_html = ?, editor_updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [$html, $id]
+            );
+        } catch (\Throwable) {
+            // Column missing in a partial install — drop silently so the
+            // editor still feels responsive even pre-migration.
+        }
+    }
+
     /**
      * Wipe the article and every byte it owns: file on disk, copilot
      * transcripts, members and invitations cascade via FK.

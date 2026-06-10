@@ -1944,3 +1944,68 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 }
 .secondary-card__done a { color: var(--c-ok); font-weight: 600; }
 .secondary-card__done a:hover { text-decoration: underline; }
+
+/* Article collaborative editor — TinyMCE workspace with a Copilot
+   bubble on text selection and an inline Accept / Reject preview. */
+.article-editor-page { max-width: 100%; }
+.article-editor { position: relative; margin-top: 12px; }
+.article-editor__save-state { margin-left: 8px; font-size: 12px; }
+.article-editor__bubble {
+    position: absolute;
+    z-index: 30;
+    background: #000; color: #fff;
+    border: 0; border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12.5px; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+.article-editor__bubble:hover { background: #1f2937; }
+.article-editor__panel {
+    position: fixed; top: 100px; right: 28px;
+    width: 380px; max-height: calc(100vh - 140px);
+    overflow: auto;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.25);
+    z-index: 60;
+}
+.article-editor__panel-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--c-border);
+}
+.article-editor__panel-close {
+    background: transparent; border: 0; color: var(--c-muted);
+    font-size: 22px; line-height: 1; cursor: pointer;
+}
+.article-editor__panel-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.article-editor__panel-context { margin: 0; font-size: 12.5px; }
+.article-editor__panel-input { resize: vertical; min-height: 70px; }
+.article-editor__proposal {
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--c-accent, #4f46e5) 6%, transparent);
+}
+.article-editor__proposal-explanation {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.article-editor__proposal-preview {
+    background: var(--c-surface);
+    border: 1px dashed var(--c-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    max-height: 240px; overflow: auto;
+    font-size: 13.5px; line-height: 1.5;
+}
+.article-editor__proposal-preview table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+.article-editor__proposal-preview th,
+.article-editor__proposal-preview td { border: 1px solid var(--c-border); padding: 4px 8px; }
+@media (max-width: 720px) {
+    .article-editor__panel { right: 8px; left: 8px; width: auto; }
+}

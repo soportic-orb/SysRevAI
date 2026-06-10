@@ -924,6 +924,124 @@ final class ClaudeService
     }
 
     /**
+     * Selection-aware editor assistant. Given the full article HTML, an
+     * optional selected fragment and the user's instruction, Copilot
+     * returns a structured edit: a small block of HTML to insert or
+     * use as a replacement for the selection, plus a human-readable
+     * explanation. The editor renders the response as an Accept /
+     * Reject preview so the user always reviews the change before it
+     * lands in the document.
+     *
+     * When `$report` is supplied (the cached critical report for the
+     * article), it's embedded so the assistant can ground its
+     * suggestions in the report's recommendations.
+     *
+     * @param array<string,mixed>      $article  Article row (title, etc.).
+     * @param string                   $fullHtml Current full document HTML.
+     * @param string                   $selectionHtml The user's selection (empty for whole-doc requests).
+     * @param string                   $userPrompt    Free-text instruction from the user.
+     * @param array<string,mixed>|null $report   Optional cached critical report.
+     * @return array{ok:bool,data?:array{action:string,html:string,explanation:string,scope:string},error?:string}
+     */
+    public function articleEditorEdit(array $article, string $fullHtml, string $selectionHtml, string $userPrompt, ?array $report = null): array
+    {
+        if ($e = $this->guard('copilot')) {
+            return $e;
+        }
+        $title = (string) ($article['title'] ?? 'Untitled article');
+        $hasSelection = trim(strip_tags($selectionHtml)) !== '';
+
+        $system = "You are SysRevAI's Article Copilot in collaborative-editor mode. The user is "
+            . "writing or revising a manuscript inside a rich-text editor and needs you to "
+            . "PROPOSE an edit they can review.\n\n"
+            . "Rules:\n"
+            . " • Reply ONLY with JSON of the exact shape: "
+            . '{"action":"replace_selection|insert_after_selection|append_to_document",'
+            . '"html":"…","explanation":"…","scope":"selection|document"}.\n'
+            . " • `action`: when a selection exists, default to `replace_selection`. Use "
+            . "`insert_after_selection` only when the user explicitly asks to add a paragraph, "
+            . "table or note next to the selection. Use `append_to_document` when there's no "
+            . "selection.\n"
+            . " • `html`: the EXACT HTML that should be inserted, using only the tags TinyMCE "
+            . "renders cleanly — p, h1-h4, strong, em, u, ul, ol, li, blockquote, table, thead, "
+            . "tbody, tr, th, td, br. Do not wrap your response in <html> or <body>. Do not "
+            . "include scripts, styles or inline event handlers.\n"
+            . " • `explanation`: one paragraph in the user's language explaining what the change "
+            . "does and why. Keep it under 80 words.\n"
+            . " • `scope`: `selection` when you're rewriting just the selected fragment, "
+            . "`document` when you're adding new content.\n\n"
+            . "Ground every change in the full article text you're about to see. If a critical "
+            . "report is supplied, prefer suggestions that move the manuscript toward its "
+            . "recommendations. Never invent results, numbers or citations that aren't "
+            . "already in the document.";
+
+        if ($report !== null) {
+            $system .= "\n\nCRITICAL REPORT FOR THIS ARTICLE:\n"
+                . $this->truncate(self::summariseReportForPrompt($report), 8000);
+        }
+
+        $system .= "\n\nARTICLE TITLE: " . $title;
+        $system .= "\n\nFULL DOCUMENT HTML (truncated for length):\n"
+            . $this->truncate($fullHtml, 40000);
+
+        $userPayload = ($hasSelection
+                ? ("SELECTED FRAGMENT (HTML):\n" . $this->truncate($selectionHtml, 8000) . "\n\n")
+                : ("NO ACTIVE SELECTION. The whole document is in scope.\n\n"))
+            . "USER INSTRUCTION:\n" . trim($userPrompt);
+
+        $res = $this->request(
+            $this->modelLight,
+            $system,
+            [['role' => 'user', 'content' => $userPayload]],
+            1600,
+            'copilot',
+            null,
+            true,
+            180,
+            1
+        );
+        if (!$res['ok'] || !is_array($res['json'])) {
+            return ['ok' => false, 'error' => $res['error'] ?? 'invalid_json'];
+        }
+        $data = $res['json'];
+        return ['ok' => true, 'data' => [
+            'action'      => self::editorAction((string) ($data['action'] ?? ''), $hasSelection),
+            'html'        => self::sanitiseEditorHtml((string) ($data['html'] ?? '')),
+            'explanation' => trim((string) ($data['explanation'] ?? '')),
+            'scope'       => $hasSelection ? 'selection' : 'document',
+        ]];
+    }
+
+    private static function editorAction(string $action, bool $hasSelection): string
+    {
+        $valid = ['replace_selection', 'insert_after_selection', 'append_to_document'];
+        if (!in_array($action, $valid, true)) {
+            $action = $hasSelection ? 'replace_selection' : 'append_to_document';
+        }
+        if (!$hasSelection && $action !== 'append_to_document') {
+            $action = 'append_to_document';
+        }
+        return $action;
+    }
+
+    /**
+     * Strip dangerous tags / attributes from Copilot's proposed HTML
+     * before it ever reaches the browser. Whitelists only the inline /
+     * block tags the editor exposes; everything else passes through
+     * strip_tags. Inline event handlers and javascript: hrefs are
+     * defused even on whitelisted tags.
+     */
+    private static function sanitiseEditorHtml(string $html): string
+    {
+        $allowed = '<p><br><strong><b><em><i><u><s><h1><h2><h3><h4><ul><ol><li>'
+            . '<blockquote><table><thead><tbody><tr><th><td><sup><sub><code>';
+        $html = strip_tags($html, $allowed);
+        $html = (string) preg_replace('#\son\w+\s*=\s*("[^"]*"|\'[^\']*\')#is', '', $html);
+        $html = (string) preg_replace('#(href|src)\s*=\s*("|\')\s*javascript:#i', '$1=$2', $html);
+        return trim($html);
+    }
+
+    /**
      * System-prompt suffix that flips the Copilot from a warm helper to
      * a critical interlocutor — the "Devil's Advocate" pattern from
      * imbad0202/academic-research-skills (CC-BY-NC 4.0). Inserts as an

@@ -22,6 +22,7 @@ $btn = static function (string $key, string $href, string $label, string $extra 
 ?>
 <div class="btn-row article-actions">
     <?= $btn('workspace', '/tools/articles/' . $id, e(__('articles.workspace_btn'))) ?>
+    <?= $btn('editor', '/tools/articles/' . $id . '/edit', e(__('articles.editor.btn'))) ?>
     <?= $btn(
         'critical-report',
         '/tools/articles/' . $id . '/critical-report',
