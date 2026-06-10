@@ -647,7 +647,7 @@ final class ClaudeService
      * @param array<int,array{role:string,content:string}> $history
      * @return array{ok:bool,reply?:string,error?:string}
      */
-    public function assistantChat(array $history, string $userMessage, string $mode = 'default'): array
+    public function assistantChat(array $history, string $userMessage, string $mode = 'default', ?array $pageContext = null): array
     {
         if ($e = $this->guard('copilot')) {
             return $e;
@@ -668,6 +668,11 @@ final class ClaudeService
             . "user's question. Use plain prose with short paragraphs; bullet lists only when really "
             . "helpful. Never invent facts — if you don't know, say so and propose how to find out.";
 
+        // When the user is on a page that supplies a rich context (today
+        // the collaborative article editor), embed it so the floating
+        // Copilot can hold a grounded conversation about the work the
+        // user is actually doing.
+        $system .= $this->pageContextOverlay($pageContext);
         $system .= self::devilAdvocateOverlay($mode);
 
         $messages = [];
@@ -1049,6 +1054,68 @@ final class ClaudeService
      * empty string when the mode isn't devil_advocate so default
      * behaviour is unchanged.
      */
+
+    /**
+     * Format a context payload from a host page into a prompt overlay
+     * so the platform-wide Copilot can hold a grounded conversation
+     * about the work the user is doing right now.
+     *
+     * Today only the collaborative article editor uses this — the
+     * payload carries the article row, the live editor HTML, the
+     * user's current selection and the cached critical report (when
+     * one exists). The CopilotController has already verified that
+     * the user owns / collaborates on the article, so by the time we
+     * see the payload we can trust the fields it carries.
+     *
+     * Returns an empty string when there's no usable context — the
+     * platform-wide system prompt stays as-is for every other page.
+     *
+     * @param array<string,mixed>|null $ctx
+     */
+    private function pageContextOverlay(?array $ctx): string
+    {
+        if (!is_array($ctx) || ($ctx['page'] ?? '') !== 'article-collab-editor') {
+            return '';
+        }
+        $article = is_array($ctx['article'] ?? null) ? $ctx['article'] : [];
+        $title = (string) ($article['title'] ?? 'Untitled article');
+        $editorHtml = (string) ($ctx['editor_html'] ?? '');
+        $selHtml = (string) ($ctx['selection_html'] ?? '');
+        $selText = (string) ($ctx['selection_text'] ?? '');
+        $report = is_array($ctx['report'] ?? null) ? $ctx['report'] : null;
+
+        $overlay = "\n\n────────────────  PAGE CONTEXT  ────────────────\n"
+            . "The user is on the COLLABORATIVE EDITOR for the article titled “" . $title . "”. "
+            . "They have an in-page Copilot side panel that proposes Accept/Reject edits on text "
+            . "selections — that flow is owned by the editor itself. As the FLOATING Copilot, your "
+            . "job here is to hold a grounded conversation about the manuscript: answer questions "
+            . "about its content, methodology and structure, suggest improvements in plain prose, "
+            . "summarise sections, explain terms, and help the user think through revisions. "
+            . "Do NOT emit JSON or proposed-edit payloads — that's the in-page panel's job. When "
+            . "the user asks you to rewrite something, give them the rewritten text inline so they "
+            . "can paste it themselves or move to the side panel for a tracked change.\n";
+
+        if ($report !== null) {
+            $overlay .= "\nCRITICAL REPORT FOR THIS ARTICLE (cached):\n"
+                . $this->truncate(self::summariseReportForPrompt($report), 6000) . "\n";
+        }
+
+        if ($selText !== '' || $selHtml !== '') {
+            $overlay .= "\nUSER'S CURRENT SELECTION INSIDE THE EDITOR";
+            if ($selText !== '') {
+                $overlay .= " (plain text):\n" . $this->truncate($selText, 4000);
+            } elseif ($selHtml !== '') {
+                $overlay .= " (HTML):\n" . $this->truncate($selHtml, 4000);
+            }
+            $overlay .= "\n";
+        }
+
+        $overlay .= "\nLIVE EDITOR CONTENT (HTML, possibly truncated):\n"
+            . $this->truncate($editorHtml, 40000);
+
+        return $overlay;
+    }
+
     private static function devilAdvocateOverlay(string $mode): string
     {
         if ($mode !== 'devil_advocate') {
