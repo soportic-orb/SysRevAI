@@ -333,11 +333,22 @@ body.is-fullscreen .fullscreen-toggle__icon--exit  { display: block; }
     width: 540px; max-width: calc(100vw - 28px);
     height: 780px; max-height: calc(100vh - 120px);
 }
+/* User has dragged the panel — switch its anchor to the viewport so
+   left/top set from JS are absolute screen coords. The bottom-right
+   tether resumes the moment the panel is exited fullscreen via the
+   expand button (handled in JS). */
+.copilot--positioned .copilot__panel {
+    position: fixed;
+}
 .copilot__head {
     display: flex; align-items: flex-start; justify-content: space-between;
     gap: 8px; padding: 12px 14px;
     background: var(--c-active-bg); color: var(--c-active-fg);
+    cursor: grab;
+    user-select: none;
 }
+.copilot__head--dragging { cursor: grabbing; }
+.copilot.is-expanded .copilot__head { cursor: default; }
 .copilot__title { margin: 0; font-size: 14px; font-weight: 700; }
 .copilot__subtitle { margin: 2px 0 0; font-size: 11.5px; opacity: .75; }
 .copilot__head-actions { display: flex; gap: 2px; }
