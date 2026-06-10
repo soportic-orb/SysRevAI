@@ -9,6 +9,7 @@ use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Article;
+use SysRevAI\Models\ArticleCriticalReport;
 use SysRevAI\Models\ArticleUser;
 use SysRevAI\Models\CopilotMessage;
 use SysRevAI\Services\DocumentTextExtractor;
@@ -108,11 +109,35 @@ final class ArticlesController
     {
         $article = $this->loadOrDeny((int) $id);
         $uid = (int) Auth::id();
+        $aid = (int) $article['id'];
+
+        // Bootstrap hook: when the user clicks "Trabajar el análisis con
+        // Copilot" on the critical-report page, we land here with a
+        // ?from_report=1 query. If a report exists, seed a one-off
+        // assistant message inviting the user to walk through it. The
+        // follow-up turns will then carry the report inside Claude's
+        // system prompt (see ClaudeService::articleChat), so any "sí"
+        // from the user kicks off a phased plan grounded in the report.
+        if (!empty($_GET['from_report'])) {
+            $report = ArticleCriticalReport::find($aid);
+            if ($report !== null) {
+                CopilotMessage::add(
+                    null,
+                    $uid,
+                    'assistant',
+                    (string) __('articles.chat.bootstrap_question'),
+                    $aid
+                );
+                ActivityLog::record('articles.chat_bootstrapped', ['article_id' => $aid]);
+            }
+            redirect('/tools/articles/' . $aid);
+        }
+
         echo View::render('articles/show', [
             'article'  => $article,
             'isOwner'  => Article::isOwner($article, $uid),
-            'members'  => ArticleUser::forArticle((int) $id),
-            'history'  => CopilotMessage::history(null, $uid, 200, (int) $id),
+            'members'  => ArticleUser::forArticle($aid),
+            'history'  => CopilotMessage::history(null, $uid, 200, $aid),
         ]);
     }
 

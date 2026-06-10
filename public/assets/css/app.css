@@ -1018,9 +1018,28 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .peer-review__rerun { display: flex; gap: 8px; margin-top: 14px; }
 
 /* Article critical report reuses peer-review primitives for axes / blocks. */
-.article-critical__overall { padding: 18px 20px; border-left: 3px solid var(--c-accent); }
-.article-critical__overall-text { margin: 0; font-size: 15px; line-height: 1.5; font-weight: 600; }
-.article-critical__meta { margin: 8px 0 0; font-size: 12.5px; }
+.article-critical__overall {
+    padding: 18px 20px;
+    border-left: 3px solid var(--c-accent);
+    position: relative;
+}
+.article-critical__overall-text { margin: 0; font-size: 15px; line-height: 1.5; font-weight: 600; padding-right: 220px; }
+.article-critical__meta { margin: 8px 0 0; font-size: 12.5px; padding-right: 220px; }
+.article-critical__overall-cta {
+    position: absolute;
+    right: 16px;
+    bottom: 14px;
+}
+@media (max-width: 720px) {
+    .article-critical__overall-text,
+    .article-critical__meta { padding-right: 0; }
+    .article-critical__overall-cta {
+        position: static;
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+    }
+}
 .article-critical__scores { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .article-critical__empty { padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .article-critical__recs { padding: 18px 20px; }

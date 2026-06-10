@@ -8,6 +8,7 @@ use SysRevAI\Core\Auth;
 use SysRevAI\Helpers\Markdown;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Article;
+use SysRevAI\Models\ArticleCriticalReport;
 use SysRevAI\Models\CopilotMessage;
 use SysRevAI\Services\ClaudeService;
 
@@ -44,7 +45,13 @@ final class ArticleChatController
         $history = CopilotMessage::history(null, $uid, 200, $articleId);
         CopilotMessage::add(null, $uid, 'user', $message, $articleId);
 
-        $result = ClaudeService::fromSettings()->articleChat($article, $history, $message, $mode);
+        // If a critical report exists for this article, hand it to
+        // ClaudeService so Copilot can ground its suggestions in the
+        // structured rubric and recommendations the user already saw.
+        $reportRow = ArticleCriticalReport::find($articleId);
+        $report = $reportRow !== null ? ArticleCriticalReport::decode($reportRow) : null;
+
+        $result = ClaudeService::fromSettings()->articleChat($article, $history, $message, $mode, $report);
 
         if (!$result['ok']) {
             ActivityLog::record('articles.chat_failed', ['article_id' => $articleId, 'error' => $result['error'] ?? 'unknown']);

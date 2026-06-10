@@ -226,6 +226,11 @@ return [
             'priority_high'   => 'High',
             'priority_medium' => 'Medium',
             'priority_low'    => 'Low',
+            'work_with_copilot'      => 'Work on the analysis with Copilot',
+            'work_with_copilot_hint' => 'Open the workspace with Copilot primed with this report.',
+        ],
+        'chat' => [
+            'bootstrap_question' => "Would you like to work on the article based on the critical report? If you say yes, I'll propose improvements phase by phase, following the report's outline.",
         ],
         'export' => [
             'btn'              => 'Export',

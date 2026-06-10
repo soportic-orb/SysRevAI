@@ -60,6 +60,13 @@ $id = (int) $article['id'];
                     <?= e(__('articles.critical.generated_at', (string) $reportRow['updated_at'])) ?>
                 </p>
             <?php endif; ?>
+            <div class="article-critical__overall-cta">
+                <a class="btn btn--primary btn--sm"
+                   href="/tools/articles/<?= $id ?>?from_report=1"
+                   title="<?= e(__('articles.critical.work_with_copilot_hint')) ?>">
+                    &#10024; <?= e(__('articles.critical.work_with_copilot')) ?>
+                </a>
+            </div>
         </div>
 
         <div class="section-card article-critical__scores">
