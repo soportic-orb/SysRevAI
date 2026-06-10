@@ -36,7 +36,15 @@ $id = (int) $article['id'];
          data-article-id="<?= $id ?>"
          data-csrf="<?= e(csrf_token()) ?>"
          data-has-report="<?= $hasReport ? '1' : '0' ?>">
-        <textarea id="articleEditorTextarea" style="display:none"><?= e($initialHtml) ?></textarea>
+        <noscript>
+            <p class="muted"><?= e(__('articles.editor.noscript')) ?></p>
+        </noscript>
+
+        <div class="article-editor__fallback" id="editorFallback" hidden>
+            <p class="muted"><?= e(__('articles.editor.cdn_failed')) ?></p>
+        </div>
+
+        <textarea id="articleEditorTextarea" class="article-editor__textarea"><?= e($initialHtml) ?></textarea>
 
         <!-- Bubble button that appears on a non-empty selection. -->
         <button type="button" class="article-editor__bubble"
@@ -80,13 +88,34 @@ $id = (int) $article['id'];
     </div>
 </div>
 
-<!-- TinyMCE (open-source, MIT) via jsDelivr. -->
-<script src="https://cdn.jsdelivr.net/npm/tinymce@7.4.1/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- TinyMCE (open-source, MIT) via jsDelivr; unpkg as fallback if the
+     primary CDN is unreachable. The textarea stays visible until the
+     editor takes over so the user always has SOMETHING to read. -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7.4.1/tinymce.min.js" referrerpolicy="origin"
+        onerror="(function(s){var f=document.createElement('script');f.src='https://unpkg.com/tinymce@7.4.1/tinymce.min.js';f.referrerPolicy='origin';s.parentNode.appendChild(f);})(this)"></script>
 <script>
 (function () {
     'use strict';
     var root = document.getElementById('articleEditor');
-    if (!root || typeof tinymce === 'undefined') return;
+    if (!root) return;
+
+    // Wait for TinyMCE to load from the CDN (or its fallback). If it
+    // never arrives — offline, CDN blocked, etc. — unhide the small
+    // fallback notice and leave the raw textarea visible so the user
+    // can still read and copy their text.
+    var attempts = 0;
+    function waitForTinyMce(cb) {
+        if (typeof tinymce !== 'undefined') { cb(); return; }
+        if (attempts++ > 40) {
+            var fb = document.getElementById('editorFallback');
+            if (fb) fb.hidden = false;
+            return;
+        }
+        setTimeout(function () { waitForTinyMce(cb); }, 200);
+    }
+    waitForTinyMce(boot);
+
+    function boot() {
 
     var articleId = root.getAttribute('data-article-id');
     var csrf      = root.getAttribute('data-csrf');
@@ -122,16 +151,21 @@ $id = (int) $article['id'];
     var pendingProposal = null;    // last Copilot proposal awaiting user decision
 
     tinymce.init({
-        target: document.getElementById('articleEditorTextarea'),
+        selector: '#articleEditorTextarea',
         license_key: 'gpl',
         plugins: 'autolink lists link image table code charmap searchreplace visualblocks wordcount fullscreen',
         toolbar: 'undo redo | blocks | bold italic underline strikethrough | bullist numlist | link image table | alignleft aligncenter alignright | searchreplace | code fullscreen',
         menubar: 'edit insert format table',
         height: 720,
+        min_height: 480,
         branding: false,
         promotion: false,
         statusbar: true,
-        valid_elements: 'p,h1,h2,h3,h4,h5,h6,strong,b,em,i,u,s,br,a[href|target|rel],ul,ol,li,blockquote,table[border|cellpadding|cellspacing|class],thead,tbody,tr,th[colspan|rowspan|scope],td[colspan|rowspan],hr,img[src|alt|width|height|title],code,pre,sup,sub,span[style|class]',
+        // Keep TinyMCE's default whitelist — restricting it strips
+        // <div>/<span> and other elements PhpWord emits for DOCX
+        // imports, leaving the editor visually empty. We extend it
+        // instead so superscripts / subscripts also survive.
+        extended_valid_elements: 'sup,sub',
         relative_urls: false,
         convert_urls: false,
         paste_data_images: false,
@@ -350,5 +384,6 @@ $id = (int) $article['id'];
         s = String(s).replace(/\s+/g, ' ').trim();
         return s.length > n ? s.substring(0, n) + '…' : s;
     }
+    } // boot()
 })();
 </script>
