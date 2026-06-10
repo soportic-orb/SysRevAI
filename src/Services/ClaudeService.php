@@ -698,7 +698,7 @@ final class ClaudeService
      * @param array<string,mixed>                            $article  Article row from the DB.
      * @param array<int,array{role:string,content:string}>  $history  Prior turns (oldest first).
      */
-    public function articleChat(array $article, array $history, string $userMessage, string $mode = 'default'): array
+    public function articleChat(array $article, array $history, string $userMessage, string $mode = 'default', ?array $report = null): array
     {
         if ($e = $this->guard('copilot')) {
             return $e;
@@ -719,6 +719,19 @@ final class ClaudeService
             . "ARTICLE TEXT (verbatim, may have been truncated for length):\n"
             . $this->truncate($text, 60000);
 
+        // When a critical report exists for this article, feed a structured
+        // summary of it into the system prompt so Copilot can guide the
+        // user through the report's recommendations phase by phase when
+        // asked. We pass the report itself, not a description of it, so
+        // the model can reference exact axis notes and recommendations.
+        if ($report !== null) {
+            $system .= "\n\nCRITICAL REPORT (use this as the structured guide. When the user agrees "
+                . "to work on the article based on it, propose improvements in phases following the "
+                . "report's section-by-section recommendations, starting with high-priority items. "
+                . "Quote the report's exact wording when useful):\n"
+                . $this->truncate(self::summariseReportForPrompt($report), 12000);
+        }
+
         $system .= self::devilAdvocateOverlay($mode);
 
         $messages = [];
@@ -737,6 +750,82 @@ final class ClaudeService
         return $res['ok']
             ? ['ok' => true, 'reply' => (string) $res['text']]
             : ['ok' => false, 'error' => $res['error']];
+    }
+
+    /**
+     * Compact human-readable rendering of the cached critical report so
+     * it fits in the chat system prompt without dragging in the full
+     * structured JSON. Format mirrors the web view's layout so the model
+     * can reference it the way the user has seen it.
+     *
+     * @param array<string,mixed> $r
+     */
+    private static function summariseReportForPrompt(array $r): string
+    {
+        $lines = [];
+        if (!empty($r['overall'])) {
+            $lines[] = 'Overall verdict: ' . trim((string) $r['overall']);
+        }
+        $axes = ['methodology', 'clarity', 'novelty', 'evidence', 'limitations'];
+        $scores = [];
+        foreach ($axes as $axis) {
+            $scores[] = ucfirst($axis) . ' ' . (int) ($r[$axis] ?? 0) . '/100';
+        }
+        $lines[] = 'Scores: ' . implode(' · ', $scores);
+        foreach ($axes as $axis) {
+            $note = trim((string) ($r[$axis . '_note'] ?? ''));
+            if ($note !== '') {
+                $lines[] = ucfirst($axis) . ' — ' . $note;
+            }
+        }
+        foreach ([
+            'summary'                => 'Executive summary',
+            'methodology_critique'   => 'Methodology critique',
+            'literature_positioning' => 'Literature positioning',
+            'publication_outlook'    => 'Publication outlook',
+            'devils_advocate'        => "Devil's advocate",
+        ] as $key => $label) {
+            $val = trim((string) ($r[$key] ?? ''));
+            if ($val !== '') {
+                $lines[] = $label . ':' . "\n" . $val;
+            }
+        }
+        foreach ([
+            'key_strengths'         => 'Key strengths',
+            'key_weaknesses'        => 'Key weaknesses',
+            'statistical_concerns'  => 'Statistical concerns',
+            'ethical_concerns'      => 'Ethical concerns',
+            'reproducibility_notes' => 'Reproducibility notes',
+        ] as $key => $label) {
+            $items = (array) ($r[$key] ?? []);
+            if ($items === []) {
+                continue;
+            }
+            $lines[] = $label . ':';
+            foreach ($items as $it) {
+                $lines[] = '  • ' . trim((string) $it);
+            }
+        }
+        $recs = (array) ($r['recommendations'] ?? []);
+        if ($recs !== []) {
+            $lines[] = 'Section-by-section recommendations:';
+            foreach ($recs as $rec) {
+                $sec = trim((string) ($rec['section'] ?? ''));
+                if ($sec !== '') {
+                    $lines[] = '  [' . $sec . ']';
+                }
+                foreach ((array) ($rec['items'] ?? []) as $it) {
+                    if (is_array($it)) {
+                        $txt  = trim((string) ($it['text'] ?? ''));
+                        $prio = strtoupper((string) ($it['priority'] ?? 'medium'));
+                        $lines[] = '    - [' . $prio . '] ' . $txt;
+                    } else {
+                        $lines[] = '    - ' . trim((string) $it);
+                    }
+                }
+            }
+        }
+        return implode("\n", $lines);
     }
 
     /**

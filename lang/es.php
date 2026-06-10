@@ -226,6 +226,11 @@ return [
             'priority_high'   => 'Alta',
             'priority_medium' => 'Media',
             'priority_low'    => 'Baja',
+            'work_with_copilot'      => 'Trabajar el análisis con Copilot',
+            'work_with_copilot_hint' => 'Ir al espacio de trabajo con Copilot cargado con este informe.',
+        ],
+        'chat' => [
+            'bootstrap_question' => '¿Quieres que trabajemos en base al informe crítico? Si dices que sí, te propondré mejoras del artículo por fases, siguiendo el guion del informe.',
         ],
         'export' => [
             'btn'              => 'Exportar',

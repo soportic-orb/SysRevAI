@@ -227,6 +227,11 @@ return [
             'priority_high'   => 'Alta',
             'priority_medium' => 'Mitjana',
             'priority_low'    => 'Baixa',
+            'work_with_copilot'      => 'Treballar l\'anàlisi amb el Copilot',
+            'work_with_copilot_hint' => 'Anar a l\'espai de treball amb el Copilot carregat amb aquest informe.',
+        ],
+        'chat' => [
+            'bootstrap_question' => "Vols que treballem en base a l'informe crític? Si dius que sí, et proposaré millores de l'article per fases, seguint el guió de l'informe.",
         ],
         'export' => [
             'btn'              => 'Exportar',
