@@ -88,6 +88,36 @@ $id = (int) $article['id'];
     </div>
 </div>
 
+<script>
+/* Expose the live editor state to the floating global Copilot widget.
+   The widget calls SysRevAICopilotContext() on every send, so the
+   model sees the document and selection AS-OF the moment the question
+   was asked — autosave isn't enough. */
+window.SysRevAICopilotContext = function () {
+    var html = '';
+    var selHtml = '';
+    var selText = '';
+    try {
+        if (window.tinymce && tinymce.activeEditor) {
+            html = tinymce.activeEditor.getContent() || '';
+            selHtml = tinymce.activeEditor.selection.getContent({ format: 'html' }) || '';
+            selText = tinymce.activeEditor.selection.getContent({ format: 'text' }) || '';
+        } else {
+            var ta = document.getElementById('articleEditorTextarea');
+            if (ta) html = ta.value || '';
+        }
+    } catch (e) { /* TinyMCE not ready yet — fall back to whatever we have */ }
+    return {
+        page:           'article-collab-editor',
+        article_id:      <?= $id ?>,
+        article_title:  <?= json_encode((string) ($article['title'] ?? ''), JSON_UNESCAPED_UNICODE) ?>,
+        editor_html:     html.slice(0, 60000),
+        selection_html:  selHtml.slice(0, 8000),
+        selection_text:  selText.slice(0, 4000)
+    };
+};
+</script>
+
 <!-- TinyMCE (open-source, MIT) via jsDelivr; unpkg as fallback if the
      primary CDN is unreachable. The textarea stays visible until the
      editor takes over so the user always has SOMETHING to read. -->

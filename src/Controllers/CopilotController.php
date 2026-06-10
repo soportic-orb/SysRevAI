@@ -6,6 +6,8 @@ namespace SysRevAI\Controllers;
 
 use SysRevAI\Core\Auth;
 use SysRevAI\Models\ActivityLog;
+use SysRevAI\Models\Article;
+use SysRevAI\Models\ArticleCriticalReport;
 use SysRevAI\Models\CopilotMessage;
 use SysRevAI\Services\ClaudeService;
 
@@ -36,6 +38,13 @@ final class CopilotController
         }
         $mode = ($payload['mode'] ?? '') === 'devil_advocate' ? 'devil_advocate' : 'default';
 
+        // Page context lets the global Copilot answer questions about the
+        // work the user is doing right now. Today only the collaborative
+        // article editor opts in — see views/articles/edit.php for the
+        // emitter. We sanitise / access-check here so a malicious client
+        // can't sneak in an article they don't own.
+        $pageContext = $this->sanitisePageContext($payload['page_context'] ?? null, $uid);
+
         $history = CopilotMessage::history(null, $uid, 200);
 
         // Persist the user turn first so a transport failure still leaves
@@ -43,7 +52,7 @@ final class CopilotController
         // version's behaviour.
         CopilotMessage::add(null, $uid, 'user', $message);
 
-        $result = ClaudeService::fromSettings()->assistantChat($history, $message, $mode);
+        $result = ClaudeService::fromSettings()->assistantChat($history, $message, $mode, $pageContext);
 
         if (!$result['ok']) {
             ActivityLog::record('copilot.global_failed', ['error' => $result['error'] ?? 'unknown']);
@@ -71,5 +80,43 @@ final class CopilotController
         CopilotMessage::clear(null, (int) Auth::id());
         ActivityLog::record('copilot.global_cleared', []);
         echo json_encode(['ok' => true]);
+    }
+
+    /**
+     * Sanitise the page_context payload supplied by the front end.
+     * Only the article-collab-editor shape is understood today; an
+     * unknown `page` or a missing / inaccessible article id makes us
+     * fall back to the regular context-free flow so the user still
+     * gets an answer.
+     *
+     * @param  mixed $raw
+     * @return array<string,mixed>|null
+     */
+    private function sanitisePageContext(mixed $raw, int $userId): ?array
+    {
+        if (!is_array($raw)) {
+            return null;
+        }
+        $page = (string) ($raw['page'] ?? '');
+        if ($page !== 'article-collab-editor') {
+            return null;
+        }
+        $articleId = (int) ($raw['article_id'] ?? 0);
+        if ($articleId <= 0 || !Article::userCanAccess($articleId, $userId)) {
+            return null;
+        }
+        $article = Article::find($articleId);
+        if ($article === null) {
+            return null;
+        }
+        $reportRow = ArticleCriticalReport::find($articleId);
+        return [
+            'page'           => 'article-collab-editor',
+            'article'        => $article,
+            'editor_html'    => substr((string) ($raw['editor_html']    ?? ''), 0, 60000),
+            'selection_html' => substr((string) ($raw['selection_html'] ?? ''), 0, 8000),
+            'selection_text' => substr((string) ($raw['selection_text'] ?? ''), 0, 4000),
+            'report'         => $reportRow !== null ? ArticleCriticalReport::decode($reportRow) : null,
+        ];
     }
 }

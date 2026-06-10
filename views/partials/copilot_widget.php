@@ -238,8 +238,17 @@ $copilotGreeting = $copilotIsGlobal
         /* Page context (when the host page provides one) lets the Copilot
            answer questions about the article the reviewer is currently
            looking at. It is read live on every send so SPAs / hot view
-           changes are reflected. */
-        var pageContext = window.SysRevAICopilotContext || null;
+           changes are reflected. The host can supply either a plain
+           object (snapshot) or a function (live getter — used by the
+           collaborative article editor so the model sees the document
+           AS-OF the moment the message was sent). */
+        var pageContextRaw = window.SysRevAICopilotContext;
+        var pageContext = null;
+        try {
+            pageContext = (typeof pageContextRaw === 'function')
+                ? pageContextRaw()
+                : pageContextRaw;
+        } catch (e) { pageContext = null; }
 
         fetch(sendUrl, {
             method: 'POST',
