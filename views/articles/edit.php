@@ -248,18 +248,31 @@ window.SysRevAICopilotContext = function () {
             });
 
             // ── Selection bubble ───────────────────────────────────────
-            editor.on('SelectionChange MouseUp KeyUp', function () {
-                var sel = editor.selection.getContent({ format: 'text' });
-                if (sel && sel.trim() !== '') {
+            // NodeChange fires on every cursor move (typing, arrows,
+            // mouse) and is the most reliable signal for selection
+            // state in TinyMCE 7. Collapsing the selection — clicking
+            // somewhere else inside the document, hitting Esc, etc. —
+            // should make the floating "Comentar amb Copilot" bubble
+            // disappear immediately so it never sticks around without
+            // an underlying selection.
+            function refreshBubble() {
+                if (!panel.hidden) {
+                    // The side panel is owning the selection — no bubble.
+                    bubble.hidden = true;
+                    return;
+                }
+                var sel = editor.selection.getContent({ format: 'text' }) || '';
+                if (sel.trim() !== '' && !editor.selection.isCollapsed()) {
                     positionBubble(editor);
-                } else if (panel.hidden) {
+                } else {
                     bubble.hidden = true;
                 }
-            });
+            }
+            editor.on('NodeChange SelectionChange MouseUp KeyUp Click', refreshBubble);
             editor.on('blur', function () {
-                // Don't hide if the bubble itself is what got focus.
+                // Don't hide if focus moved to the bubble or side panel.
                 setTimeout(function () {
-                    if (!document.activeElement || (!root.contains(document.activeElement))) {
+                    if (!document.activeElement || !root.contains(document.activeElement)) {
                         bubble.hidden = true;
                     }
                 }, 80);

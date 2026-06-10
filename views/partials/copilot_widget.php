@@ -348,5 +348,102 @@ $copilotGreeting = $copilotIsGlobal
     }
 
     function scrollToBottom() { msgs.scrollTop = msgs.scrollHeight; }
+
+    /* ── Draggable panel ────────────────────────────────────────────
+       Grab the header and drag the chat anywhere on the screen — once
+       the user moves it we switch the panel from its default bottom-
+       right anchor (managed by CSS) to absolute top/left coordinates,
+       then persist them to localStorage so the choice survives reloads.
+       Dragging is disabled while the panel is fullscreen-expanded; the
+       button rows in the header keep working because we only start a
+       drag when the mousedown lands on the head element itself or a
+       text node, not on a button or icon. */
+    var head = document.querySelector('.copilot__head');
+    var posKey = 'sysrevai.copilot.position';
+    var drag = null;
+
+    function applyStoredPosition() {
+        if (root.classList.contains('is-expanded')) return;
+        try {
+            var raw = localStorage.getItem(posKey);
+            if (!raw) return;
+            var p = JSON.parse(raw);
+            if (typeof p.left === 'number' && typeof p.top === 'number') {
+                positionPanelAt(p.left, p.top);
+            }
+        } catch (e) {}
+    }
+
+    function positionPanelAt(left, top) {
+        var r = panel.getBoundingClientRect();
+        var w = r.width  || 360;
+        var h = r.height || 480;
+        var maxLeft = Math.max(0, window.innerWidth  - w - 8);
+        var maxTop  = Math.max(0, window.innerHeight - h - 8);
+        left = Math.min(Math.max(8, left), maxLeft);
+        top  = Math.min(Math.max(8, top),  maxTop);
+        panel.style.left   = left + 'px';
+        panel.style.top    = top + 'px';
+        panel.style.right  = 'auto';
+        panel.style.bottom = 'auto';
+        root.classList.add('copilot--positioned');
+    }
+
+    if (head) {
+        head.addEventListener('mousedown', function (e) {
+            if (root.classList.contains('is-expanded')) return;
+            // Ignore drags that start on a button / icon so the close /
+            // expand / clear / devil's-advocate controls still work.
+            if (e.target.closest('button, a, svg, input, textarea')) return;
+            var rect = panel.getBoundingClientRect();
+            drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+            head.classList.add('copilot__head--dragging');
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!drag) return;
+            positionPanelAt(e.clientX - drag.dx, e.clientY - drag.dy);
+        });
+        document.addEventListener('mouseup', function () {
+            if (!drag) return;
+            drag = null;
+            head.classList.remove('copilot__head--dragging');
+            try {
+                var r = panel.getBoundingClientRect();
+                localStorage.setItem(posKey, JSON.stringify({ left: r.left, top: r.top }));
+            } catch (e) {}
+        });
+    }
+
+    // Restore on every panel open + on every fullscreen toggle. The
+    // panel has no measurable size while it's still `hidden`, so we
+    // schedule the restore for the next tick. Piggy-backed off the
+    // same click that opens the panel — the original openPanel
+    // handler runs first because it was registered earlier.
+    toggle.addEventListener('click', function () {
+        setTimeout(applyStoredPosition, 0);
+    });
+    if (expand) {
+        // The original expand handler flipped the .is-expanded class
+        // before we run; so reading it here tells us the NEW state.
+        // Entering fullscreen wipes the user position so the expanded
+        // layout uses its own CSS; leaving fullscreen restores it.
+        expand.addEventListener('click', function () {
+            if (root.classList.contains('is-expanded')) {
+                panel.style.left = panel.style.top = panel.style.right = panel.style.bottom = '';
+                root.classList.remove('copilot--positioned');
+            } else {
+                setTimeout(applyStoredPosition, 0);
+            }
+        });
+    }
+
+    // Re-clamp on window resize so the panel never sits off-screen.
+    window.addEventListener('resize', function () {
+        if (!root.classList.contains('copilot--positioned')) return;
+        if (root.classList.contains('is-expanded')) return;
+        var r = panel.getBoundingClientRect();
+        positionPanelAt(r.left, r.top);
+    });
 })();
 </script>
