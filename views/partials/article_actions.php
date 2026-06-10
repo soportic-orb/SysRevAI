@@ -26,7 +26,7 @@ $btn = static function (string $key, string $href, string $label, string $extra 
     <?= $btn(
         'critical-report',
         '/tools/articles/' . $id . '/critical-report',
-        '&#10024; ' . e(__('articles.critical.cta'))
+        e(__('articles.critical.cta'))
     ) ?>
     <?= $btn('export', '/tools/articles/' . $id . '/export', e(__('articles.export.btn'))) ?>
     <?= $btn('team', '/tools/articles/' . $id . '/team', e(__('articles.team_btn'))) ?>
