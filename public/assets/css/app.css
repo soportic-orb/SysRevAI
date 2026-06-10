@@ -829,7 +829,25 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 /* Article workspace — split-pane: article text on the left, chat panel on
    the right. Collapses to a single column on narrow viewports. */
 .article-page { max-width: 100%; }
-.article-actions { flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+/* The article action bar must always render on a single line — the
+   tabs read as a coherent toolbar only when they sit side-by-side. On
+   narrow viewports we let the row scroll horizontally instead of
+   wrapping, and hide the scrollbar so it doesn't visually clutter the
+   header. flex-shrink:0 on the children keeps each button at its
+   intrinsic width even when the parent is short on space. */
+.article-actions {
+    flex-wrap: nowrap;
+    gap: 6px;
+    justify-content: flex-end;
+    overflow-x: auto;
+    scrollbar-width: none;
+    max-width: 100%;
+    /* min-width:0 lets the flex parent shrink this row so overflow-x:auto
+       can take over instead of forcing the page__head--row to overflow. */
+    min-width: 0;
+}
+.article-actions::-webkit-scrollbar { display: none; }
+.article-actions > * { flex-shrink: 0; }
 .article-workspace {
     display: grid; gap: 16px;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
