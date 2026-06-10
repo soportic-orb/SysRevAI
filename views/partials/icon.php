@@ -48,6 +48,23 @@ $path = match ($iconName ?? '') {
                  . '<circle cx="9" cy="7" r="4"></circle>'
                  . '<path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>'
                  . '<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
+    // Tabler "users-group" — three-person huddle. Used as the icon-only
+    // tab label on the article action bar.
+    'team_group' => '<path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>'
+                 . '<path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"></path>'
+                 . '<path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>'
+                 . '<path d="M17 10h2a2 2 0 0 1 2 2v1"></path>'
+                 . '<path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>'
+                 . '<path d="M3 13v-1a2 2 0 0 1 2 -2h2"></path>',
+    // Tabler "file-export" — page with an outward arrow. Used as the
+    // icon-only "Export" tab on the article action bar.
+    'file_export' => '<path d="M14 3v4a1 1 0 0 0 1 1h4"></path>'
+                 . '<path d="M11.5 21h-4.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v5m-5 6h7m-3 -3l3 3l-3 3"></path>',
+    // Tabler "download" — tray with a downward arrow. Used as the
+    // icon-only "Download original" button.
+    'download'  => '<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>'
+                 . '<path d="M7 11l5 5l5 -5"></path>'
+                 . '<path d="M12 4l0 12"></path>',
     'protocol'  => '<path d="M14.5 4.5 19 9l-9.5 9.5H5V14L14.5 4.5Z"></path>'
                  . '<path d="m12.5 6.5 5 5"></path>',
     'archive'   => '<rect x="3" y="4" width="18" height="4" rx="1"></rect>'
@@ -60,6 +77,12 @@ $path = match ($iconName ?? '') {
                  . '<path d="M14 11v6"></path>'
                  . '<path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>'
                  . '<path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>',
+    // Tabler "trash-x" — trash bin with an X mark inside, used as the
+    // icon-only "Delete article" button.
+    'trash_x'   => '<path d="M4 7h16"></path>'
+                 . '<path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>'
+                 . '<path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>'
+                 . '<path d="M10 12l4 4m0 -4l-4 4"></path>',
     // Document page with text lines — used to mark references that
     // already carry an abstract on the references table.
     'abstract'  => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>'

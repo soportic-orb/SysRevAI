@@ -763,6 +763,19 @@ body.is-fullscreen .fullscreen-toggle__icon--exit  { display: block; }
 .btn--sm { padding: 7px 12px; font-size: 13px; }
 .btn--xs { padding: 4px 10px; font-size: 12.5px; border-radius: 6px; }
 .btn--block { width: 100%; }
+/* Square icon-only buttons (used by the article action bar). The text
+   label survives as aria-label / title so screen readers and hover
+   tooltips still announce the action. */
+.btn--icon {
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn--icon.btn--sm { width: 30px; height: 30px; }
+.btn--icon .icon-action { width: 18px; height: 18px; }
 .btn--primary { background: var(--c-primary); color: var(--c-on-primary); }
 .btn--primary:hover { background: var(--c-primary-d); }
 .btn--ghost { background: var(--c-surface); border-color: var(--c-border); color: var(--c-text); }
