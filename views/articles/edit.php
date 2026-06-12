@@ -327,6 +327,66 @@ window.SysRevAICopilotContext = function () {
     });
     closeBtn.addEventListener('click', closePanel);
 
+    /* ── Drag the Copilot side panel by its header ─────────────────────
+       The panel's default tether is top:100px;right:28px (CSS). As soon
+       as the user grabs the header we switch to absolute viewport
+       coords; the position is persisted to localStorage so the choice
+       survives reloads. mousedown on the close button is ignored so
+       the X still closes the panel. */
+    var panelHead = panel.querySelector('.article-editor__panel-head');
+    var panelPosKey = 'sysrevai.article_editor.panel_position';
+    var panelDrag = null;
+
+    function clampPanelTo(left, top) {
+        var r = panel.getBoundingClientRect();
+        var w = r.width  || 380;
+        var h = r.height || 320;
+        left = Math.min(Math.max(8, left), Math.max(8, window.innerWidth  - w - 8));
+        top  = Math.min(Math.max(8, top),  Math.max(8, window.innerHeight - h - 8));
+        panel.style.left = left + 'px';
+        panel.style.top  = top  + 'px';
+        panel.classList.add('article-editor__panel--positioned');
+    }
+    function applyStoredPanelPosition() {
+        try {
+            var raw = localStorage.getItem(panelPosKey);
+            if (!raw) return;
+            var p = JSON.parse(raw);
+            if (typeof p.left === 'number' && typeof p.top === 'number') {
+                clampPanelTo(p.left, p.top);
+            }
+        } catch (e) {}
+    }
+
+    if (panelHead) {
+        panelHead.addEventListener('mousedown', function (e) {
+            // Ignore drags that start on a button so the close X still works.
+            if (e.target.closest('button, a, svg, input, textarea')) return;
+            var rect = panel.getBoundingClientRect();
+            panelDrag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+            panelHead.classList.add('article-editor__panel-head--dragging');
+            e.preventDefault();
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!panelDrag) return;
+            clampPanelTo(e.clientX - panelDrag.dx, e.clientY - panelDrag.dy);
+        });
+        document.addEventListener('mouseup', function () {
+            if (!panelDrag) return;
+            panelDrag = null;
+            panelHead.classList.remove('article-editor__panel-head--dragging');
+            try {
+                var r = panel.getBoundingClientRect();
+                localStorage.setItem(panelPosKey, JSON.stringify({ left: r.left, top: r.top }));
+            } catch (e) {}
+        });
+    }
+    window.addEventListener('resize', function () {
+        if (!panel.classList.contains('article-editor__panel--positioned')) return;
+        var r = panel.getBoundingClientRect();
+        clampPanelTo(r.left, r.top);
+    });
+
     function openPanel(withSelection) {
         var editor = tinymce.activeEditor;
         if (!editor) return;
@@ -339,6 +399,9 @@ window.SysRevAICopilotContext = function () {
         panel.hidden = false;
         bubble.hidden = true;
         panelInput.value = '';
+        // Restore the user's last drag position. We can't measure the
+        // panel while it's `hidden`, so defer to the next tick.
+        setTimeout(applyStoredPanelPosition, 0);
         panelInput.focus();
     }
     function closePanel() {

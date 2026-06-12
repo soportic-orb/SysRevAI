@@ -2105,7 +2105,13 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px 14px;
     border-bottom: 1px solid var(--c-border);
+    cursor: grab;
+    user-select: none;
 }
+.article-editor__panel-head--dragging { cursor: grabbing; }
+/* User has dragged the panel — switch from the default top:100px;
+   right:28px tether to absolute viewport coords set inline by JS. */
+.article-editor__panel--positioned { right: auto; bottom: auto; }
 .article-editor__panel-close {
     background: transparent; border: 0; color: var(--c-muted);
     font-size: 22px; line-height: 1; cursor: pointer;
