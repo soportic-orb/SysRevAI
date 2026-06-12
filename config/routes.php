@@ -109,6 +109,10 @@ $router->post('/tools/articles/{id}/edit/save', [ArticleEditorController::class,
 $router->post('/tools/articles/{id}/edit/image', [ArticleEditorController::class, 'uploadImage'], ['auth']);
 $router->get('/tools/articles/{id}/edit/image/{name}', [ArticleEditorController::class, 'serveImage'], ['auth']);
 $router->post('/tools/articles/{id}/edit/copilot', [ArticleEditorController::class, 'copilot'], ['auth']);
+$router->get('/tools/articles/{id}/edit/versions', [ArticleEditorController::class, 'listVersions'], ['auth']);
+$router->post('/tools/articles/{id}/edit/versions', [ArticleEditorController::class, 'createVersion'], ['auth']);
+$router->get('/tools/articles/{id}/edit/versions/{vid}', [ArticleEditorController::class, 'showVersion'], ['auth']);
+$router->get('/tools/articles/{id}/edit/word', [ArticleEditorController::class, 'exportWord'], ['auth']);
 $router->get('/tools/articles/{id}/export', [ArticleExportController::class, 'index'], ['auth']);
 $router->get('/tools/articles/{id}/export/{format}', [ArticleExportController::class, 'download'], ['auth']);
 $router->get('/tools/articles/{id}/team', [ArticleMembersController::class, 'index'], ['auth']);

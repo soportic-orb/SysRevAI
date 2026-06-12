@@ -14,8 +14,8 @@ $id = (int) $article['id'];
 // from the generic chat used by the floating button.
 ?>
 <div class="page article-editor-page">
-    <div class="page__head page__head--row">
-        <div>
+    <div class="page__head article-head">
+        <div class="article-head__title">
             <h1 class="page__title">
                 <?= e((string) ($article['title'] ?: '—')) ?>
                 <span class="muted">— <?= e(__('articles.editor.title')) ?></span>
@@ -42,6 +42,34 @@ $id = (int) $article['id'];
 
         <div class="article-editor__fallback" id="editorFallback" hidden>
             <p class="muted"><?= e(__('articles.editor.cdn_failed')) ?></p>
+        </div>
+
+        <!-- Toolbar — Save snapshot (with versions dropdown) + Word export. -->
+        <div class="article-editor__toolbar">
+            <div class="article-editor__toolbar-group article-editor__versions" id="editorVersions">
+                <button type="button" class="btn btn--primary btn--sm" id="editorSaveVersion">
+                    <?= e(__('articles.editor.save_version')) ?>
+                </button>
+                <button type="button" class="btn btn--ghost btn--sm article-editor__versions-toggle"
+                        id="editorVersionsToggle"
+                        aria-haspopup="listbox" aria-expanded="false"
+                        title="<?= e(__('articles.editor.versions_toggle_title')) ?>">
+                    <span class="article-editor__versions-toggle-label"><?= e(__('articles.editor.versions_btn')) ?></span>
+                    <span aria-hidden="true">▾</span>
+                </button>
+                <div class="article-editor__versions-menu" id="editorVersionsMenu" hidden role="listbox">
+                    <p class="article-editor__versions-empty muted" id="editorVersionsEmpty">
+                        <?= e(__('articles.editor.versions_empty')) ?>
+                    </p>
+                    <ul class="article-editor__versions-list" id="editorVersionsList"></ul>
+                </div>
+            </div>
+            <div class="article-editor__toolbar-group article-editor__toolbar-group--end">
+                <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/edit/word"
+                   title="<?= e(__('articles.editor.export_word_title')) ?>">
+                    <?= e(__('articles.editor.export_word')) ?>
+                </a>
+            </div>
         </div>
 
         <textarea id="articleEditorTextarea" class="article-editor__textarea"><?= e($initialHtml) ?></textarea>
@@ -408,6 +436,142 @@ window.SysRevAICopilotContext = function () {
         hideProposal();
         panelInput.focus();
     });
+
+    /* ── Versions: save snapshot + dropdown to restore ───────────────── */
+    var versionsUrl = '/tools/articles/' + articleId + '/edit/versions';
+    var saveVerBtn  = document.getElementById('editorSaveVersion');
+    var verToggle   = document.getElementById('editorVersionsToggle');
+    var verMenu     = document.getElementById('editorVersionsMenu');
+    var verList     = document.getElementById('editorVersionsList');
+    var verEmpty    = document.getElementById('editorVersionsEmpty');
+    var versionsLoaded = false;
+
+    saveVerBtn.addEventListener('click', function () {
+        var editor = tinymce.activeEditor;
+        if (!editor) return;
+        var label = window.prompt(
+            <?= json_encode(__('articles.editor.versions_label_prompt')) ?>,
+            ''
+        );
+        if (label === null) return; // user cancelled
+        saveVerBtn.disabled = true;
+        fetch(versionsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ _csrf: csrf, html: editor.getContent(), label: label })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (body) {
+            if (body && body.ok && body.version) {
+                versionsLoaded = false; // force reload next time
+                if (window.SysRevAI && typeof window.SysRevAI.toast === 'function') {
+                    window.SysRevAI.toast(
+                        <?= json_encode(__('articles.editor.versions_saved_toast')) ?>,
+                        'success'
+                    );
+                }
+                saveState.textContent = labels.saved;
+            } else {
+                window.alert(labels.error);
+            }
+        })
+        .catch(function () { window.alert(labels.error); })
+        .finally(function () { saveVerBtn.disabled = false; });
+    });
+
+    verToggle.addEventListener('click', function () {
+        var willOpen = verMenu.hidden;
+        verMenu.hidden = !willOpen;
+        verToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        if (willOpen) loadVersionsInto(verList);
+    });
+
+    // Close the dropdown on click outside.
+    document.addEventListener('click', function (e) {
+        if (verMenu.hidden) return;
+        var versionsRoot = document.getElementById('editorVersions');
+        if (versionsRoot && !versionsRoot.contains(e.target)) {
+            verMenu.hidden = true;
+            verToggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    function loadVersionsInto(listEl) {
+        if (versionsLoaded) return; // populated already
+        listEl.innerHTML = '';
+        verEmpty.hidden = false;
+        verEmpty.textContent = <?= json_encode(__('articles.editor.versions_loading')) ?>;
+        fetch(versionsUrl, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (body) {
+                if (!body || !body.ok || !Array.isArray(body.versions)) {
+                    verEmpty.textContent = labels.error;
+                    return;
+                }
+                versionsLoaded = true;
+                if (body.versions.length === 0) {
+                    verEmpty.textContent = <?= json_encode(__('articles.editor.versions_empty')) ?>;
+                    return;
+                }
+                verEmpty.hidden = true;
+                body.versions.forEach(function (v) {
+                    var li = document.createElement('li');
+                    li.className = 'article-editor__versions-item';
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'article-editor__versions-restore';
+                    var title = document.createElement('span');
+                    title.className = 'article-editor__versions-label';
+                    title.textContent = v.label && v.label.length
+                        ? v.label
+                        : <?= json_encode(__('articles.editor.versions_unnamed')) ?>;
+                    var meta = document.createElement('span');
+                    meta.className = 'article-editor__versions-meta muted';
+                    meta.textContent = formatVersionMeta(v);
+                    btn.appendChild(title);
+                    btn.appendChild(meta);
+                    btn.addEventListener('click', function () { restoreVersion(v.id); });
+                    li.appendChild(btn);
+                    listEl.appendChild(li);
+                });
+            })
+            .catch(function () { verEmpty.textContent = labels.error; });
+    }
+
+    function restoreVersion(vid) {
+        if (!window.confirm(<?= json_encode(__('articles.editor.versions_restore_confirm')) ?>)) return;
+        fetch(versionsUrl + '/' + vid, { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (body) {
+                if (!body || !body.ok || typeof body.html !== 'string') {
+                    window.alert(labels.error);
+                    return;
+                }
+                var editor = tinymce.activeEditor;
+                if (!editor) return;
+                editor.setContent(body.html);
+                editor.undoManager.add();
+                verMenu.hidden = true;
+                verToggle.setAttribute('aria-expanded', 'false');
+                autosave(editor);
+            })
+            .catch(function () { window.alert(labels.error); });
+    }
+
+    function formatVersionMeta(v) {
+        var parts = [];
+        if (v.created_at) {
+            try {
+                var d = new Date(v.created_at);
+                if (!isNaN(d.getTime())) {
+                    parts.push(d.toLocaleString(document.documentElement.lang || undefined,
+                        { dateStyle: 'short', timeStyle: 'short' }));
+                }
+            } catch (e) {}
+        }
+        if (v.saved_by_name) parts.push(v.saved_by_name);
+        return parts.join(' · ');
+    }
 
     function autosave(editor) {
         saveState.textContent = labels.saving;

@@ -9,6 +9,7 @@ use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Article;
 use SysRevAI\Models\ArticleCriticalReport;
+use SysRevAI\Models\ArticleEditorVersion;
 use SysRevAI\Services\ArticleHtmlImporter;
 use SysRevAI\Services\ClaudeService;
 use SysRevAI\Services\FileStorage;
@@ -182,6 +183,127 @@ final class ArticleEditorController
             'scope'      => $result['data']['scope'],
         ]);
         echo json_encode(['ok' => true, 'data' => $result['data']]);
+    }
+
+    /**
+     * POST /tools/articles/{id}/edit/versions — append a named snapshot.
+     * Body: { html, label? }. Also updates editor_html so the autosave
+     * baseline reflects the snapshot the user just took.
+     */
+    public function createVersion(string $id): void
+    {
+        header('Content-Type: application/json');
+        $article = $this->loadOrDeny((int) $id);
+        $payload = $this->jsonBody();
+        $html  = (string) ($payload['html']  ?? '');
+        $label = trim((string) ($payload['label'] ?? ''));
+        if (strlen($html) > 4 * 1024 * 1024) {
+            echo json_encode(['ok' => false, 'error' => 'too_large']);
+            return;
+        }
+        $aid = (int) $article['id'];
+        Article::saveEditorHtml($aid, $html);
+        $vid = ArticleEditorVersion::create(
+            $aid,
+            $html,
+            $label !== '' ? $label : null,
+            (int) Auth::id() ?: null,
+        );
+        ActivityLog::record('articles.editor_version_saved', ['article_id' => $aid, 'version_id' => $vid]);
+        echo json_encode([
+            'ok'       => true,
+            'version'  => [
+                'id'            => $vid,
+                'label'         => $label !== '' ? $label : null,
+                'created_at'    => gmdate('c'),
+                'saved_by_name' => (string) (Auth::user()['name'] ?? ''),
+            ],
+        ]);
+    }
+
+    /** GET /tools/articles/{id}/edit/versions — list snapshots (no html). */
+    public function listVersions(string $id): void
+    {
+        header('Content-Type: application/json');
+        $article = $this->loadOrDeny((int) $id);
+        $rows = ArticleEditorVersion::listForArticle((int) $article['id'], 50);
+        echo json_encode(['ok' => true, 'versions' => $rows]);
+    }
+
+    /** GET /tools/articles/{id}/edit/versions/{vid} — fetch the html. */
+    public function showVersion(string $id, string $vid): void
+    {
+        header('Content-Type: application/json');
+        $article = $this->loadOrDeny((int) $id);
+        $row = ArticleEditorVersion::find((int) $vid);
+        if ($row === null || (int) $row['article_id'] !== (int) $article['id']) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'error' => 'not_found']);
+            return;
+        }
+        echo json_encode([
+            'ok'   => true,
+            'html' => (string) $row['html'],
+            'id'   => (int) $row['id'],
+        ]);
+    }
+
+    /**
+     * GET /tools/articles/{id}/edit/word — stream the editor HTML as a
+     * Word 2007 (.docx) download. Uses PhpWord's Html::addHtml helper
+     * so headings, lists, tables and inline formatting carry over.
+     */
+    public function exportWord(string $id): void
+    {
+        $article = $this->loadOrDeny((int) $id);
+        $aid = (int) $article['id'];
+        $html = (string) ($article['editor_html'] ?? '');
+        if ($html === '') {
+            $html = ArticleHtmlImporter::fromArticle($article);
+        }
+
+        @set_time_limit(120);
+        if (!class_exists(\PhpOffice\PhpWord\PhpWord::class)) {
+            http_response_code(500);
+            echo 'PhpWord is not installed.';
+            return;
+        }
+
+        $doc = new \PhpOffice\PhpWord\PhpWord();
+        $section = $doc->addSection();
+        try {
+            // Wrap the fragment in a <body> so PhpWord's Html reader has
+            // something to anchor on; the second arg false means "no
+            // fullHTML wrapper", third arg false means "don't preserve
+            // styles" (we want clean Word defaults).
+            \PhpOffice\PhpWord\Shared\Html::addHtml($section, '<div>' . $html . '</div>', false, false);
+        } catch (\Throwable $e) {
+            // PhpWord's HTML reader chokes on a handful of edge cases
+            // (deeply nested tables, unbalanced markup). Fall back to a
+            // safe plain-text dump so the user always gets *something*.
+            $section->addText(trim(strip_tags($html)));
+        }
+
+        $filename = $this->wordFilename($article);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store');
+
+        $writer = \PhpOffice\PhpWord\IOFactory::createWriter($doc, 'Word2007');
+        $writer->save('php://output');
+
+        ActivityLog::record('articles.editor_exported_word', ['article_id' => $aid]);
+    }
+
+    private function wordFilename(array $article): string
+    {
+        $base = (string) ($article['title'] ?? 'article');
+        $base = preg_replace('/[^\p{L}\p{N}\-_ ]+/u', '', $base) ?? 'article';
+        $base = trim($base);
+        if ($base === '') {
+            $base = 'article-' . (int) $article['id'];
+        }
+        return mb_substr($base, 0, 80) . '.docx';
     }
 
     /** @return array<string,mixed> */

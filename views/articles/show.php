@@ -15,8 +15,8 @@ $id = (int) $article['id'];
 $text = (string) ($article['extracted_text'] ?? '');
 ?>
 <div class="page article-page article-page--workspace">
-    <div class="page__head page__head--row">
-        <div>
+    <div class="page__head article-head">
+        <div class="article-head__title">
             <h1 class="page__title"><?= e((string) ($article['title'] ?: '—')) ?></h1>
             <p class="page__subtitle muted">
                 <?php if (!empty($article['source_filename'])): ?>
