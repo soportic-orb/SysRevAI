@@ -853,12 +853,24 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
     overflow-x: auto;
     scrollbar-width: none;
     max-width: 100%;
-    /* min-width:0 lets the flex parent shrink this row so overflow-x:auto
-       can take over instead of forcing the page__head--row to overflow. */
     min-width: 0;
 }
 .article-actions::-webkit-scrollbar { display: none; }
 .article-actions > * { flex-shrink: 0; }
+
+/* Article page head — vertical stack so the title block always wraps
+   freely above and the action bar gets the entire width below. This
+   guarantees the bar can never collide with a long title or break to
+   two rows; it falls back to overflow-x:auto (above) when the viewport
+   is too narrow for every button. */
+.article-head {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+}
+.article-head__title { min-width: 0; }
+.article-head .article-actions { justify-content: flex-start; }
 .article-workspace {
     display: grid; gap: 16px;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1992,6 +2004,60 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .article-editor-page { max-width: 100%; }
 .article-editor { position: relative; margin-top: 12px; }
 .article-editor__save-state { margin-left: 8px; font-size: 12px; }
+/* Editor toolbar — Save-version button with its versions dropdown on the
+   left, Export-to-Word on the right. Sits above the TinyMCE iframe. */
+.article-editor__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 10px;
+    flex-wrap: wrap;
+}
+.article-editor__toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+}
+.article-editor__toolbar-group--end { margin-left: auto; }
+.article-editor__versions-toggle { display: inline-flex; align-items: center; gap: 4px; }
+.article-editor__versions-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 40;
+    min-width: 300px;
+    max-width: 460px;
+    max-height: 360px;
+    overflow-y: auto;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.18);
+    padding: 6px;
+}
+.article-editor__versions-empty { margin: 8px 10px; font-size: 13px; }
+.article-editor__versions-list { list-style: none; margin: 0; padding: 0; }
+.article-editor__versions-item { padding: 0; }
+.article-editor__versions-restore {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+    color: var(--c-text);
+    font: inherit;
+}
+.article-editor__versions-restore:hover { background: var(--c-hover, rgba(0,0,0,.04)); }
+.article-editor__versions-label { font-weight: 600; font-size: 13.5px; }
+.article-editor__versions-meta  { font-size: 12px; }
+
 /* Visible textarea while TinyMCE boots — the editor hides it on init,
    so the user always sees their document, even if the CDN is slow or
    blocked. */

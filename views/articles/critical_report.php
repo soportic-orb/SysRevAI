@@ -13,8 +13,8 @@ use SysRevAI\Core\Session;
 $id = (int) $article['id'];
 ?>
 <div class="page article-critical">
-    <div class="page__head page__head--row">
-        <div>
+    <div class="page__head article-head">
+        <div class="article-head__title">
             <h1 class="page__title">
                 <?= e((string) ($article['title'] ?: '—')) ?>
                 <span class="muted">— <?= e(__('articles.critical.title')) ?></span>

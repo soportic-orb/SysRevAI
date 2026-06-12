@@ -11,8 +11,8 @@ use SysRevAI\Services\ArticleExportService;
 $id = (int) $article['id'];
 ?>
 <div class="page article-export">
-    <div class="page__head page__head--row">
-        <div>
+    <div class="page__head article-head">
+        <div class="article-head__title">
             <h1 class="page__title">
                 <?= e((string) ($article['title'] ?: '—')) ?>
                 <span class="muted">— <?= e(__('articles.export.title')) ?></span>
