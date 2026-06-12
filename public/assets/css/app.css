@@ -858,19 +858,31 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .article-actions::-webkit-scrollbar { display: none; }
 .article-actions > * { flex-shrink: 0; }
 
-/* Article page head — vertical stack so the title block always wraps
-   freely above and the action bar gets the entire width below. This
-   guarantees the bar can never collide with a long title or break to
-   two rows; it falls back to overflow-x:auto (above) when the viewport
-   is too narrow for every button. */
+/* Article page head — title block on the LEFT, action bar on the
+   TOP RIGHT, both on the same row aligned to the top so the buttons
+   sit at the same vertical level as the H1. The action bar keeps its
+   intrinsic width (flex-shrink:0) and never wraps; on narrow
+   viewports it scrolls horizontally instead, courtesy of the
+   .article-actions overflow rule above. The title block takes the
+   remaining width (flex:1) with min-width:0 so a long title can wrap
+   inside it without pushing the bar off-screen. */
 .article-head {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: nowrap;
 }
-.article-head__title { min-width: 0; }
-.article-head .article-actions { justify-content: flex-start; }
+.article-head__title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.article-head .article-actions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
 .article-workspace {
     display: grid; gap: 16px;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
