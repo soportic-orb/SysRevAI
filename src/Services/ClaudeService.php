@@ -944,6 +944,88 @@ final class ClaudeService
         return ['ok' => true, 'data' => $out];
     }
 
+    /**
+     * Extract verbatim search-strategy syntaxes from a review's
+     * protocol context for each supported bibliographic database.
+     *
+     * The protocol context is built by the caller (controller) from the
+     * review's question, PICO/PCC, inclusion/exclusion criteria and any
+     * notes — whatever literal protocol text we have at hand. The model
+     * is told NOT to invent a syntax when the protocol doesn't contain
+     * one for that database; empty strings are the correct answer in
+     * that case, and the caller drops them.
+     *
+     * @param array<string,mixed>             $review     Reviews row.
+     * @param string                          $protocolText Concatenated protocol context.
+     * @param array<int,array<string,string>> $databases  Catalogue entries (key + label + syntax_hint).
+     * @return array{ok:bool,data?:array<string,string>,error?:string}
+     */
+    public function extractSearchSyntaxes(array $review, string $protocolText, array $databases): array
+    {
+        if ($e = $this->guard('copilot')) {
+            return $e;
+        }
+
+        $catalogue = [];
+        foreach ($databases as $db) {
+            $catalogue[] = '  • ' . $db['key'] . ' — ' . $db['label']
+                . ' (' . ($db['syntax_hint'] ?? '') . ')';
+        }
+
+        $system = "You are SysRevAI's search-strategy extractor. The user has a research-review "
+            . "protocol and wants you to PULL OUT the literal database search syntaxes embedded "
+            . "in it — one per supported bibliographic database.\n\n"
+            . "DATABASES (key — label):\n" . implode("\n", $catalogue) . "\n\n"
+            . "RULES:\n"
+            . " • Reply ONLY with a JSON object whose keys are the database `key`s above. No "
+            . "prose, no markdown, no comments outside the JSON.\n"
+            . " • The value for each key must be a string: the EXACT verbatim search-strategy "
+            . "syntax found in the protocol for that database. Preserve operators, field tags, "
+            . "parentheses and line breaks (use \\n inside the JSON string).\n"
+            . " • If the protocol does NOT contain a search syntax for a given database, return "
+            . "\"\" for that key. NEVER invent or interpolate a syntax. If unsure, return \"\".\n"
+            . " • Use the database hint above only to RECOGNISE the syntax, not to author one.\n"
+            . " • Drop boilerplate like \"Search ran on …\" or \"Strategy adapted from …\" — keep "
+            . "only the actual query.";
+
+        $title = (string) ($review['title'] ?? 'Untitled review');
+        $kind  = (string) ($review['kind']  ?? 'systematic');
+
+        $body = "REVIEW TITLE: " . $title . "\n"
+            . "REVIEW TYPE: " . $kind . "\n\n"
+            . "PROTOCOL TEXT (verbatim):\n" . $this->truncate($protocolText, 60000);
+
+        $res = $this->request(
+            $this->modelLight,
+            $system,
+            [['role' => 'user', 'content' => $body]],
+            6000,
+            'copilot',
+            null,
+            true,
+            240,
+            1
+        );
+        if (!$res['ok'] || !is_array($res['json'])) {
+            return ['ok' => false, 'error' => $res['error'] ?? 'invalid_json'];
+        }
+
+        $allowed = [];
+        foreach ($databases as $db) {
+            $allowed[(string) $db['key']] = true;
+        }
+        $out = [];
+        foreach ($res['json'] as $k => $v) {
+            if (!is_string($k) || !isset($allowed[$k])) {
+                continue;
+            }
+            if (is_string($v)) {
+                $out[$k] = trim($v);
+            }
+        }
+        return ['ok' => true, 'data' => $out];
+    }
+
     public function articleCriticalReport(array $article, string $targetLanguage = 'en'): array
     {
         if ($e = $this->guard('peer_review')) {

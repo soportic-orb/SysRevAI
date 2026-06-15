@@ -56,6 +56,7 @@ $links = [
     // reviews map rather than synthesise), so the tab is hidden when
     // the review's kind is 'scoping'.
     ['key' => 'rob',        'url' => "/reviews/{$id}/risk-of-bias", 'label' => __('rob.title'),             'style' => 'primary', 'kindOnly' => 'systematic'],
+    ['key' => 'syntaxes',   'url' => "/reviews/{$id}/search-syntaxes", 'label' => __('search_syntaxes.subnav_label'), 'style' => 'ghost', 'icon' => 'search'],
     ['key' => 'exports',    'url' => "/reviews/{$id}/exports",      'label' => __('exports.title'),         'style' => 'ghost', 'icon' => 'export'],
     ['key' => 'references', 'url' => "/reviews/{$id}/references",   'label' => __('references.title'),      'style' => 'ghost', 'icon' => 'references'],
     ['key' => 'team',       'url' => "/reviews/{$id}/team",         'label' => __('team.title'),            'style' => 'ghost', 'icon' => 'team',     'owner' => true],

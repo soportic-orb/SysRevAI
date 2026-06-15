@@ -36,6 +36,7 @@ if (preg_match('#^/reviews/(\d+)(/([^/?]*))?#', $_path, $_m)) {
             'import'         => 'import',
             'team'           => 'team',
             'protocol'       => 'protocol',
+            'search-syntaxes'=> 'syntaxes',
             default          => '',
         };
     }
