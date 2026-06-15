@@ -161,6 +161,30 @@ $extractUrl = $isEdit
             <p class="ai-upload__status muted" id="extractStatus" hidden></p>
             <p class="field-help"><?= e(__('reviews.ai_upload_help')) ?></p>
 
+            <?php
+            // Persisted protocol document — present whenever the user has
+            // already uploaded a PDF / DOCX (initially or at any later
+            // moment). The button is hidden for reviews that have never
+            // had a protocol uploaded so the section stays clean.
+            if ($isEdit && !empty($review['protocol_path'])):
+                $protocolName = (string) ($review['protocol_filename'] ?? __('reviews.protocol_download_default'));
+                $uploadedAt   = (string) ($review['protocol_uploaded_at'] ?? '');
+            ?>
+                <div class="ai-upload__download" id="protocolDownload">
+                    <a class="btn btn--ghost btn--sm"
+                       href="/reviews/<?= (int) $review['id'] ?>/protocol/download"
+                       title="<?= e(__('reviews.protocol_download_title')) ?>">
+                        &#11015; <?= e(__('reviews.protocol_download')) ?>
+                    </a>
+                    <span class="muted ai-upload__download-meta">
+                        <?= e($protocolName) ?>
+                        <?php if ($uploadedAt !== ''): ?>
+                            · <?= e(sprintf(__('reviews.protocol_uploaded_at'), $uploadedAt)) ?>
+                        <?php endif; ?>
+                    </span>
+                </div>
+            <?php endif; ?>
+
             <!-- Detected sub-studies. Hidden until the AI returns a
                  non-empty `secondaries` list. Each card is rendered by JS
                  from #secondaryTemplate and submits straight to /reviews
