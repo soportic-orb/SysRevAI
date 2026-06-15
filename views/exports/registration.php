@@ -172,6 +172,17 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
         aiBtn.disabled = true;
         aiBtn.textContent = aiBtn.getAttribute('data-busy-label') || originalLabel;
         statusEl.textContent = labels.saving;
+
+        /* Show the platform-wide "Espera, treballant…" overlay while
+           Claude works through the field map. ~45 s is a realistic
+           wall-clock estimate for ~30 fields. */
+        if (window.SysRevAI && typeof window.SysRevAI.showAiOverlay === 'function') {
+            window.SysRevAI.showAiOverlay({
+                label: <?= json_encode(__('common.working')) ?>,
+                estimate: 45000
+            });
+        }
+
         fetch(aiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
@@ -181,23 +192,31 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
         .then(function (body) {
             if (!body || !body.ok || !body.data) {
                 statusEl.textContent = labels.error;
-                window.alert(labels.error);
+                window.alert(labels.error + (body && body.error ? ' (' + body.error + ')' : ''));
                 return;
             }
             // Only populate fields that were empty so we never trample
             // text the user has already polished.
+            var filled = 0;
             Object.keys(body.data).forEach(function (k) {
                 var el = form.querySelector('[name="fields[' + k + ']"]');
-                if (el && el.value.trim() === '' && typeof body.data[k] === 'string') {
+                if (el && el.value.trim() === '' && typeof body.data[k] === 'string' && body.data[k] !== '') {
                     el.value = body.data[k];
+                    filled++;
                 }
             });
             statusEl.textContent = labels.saved;
         })
-        .catch(function () { statusEl.textContent = labels.error; })
+        .catch(function () {
+            statusEl.textContent = labels.error;
+            window.alert(labels.error);
+        })
         .finally(function () {
             aiBtn.disabled = false;
             aiBtn.textContent = originalLabel;
+            if (window.SysRevAI && typeof window.SysRevAI.hideAiOverlay === 'function') {
+                window.SysRevAI.hideAiOverlay();
+            }
         });
     });
 
