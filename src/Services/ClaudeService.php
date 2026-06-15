@@ -851,6 +851,99 @@ final class ClaudeService
      *
      * @param array<string,mixed> $article Article row (title, extracted_text).
      */
+    /**
+     * Fill the PROSPERO or OSF registration field map from the existing
+     * review protocol (PICO/PCC, question, criteria, search context).
+     *
+     * Returns ['ok' => true, 'data' => [fieldId => string, …]] on success.
+     * The field set is dictated by RegistrationFields::schemaFor($kind);
+     * any keys the model emits outside that set are dropped server-side.
+     *
+     * @param array<string,mixed>             $review   Reviews row.
+     * @param array<string,string>            $pico     Decoded PICO/PCC map.
+     * @param array<int,array<string,mixed>>  $fields   Field schema entries.
+     * @param string                          $kind     'prospero' | 'osf'.
+     * @param string                          $locale   Target reply language.
+     */
+    public function fillRegistrationFields(array $review, array $pico, array $fields, string $kind, string $locale = 'en'): array
+    {
+        if ($e = $this->guard('copilot')) {
+            return $e;
+        }
+
+        $isOsf = $kind === 'osf';
+        $registry = $isOsf ? 'OSF (Open Science Framework) preregistration for a SCOPING REVIEW' : 'PROSPERO registration for a SYSTEMATIC REVIEW';
+
+        $schemaLines = [];
+        foreach ($fields as $f) {
+            $schemaLines[] = '  • ' . $f['id'] . ' — '
+                . ($f['type'] === 'textarea' ? 'multi-paragraph text' : 'short single-line text');
+        }
+
+        $system = "You are SysRevAI's registration assistant. The user is preparing the "
+            . $registry . " for an existing protocol stored on this platform. Your job is to "
+            . "PRE-FILL every registration field as accurately as possible from the protocol "
+            . "context that follows.\n\n"
+            . "RULES:\n"
+            . " • Reply ONLY with a JSON object whose keys are the field ids listed below. No "
+            . "prose outside the JSON, no markdown, no comments.\n"
+            . " • Every value must be a string. Use \"\" for fields you genuinely cannot infer "
+            . "from the protocol — never invent dates, authors, funding, or numbers.\n"
+            . " • Keep wording professional and consistent with " . ($isOsf ? "JBI / PRISMA-ScR" : "Cochrane / PRISMA") . " conventions.\n"
+            . " • Reply in the user's locale: " . $locale . ". Field ids stay in English.\n"
+            . " • Multi-paragraph fields may use \\n\\n between paragraphs; don't include HTML.\n\n"
+            . "FIELDS TO FILL (id — kind):\n" . implode("\n", $schemaLines);
+
+        $picoLines = [];
+        foreach ($pico as $k => $v) {
+            $v = trim((string) $v);
+            if ($v !== '') {
+                $picoLines[] = '  ' . $k . ': ' . $this->truncate($v, 1200);
+            }
+        }
+
+        $protocol = "REVIEW TYPE: " . ($isOsf ? "scoping review" : "systematic review") . "\n"
+            . "TITLE: " . ($review['title'] ?? '—') . "\n"
+            . "QUESTION: " . trim((string) ($review['question'] ?? '')) . "\n"
+            . "INCLUSION CRITERIA:\n" . $this->truncate((string) ($review['inclusion_criteria'] ?? ''), 4000) . "\n"
+            . "EXCLUSION CRITERIA:\n" . $this->truncate((string) ($review['exclusion_criteria'] ?? ''), 4000) . "\n"
+            . "PICO / PCC:\n" . ($picoLines !== [] ? implode("\n", $picoLines) : '  (empty)');
+
+        $res = $this->request(
+            $this->modelLight,
+            $system,
+            [['role' => 'user', 'content' => $protocol]],
+            4000,
+            'copilot',
+            null,
+            true,
+            240,
+            1
+        );
+        if (!$res['ok'] || !is_array($res['json'])) {
+            return ['ok' => false, 'error' => $res['error'] ?? 'invalid_json'];
+        }
+
+        // Whitelist the keys we know about so a stray key from the
+        // model can't blow up the form, and stringify defensively.
+        $allowed = [];
+        foreach ($fields as $f) {
+            $allowed[$f['id']] = true;
+        }
+        $out = [];
+        foreach ($res['json'] as $k => $v) {
+            if (!is_string($k) || !isset($allowed[$k])) {
+                continue;
+            }
+            if (is_string($v)) {
+                $out[$k] = trim($v);
+            } elseif (is_scalar($v)) {
+                $out[$k] = trim((string) $v);
+            }
+        }
+        return ['ok' => true, 'data' => $out];
+    }
+
     public function articleCriticalReport(array $article, string $targetLanguage = 'en'): array
     {
         if ($e = $this->guard('peer_review')) {
