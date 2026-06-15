@@ -38,6 +38,7 @@ use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Controllers\ChatController;
 use SysRevAI\Controllers\ExportController;
+use SysRevAI\Controllers\ReviewRegistrationController;
 use SysRevAI\Controllers\ExtractionController;
 use SysRevAI\Controllers\FullTextScreeningController;
 use SysRevAI\Controllers\SummariesController;
@@ -215,6 +216,11 @@ $router->get('/reviews/{id}/exports/csv', [ExportController::class, 'csv'], ['au
 $router->get('/reviews/{id}/exports/excel', [ExportController::class, 'excel'], ['auth']);
 $router->get('/reviews/{id}/exports/word', [ExportController::class, 'word'], ['auth']);
 $router->get('/reviews/{id}/exports/revman', [ExportController::class, 'revman'], ['auth']);
+$router->get('/reviews/{id}/exports/registration', [ReviewRegistrationController::class, 'show'], ['auth']);
+$router->post('/reviews/{id}/exports/registration/save', [ReviewRegistrationController::class, 'save'], ['auth']);
+$router->post('/reviews/{id}/exports/registration/ai-fill', [ReviewRegistrationController::class, 'aiFill'], ['auth']);
+$router->get('/reviews/{id}/exports/registration/word', [ReviewRegistrationController::class, 'word'], ['auth']);
+$router->get('/reviews/{id}/exports/registration/pdf', [ReviewRegistrationController::class, 'pdf'], ['auth']);
 
 // Data extraction (literal /template before the {refId} pattern).
 // Risk of bias (per (reference, reviewer, tool, domain)).

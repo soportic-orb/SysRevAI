@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use SysRevAI\Core\Session;
+use SysRevAI\Models\Review;
 
 /** @var array $review */
 /** @var array $counts */
 /** @var string $svg */
 $id = (int) $review['id'];
+$isScoping = Review::isScoping($review);
+$registry  = $isScoping ? 'OSF' : 'PROSPERO';
 ?>
 <div class="page">
     <div class="page__head">
@@ -43,6 +46,18 @@ $id = (int) $review['id'];
         <div class="btn-row">
             <a class="btn btn--primary" href="/reviews/<?= $id ?>/exports/word">&#11015; Word (.docx)</a>
             <a class="btn btn--ghost" href="/reviews/<?= $id ?>/exports/revman">&#11015; RevMan 5 (.rm5)</a>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <h2 class="section__subtitle">
+            <?= e(sprintf(__('exports.registration_title'), $registry)) ?>
+        </h2>
+        <p class="muted"><?= e(sprintf(__('exports.registration_help'), $registry)) ?></p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/reviews/<?= $id ?>/exports/registration">
+                &#10024; <?= e(sprintf(__('exports.registration_open'), $registry)) ?>
+            </a>
         </div>
     </div>
 </div>
