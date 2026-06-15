@@ -553,6 +553,26 @@ return [
         ],
     ],
 
+    'search_syntaxes' => [
+        'subnav_label'      => 'Sintaxis de búsqueda',
+        'title'             => 'Sintaxis de búsqueda',
+        'intro'             => 'Registra la sintaxis de la búsqueda ejecutada en cada base de datos. Puedes añadir tantas como necesites.',
+        'hint'              => 'Pulsa «+ Añadir sintaxis», elige la base de datos y pega la sintaxis tal como la has ejecutado. Recuerda guardar antes de salir.',
+        'add'               => 'Añadir sintaxis',
+        'save'              => 'Guardar',
+        'saving'            => 'Guardando…',
+        'saved'             => 'Guardado.',
+        'error'             => 'Ha habido un error. Inténtalo de nuevo.',
+        'empty'             => 'Todavía no has añadido ninguna sintaxis de búsqueda.',
+        'placeholder'       => 'Pega aquí la sintaxis exacta de la búsqueda.',
+        'remove'            => 'Eliminar',
+        'ai_import'         => 'Importar con IA desde el protocolo',
+        'ai_import_title'   => 'La IA leerá el protocolo y añadirá la sintaxis de cada base de datos que encuentre. Si no encuentra ninguna para una base de datos, no se añadirá nada.',
+        'ai_importing'      => 'Importando…',
+        'ai_nothing_found'  => 'La IA no ha encontrado ninguna sintaxis nueva en el protocolo.',
+        'ai_added'          => 'Se han añadido %s sintaxis desde el protocolo.',
+    ],
+
     'peer_review' => [
         'title'           => 'Revisión por pares (IA)',
         'button'          => 'Peer review',

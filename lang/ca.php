@@ -556,6 +556,26 @@ return [
         ],
     ],
 
+    'search_syntaxes' => [
+        'subnav_label'      => 'Sintaxis de recerca',
+        'title'             => 'Sintaxis de recerca',
+        'intro'             => 'Registra la sintaxi de la cerca executada a cadascuna de les bases de dades. Pots afegir-ne tantes com en necessitis.',
+        'hint'              => 'Prem «+ Afegir sintaxi», escull la base de dades i enganxa la sintaxi tal com l\'has executat. Recorda desar abans de sortir de la pàgina.',
+        'add'               => 'Afegir sintaxi',
+        'save'              => 'Desar',
+        'saving'            => 'Desant…',
+        'saved'             => 'Desat.',
+        'error'             => 'Hi ha hagut un error. Torna-ho a provar.',
+        'empty'             => 'Encara no has afegit cap sintaxi de cerca.',
+        'placeholder'       => 'Enganxa aquí la sintaxi exacta de la cerca.',
+        'remove'            => 'Eliminar',
+        'ai_import'         => 'Importar amb IA des del protocol',
+        'ai_import_title'   => 'La IA llegirà el protocol i afegirà la sintaxi de cada base de dades que hi trobi. Si no en troba cap per a una base de dades, no s\'afegirà res.',
+        'ai_importing'      => 'Important…',
+        'ai_nothing_found'  => 'La IA no ha trobat cap sintaxi nova al protocol.',
+        'ai_added'          => 'S\'han afegit %s sintaxis des del protocol.',
+    ],
+
     'peer_review' => [
         'title'           => 'Revisió per parells (IA)',
         'button'          => 'Peer review',

@@ -553,6 +553,26 @@ return [
         ],
     ],
 
+    'search_syntaxes' => [
+        'subnav_label'      => 'Search syntaxes',
+        'title'             => 'Search syntaxes',
+        'intro'             => 'Record the verbatim syntax of the search you ran in each database. Add as many as you need.',
+        'hint'              => 'Press "+ Add syntax", pick the database and paste the syntax as you ran it. Remember to Save before leaving the page.',
+        'add'               => 'Add syntax',
+        'save'              => 'Save',
+        'saving'            => 'Saving…',
+        'saved'             => 'Saved.',
+        'error'             => 'Something went wrong. Try again.',
+        'empty'             => 'No search syntax recorded yet.',
+        'placeholder'       => 'Paste the exact search syntax here.',
+        'remove'            => 'Remove',
+        'ai_import'         => 'Import from protocol with AI',
+        'ai_import_title'   => 'The AI will read the protocol and add a row per database whose syntax it can find. Databases without an embedded syntax are skipped.',
+        'ai_importing'      => 'Importing…',
+        'ai_nothing_found'  => 'The AI did not find a new syntax in the protocol.',
+        'ai_added'          => 'Added %s syntaxes from the protocol.',
+    ],
+
     'peer_review' => [
         'title'           => 'Peer review (AI)',
         'button'          => 'Peer review',
