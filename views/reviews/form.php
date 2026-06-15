@@ -269,6 +269,29 @@ $extractUrl = $isEdit
        returned. Old-shape responses (flat object) still work — we treat
        the whole thing as the primary so a model regression doesn't break
        the form pre-fill. */
+    /**
+     * Carry per-upload metadata (draft-protocol token + filename + MIME)
+     * into the main create-review form so /reviews receives them on
+     * submit. The form is the closest <form> ancestor of the upload
+     * widget — we create the hidden input the first time we see a
+     * given name and update its value on every subsequent call.
+     */
+    function setHidden(name, value) {
+        var upload = document.getElementById('protocolUpload');
+        var form   = upload && upload.parentNode
+            ? upload.parentNode.querySelector('form')
+            : null;
+        if (!form) return;
+        var input = form.querySelector('input[type=hidden][name="' + name + '"]');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            form.appendChild(input);
+        }
+        input.value = value || '';
+    }
+
     function applyPrimary(p) {
         if (!p) return;
         setField('title',              p.title);
@@ -418,6 +441,18 @@ $extractUrl = $isEdit
                 var secondaries = Array.isArray(d.secondaries) ? d.secondaries : [];
                 applyPrimary(primary);
                 renderSecondaries(secondaries);
+
+                // Persist the draft-protocol token returned by the
+                // server so /reviews (the create endpoint) can promote
+                // the stored bytes onto the review row that's about to
+                // be created. We keep three hidden inputs in step so
+                // the original filename + MIME survive too.
+                if (res.body.protocol_draft_token) {
+                    setHidden('protocol_draft_token',    res.body.protocol_draft_token);
+                    setHidden('protocol_draft_filename', res.body.protocol_draft_filename || '');
+                    setHidden('protocol_draft_mime',     res.body.protocol_draft_mime     || '');
+                }
+
                 show(secondaries.length > 0
                         ? labels.okMulti.replace('%d', String(secondaries.length))
                         : labels.ok,
