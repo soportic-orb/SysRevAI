@@ -909,39 +909,92 @@ final class ClaudeService
             . "EXCLUSION CRITERIA:\n" . $this->truncate((string) ($review['exclusion_criteria'] ?? ''), 4000) . "\n"
             . "PICO / PCC:\n" . ($picoLines !== [] ? implode("\n", $picoLines) : '  (empty)');
 
+        // 32 multi-paragraph PROSPERO fields can easily blow past 4 k
+        // output tokens — the response got truncated mid-JSON and
+        // json_decode silently failed. 16 k is comfortable for Haiku
+        // 4.5 and still well inside its quota. Two attempts so a
+        // transient 5xx / overload is retried automatically.
         $res = $this->request(
             $this->modelLight,
             $system,
             [['role' => 'user', 'content' => $protocol]],
-            4000,
+            16000,
             'copilot',
             null,
             true,
             240,
-            1
+            2
         );
-        if (!$res['ok'] || !is_array($res['json'])) {
-            return ['ok' => false, 'error' => $res['error'] ?? 'invalid_json'];
+        if (!$res['ok']) {
+            return ['ok' => false, 'error' => $res['error'] ?? 'request_failed'];
         }
 
-        // Whitelist the keys we know about so a stray key from the
-        // model can't blow up the form, and stringify defensively.
         $allowed = [];
         foreach ($fields as $f) {
             $allowed[$f['id']] = true;
         }
         $out = [];
-        foreach ($res['json'] as $k => $v) {
-            if (!is_string($k) || !isset($allowed[$k])) {
-                continue;
-            }
-            if (is_string($v)) {
-                $out[$k] = trim($v);
-            } elseif (is_scalar($v)) {
-                $out[$k] = trim((string) $v);
+
+        // Happy path: structured JSON parsed by request()'s extractJson.
+        if (is_array($res['json'])) {
+            foreach ($res['json'] as $k => $v) {
+                if (!is_string($k) || !isset($allowed[$k])) {
+                    continue;
+                }
+                if (is_string($v)) {
+                    $out[$k] = trim($v);
+                } elseif (is_scalar($v)) {
+                    $out[$k] = trim((string) $v);
+                }
             }
         }
+
+        // Fallback: extractJson failed (truncated payload, prose around
+        // JSON, etc.). Try to pull individual "key": "value" pairs out
+        // of the raw text so the user still gets partial credit.
+        if ($out === [] && is_string($res['text'] ?? null) && $res['text'] !== '') {
+            foreach (self::recoverFieldsFromText((string) $res['text'], array_keys($allowed)) as $k => $v) {
+                $out[$k] = $v;
+            }
+        }
+
+        if ($out === []) {
+            return ['ok' => false, 'error' => 'invalid_json'];
+        }
         return ['ok' => true, 'data' => $out];
+    }
+
+    /**
+     * Best-effort scan of a possibly-truncated AI response for the
+     * "<key>": "<value>" pairs we know we asked for. Used as a fallback
+     * for fillRegistrationFields when the JSON parser couldn't put the
+     * whole document back together. Walks the text key-by-key so each
+     * field is independently recoverable.
+     *
+     * @param  array<int,string> $keys
+     * @return array<string,string>
+     */
+    private static function recoverFieldsFromText(string $text, array $keys): array
+    {
+        $out = [];
+        foreach ($keys as $key) {
+            // Match  "key" : " ... "  with JSON-escaped backslashes /
+            // quotes inside the value. Non-greedy stop at the next
+            // unescaped quote, then JSON-decode the matched literal so
+            // \n / \" / \\ etc. come back through.
+            $pattern = '/"' . preg_quote($key, '/') . '"\s*:\s*"((?:\\\\.|[^"\\\\])*)"/s';
+            if (preg_match($pattern, $text, $m)) {
+                $literal = '"' . $m[1] . '"';
+                $decoded = json_decode($literal, true);
+                if (is_string($decoded)) {
+                    $value = trim($decoded);
+                    if ($value !== '') {
+                        $out[$key] = $value;
+                    }
+                }
+            }
+        }
+        return $out;
     }
 
     /**

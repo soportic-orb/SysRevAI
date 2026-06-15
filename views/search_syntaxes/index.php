@@ -175,6 +175,13 @@ $id = (int) $review['id'];
         aiBtn.textContent = aiBtn.getAttribute('data-busy-label') || originalLabel;
         status.textContent = labels.importing;
 
+        if (window.SysRevAI && typeof window.SysRevAI.showAiOverlay === 'function') {
+            window.SysRevAI.showAiOverlay({
+                label: <?= json_encode(__('common.working')) ?>,
+                estimate: 30000
+            });
+        }
+
         fetch(aiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
@@ -209,6 +216,9 @@ $id = (int) $review['id'];
         .finally(function () {
             aiBtn.disabled = false;
             aiBtn.textContent = originalLabel;
+            if (window.SysRevAI && typeof window.SysRevAI.hideAiOverlay === 'function') {
+                window.SysRevAI.hideAiOverlay();
+            }
         });
     });
 
