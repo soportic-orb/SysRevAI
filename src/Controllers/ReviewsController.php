@@ -68,6 +68,15 @@ final class ReviewsController
         $id = Review::create($uid, $data);
         ReviewUser::add($id, $uid, 'owner', false, true);
 
+        // Promote a protocol-document draft, if the new-review form
+        // included one. The token was minted by runProtocolExtraction()
+        // and stashed under storage/protocol_drafts/{uid}_{uuid}.{ext}
+        // — we re-store the bytes under storage/protocols/ so the
+        // review's protocol_path matches the regular upload format,
+        // and clean up the draft. The {uid} prefix check stops a
+        // malicious POST from promoting another user's draft.
+        $this->promoteProtocolDraft($id, $uid);
+
         // Persist exclusion reasons. When the caller didn't send any (the
         // AJAX-submitted sub-study cards only carry the 9 protocol fields,
         // and the AI-extract flow doesn't seed the exclusion-reasons
@@ -225,10 +234,18 @@ final class ReviewsController
         ActivityLog::record('review.protocol_extract.ok', [], $reviewId);
 
         // Keep the original document on disk so the user can download it
-        // back from the "Editar protocol" page. Only persist when we
-        // have a review id — the new-review form has no row yet, so the
-        // file gets discarded (the user can re-upload from the edit
-        // page once the review exists).
+        // Keep the original document on disk so the user can download it
+        // back from the "Editar protocol" page. Two code paths:
+        //
+        //  • Existing review (reviewId !== null): store directly under
+        //    storage/protocols/ and record the path on the review row.
+        //  • New-review draft (reviewId === null): the review row doesn't
+        //    exist yet, so we stash the bytes under storage/protocol_
+        //    drafts/ with a {userId}_{uuid}.{ext} basename and return
+        //    the basename as `protocol_draft_token`. The new-review form
+        //    submits that token along with the row; store() promotes
+        //    the file to storage/protocols/ once the review is created.
+        $extra = [];
         if ($reviewId !== null) {
             try {
                 $bytes = (string) file_get_contents((string) $file['tmp_name']);
@@ -247,9 +264,34 @@ final class ReviewsController
                 // user keeps the AI draft; the download button just
                 // won't appear until they re-upload.
             }
+        } else {
+            try {
+                $uid   = (int) Auth::id();
+                $bytes = (string) file_get_contents((string) $file['tmp_name']);
+                $path  = \SysRevAI\Services\FileStorage::storeBytes($bytes, $ext, 'protocol_drafts');
+                if ($path !== null && $uid > 0) {
+                    // Namespace draft files by user id so a malicious
+                    // client can't promote another user's draft into
+                    // its own review. The basename then carries the
+                    // uploader's id, which store() checks.
+                    $prefixed = dirname($path) . '/' . $uid . '_' . basename($path);
+                    if (@rename($path, $prefixed)) {
+                        $extra = [
+                            'protocol_draft_token'    => basename($prefixed),
+                            'protocol_draft_filename' => $name,
+                            'protocol_draft_mime'     => $mime ?: '',
+                        ];
+                    } else {
+                        @unlink($path);
+                    }
+                }
+            } catch (\Throwable) {
+                // Same fallback as above — the AI draft still lands,
+                // we just can't offer a download later.
+            }
         }
 
-        echo json_encode(['ok' => true, 'data' => $result['data']], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['ok' => true, 'data' => $result['data']] + $extra, JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -463,6 +505,49 @@ final class ReviewsController
     }
 
     /* ── Helpers ───────────────────────────────────────────────────────── */
+
+    /**
+     * Move a protocol-document draft (created by the new-review form's
+     * AI extractor) into the canonical storage/protocols/ location and
+     * link it on the just-created review. No-op when the token is
+     * missing or doesn't pass the user-id / shape check.
+     */
+    private function promoteProtocolDraft(int $reviewId, int $userId): void
+    {
+        $token    = (string) ($_POST['protocol_draft_token']    ?? '');
+        $filename = (string) ($_POST['protocol_draft_filename'] ?? '');
+        $mime     = (string) ($_POST['protocol_draft_mime']     ?? '');
+        if ($token === '') {
+            return;
+        }
+        // Strict format check + per-user prefix so a forged token can't
+        // promote another user's draft into the new review.
+        $expectedPrefix = $userId . '_';
+        if (
+            preg_match('/^[a-zA-Z0-9_-]+\.[a-z0-9]{1,5}$/i', $token) !== 1
+            || !str_starts_with($token, $expectedPrefix)
+        ) {
+            return;
+        }
+        $draftDir = (string) config('paths.storage') . '/protocol_drafts/';
+        $draftPath = $draftDir . $token;
+        if (!is_file($draftPath) || !\SysRevAI\Services\FileStorage::isStoredIn($draftPath, 'protocol_drafts')) {
+            return;
+        }
+        try {
+            $bytes = (string) file_get_contents($draftPath);
+            $ext = strtolower((string) pathinfo($token, PATHINFO_EXTENSION));
+            $newPath = \SysRevAI\Services\FileStorage::storeBytes($bytes, $ext, 'protocols');
+            if ($newPath !== null) {
+                Review::saveProtocolFile($reviewId, $newPath, $filename, $mime);
+                @unlink($draftPath);
+            }
+        } catch (\Throwable) {
+            // Same fallback as the upload path — the review still gets
+            // created with the AI-filled fields; the download just
+            // won't appear until the user re-uploads.
+        }
+    }
 
     private function readInput(): array
     {
