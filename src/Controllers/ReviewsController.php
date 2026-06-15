@@ -223,7 +223,68 @@ final class ReviewsController
             return;
         }
         ActivityLog::record('review.protocol_extract.ok', [], $reviewId);
+
+        // Keep the original document on disk so the user can download it
+        // back from the "Editar protocol" page. Only persist when we
+        // have a review id — the new-review form has no row yet, so the
+        // file gets discarded (the user can re-upload from the edit
+        // page once the review exists).
+        if ($reviewId !== null) {
+            try {
+                $bytes = (string) file_get_contents((string) $file['tmp_name']);
+                $path  = \SysRevAI\Services\FileStorage::storeBytes($bytes, $ext, 'protocols');
+                if ($path !== null) {
+                    // Delete the previous protocol file so we don't accumulate
+                    // orphan uploads on every re-extraction.
+                    $existing = Review::find($reviewId);
+                    if ($existing !== null && !empty($existing['protocol_path'])) {
+                        \SysRevAI\Services\FileStorage::delete((string) $existing['protocol_path']);
+                    }
+                    Review::saveProtocolFile($reviewId, $path, $name, $mime ?: '');
+                }
+            } catch (\Throwable) {
+                // Disk full / perms — extraction still succeeded so the
+                // user keeps the AI draft; the download button just
+                // won't appear until they re-upload.
+            }
+        }
+
         echo json_encode(['ok' => true, 'data' => $result['data']], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Serve back the protocol document the user (or someone with write
+     * access) uploaded. Members can download; non-members get 403.
+     */
+    public function downloadProtocol(string $id): void
+    {
+        $review = $this->loadOrDeny((int) $id);
+        $path = (string) ($review['protocol_path'] ?? '');
+        if ($path === '' || !\SysRevAI\Services\FileStorage::isStoredIn($path, 'protocols') || !is_file($path)) {
+            http_response_code(404);
+            echo View::render('errors/404', [], 'layouts/auth');
+            return;
+        }
+        $filename = (string) ($review['protocol_filename'] ?? '') !== ''
+            ? (string) $review['protocol_filename']
+            : ('protocol-' . (int) $review['id'] . '.' . pathinfo($path, PATHINFO_EXTENSION));
+        $mime = (string) ($review['protocol_mime'] ?? '') !== ''
+            ? (string) $review['protocol_mime']
+            : 'application/octet-stream';
+
+        // Strip any path component the original filename might have
+        // carried (Windows users sometimes upload "C:\fakepath\foo.pdf")
+        // and quote-escape to keep Content-Disposition well-formed.
+        $filename = basename(str_replace('\\', '/', $filename));
+        $filename = str_replace(['"', "\r", "\n"], ['', '', ''], $filename);
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($path));
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, max-age=0');
+        readfile($path);
+        ActivityLog::record('review.protocol_downloaded', ['review_id' => (int) $review['id']], (int) $review['id']);
     }
 
     /**

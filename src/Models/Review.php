@@ -108,6 +108,28 @@ final class Review
         );
     }
 
+    /**
+     * Persist (or replace) the protocol document attached to the
+     * review. Tolerant of pre-migration installs — silent no-op if the
+     * columns don't exist yet so a working review never fails on
+     * write just because 035 hasn't been applied.
+     */
+    public static function saveProtocolFile(int $id, string $path, string $filename, string $mime): void
+    {
+        $table = Database::table('reviews');
+        try {
+            Database::affecting(
+                "UPDATE `{$table}`
+                    SET protocol_path = ?, protocol_filename = ?, protocol_mime = ?,
+                        protocol_uploaded_at = CURRENT_TIMESTAMP
+                  WHERE id = ?",
+                [$path, mb_substr($filename, 0, 512), mb_substr($mime, 0, 80), $id]
+            );
+        } catch (\Throwable) {
+            // pre-migration install — degrade silently.
+        }
+    }
+
     public static function update(int $id, array $data): void
     {
         $table = Database::table('reviews');

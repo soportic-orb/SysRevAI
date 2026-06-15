@@ -131,6 +131,7 @@ $router->post('/reviews/extract-protocol-draft', [ReviewsController::class, 'ext
 $router->post('/reviews', [ReviewsController::class, 'store'], ['auth']);
 $router->get('/reviews/{id}/protocol', [ReviewsController::class, 'editProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol/extract', [ReviewsController::class, 'extractProtocol'], ['auth']);
+$router->get('/reviews/{id}/protocol/download', [ReviewsController::class, 'downloadProtocol'], ['auth']);
 $router->post('/reviews/{id}/protocol', [ReviewsController::class, 'updateProtocol'], ['auth']);
 $router->post('/reviews/{id}/archive', [ReviewsController::class, 'archive'], ['auth']);
 $router->post('/reviews/{id}/delete', [ReviewsController::class, 'destroy'], ['auth']);
