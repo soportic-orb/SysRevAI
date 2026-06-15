@@ -65,7 +65,8 @@ $id = (int) $article['id'];
                 </div>
             </div>
             <div class="article-editor__toolbar-group article-editor__toolbar-group--end">
-                <a class="btn btn--ghost btn--sm" href="/tools/articles/<?= $id ?>/edit/word"
+                <a class="btn btn--ghost btn--sm" id="editorExportWord"
+                   href="/tools/articles/<?= $id ?>/edit/word"
                    title="<?= e(__('articles.editor.export_word_title')) ?>">
                     <?= e(__('articles.editor.export_word')) ?>
                 </a>
@@ -508,6 +509,32 @@ window.SysRevAICopilotContext = function () {
     var verList     = document.getElementById('editorVersionsList');
     var verEmpty    = document.getElementById('editorVersionsEmpty');
     var versionsLoaded = false;
+
+    /* Flush autosave before navigating to /edit/word so the .docx
+       reflects the document the user sees, not the last saved
+       baseline. We can't rely on beforeunload's sendBeacon because
+       the server would race the GET against the POST and might
+       export the older HTML. */
+    var exportWordLink = document.getElementById('editorExportWord');
+    if (exportWordLink) {
+        exportWordLink.addEventListener('click', function (e) {
+            var editor = tinymce.activeEditor;
+            if (!editor) return; // let the default navigation handle it
+            if (saveState.textContent === labels.saved) return; // nothing pending
+            e.preventDefault();
+            var href = exportWordLink.href;
+            fetch(saveUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                body: JSON.stringify({ _csrf: csrf, html: editor.getContent() })
+            })
+            .catch(function () { /* still navigate, server falls back to last save */ })
+            .finally(function () {
+                saveState.textContent = labels.saved;
+                window.location.href = href;
+            });
+        });
+    }
 
     saveVerBtn.addEventListener('click', function () {
         var editor = tinymce.activeEditor;

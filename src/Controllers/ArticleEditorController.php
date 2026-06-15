@@ -269,19 +269,45 @@ final class ArticleEditorController
             return;
         }
 
+        // Resolve image URLs that point at our protected edit/image route
+        // into the actual paths on disk so PhpWord can embed them — it
+        // can't follow an authenticated URL of its own accord.
+        $html = $this->resolveEditorImageUrls($html, $aid);
+
+        // TinyMCE outputs HTML5 (void elements without self-closing,
+        // bare ampersands, etc.); PhpWord's Shared\Html::addHtml does
+        // a STRICT $dom->loadXML on its input and fails silently when
+        // it isn't well-formed XML — that's why early callers got an
+        // empty .docx. Reformat the fragment to clean XHTML using
+        // DOMDocument::loadHTML (forgiving) + saveXML.
+        $xhtml = $this->htmlFragmentToXhtml($html);
+
         $doc = new \PhpOffice\PhpWord\PhpWord();
         $section = $doc->addSection();
+        $rendered = false;
         try {
-            // Wrap the fragment in a <body> so PhpWord's Html reader has
-            // something to anchor on; the second arg false means "no
-            // fullHTML wrapper", third arg false means "don't preserve
-            // styles" (we want clean Word defaults).
-            \PhpOffice\PhpWord\Shared\Html::addHtml($section, '<div>' . $html . '</div>', false, false);
-        } catch (\Throwable $e) {
-            // PhpWord's HTML reader chokes on a handful of edge cases
-            // (deeply nested tables, unbalanced markup). Fall back to a
-            // safe plain-text dump so the user always gets *something*.
-            $section->addText(trim(strip_tags($html)));
+            \PhpOffice\PhpWord\Shared\Html::addHtml($section, $xhtml, false, false);
+            $rendered = true;
+        } catch (\Throwable) {
+            // Fall through to the plain-text fallback below.
+        }
+        if (!$rendered || $this->sectionIsEmpty($section)) {
+            // Safety net so the user always gets *something* — strip
+            // tags, collapse whitespace, paragraphise on blank lines.
+            $plain = trim(html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($plain === '') {
+                $plain = (string) ($article['title'] ?? '');
+            }
+            // Rebuild the section so the (possibly half-applied) HTML
+            // attempt doesn't show through.
+            $doc = new \PhpOffice\PhpWord\PhpWord();
+            $section = $doc->addSection();
+            foreach (preg_split('/\n{2,}/', $plain) ?: [$plain] as $block) {
+                $block = trim((string) $block);
+                if ($block !== '') {
+                    $section->addText($block);
+                }
+            }
         }
 
         $filename = $this->wordFilename($article);
@@ -304,6 +330,81 @@ final class ArticleEditorController
             $base = 'article-' . (int) $article['id'];
         }
         return mb_substr($base, 0, 80) . '.docx';
+    }
+
+    /**
+     * Reformat a TinyMCE HTML fragment to clean XHTML so PhpWord's
+     * Shared\Html::addHtml can parse it. DOMDocument::loadHTML is
+     * forgiving (closes voids, balances tags, decodes entities) and
+     * saveXML produces XML that loadXML on the other side accepts.
+     */
+    private function htmlFragmentToXhtml(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+        $previous = libxml_use_internal_errors(true);
+        $doc = new \DOMDocument('1.0', 'UTF-8');
+        // The XML encoding declaration prefixed below is the documented
+        // way to stop loadHTML from treating the bytes as Windows-1252.
+        // Without it, Catalan accents end up double-encoded in the .docx.
+        $doc->loadHTML(
+            '<?xml encoding="UTF-8"?><html><body>' . $html . '</body></html>',
+            LIBXML_NOERROR | LIBXML_NOWARNING
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $body = $doc->getElementsByTagName('body')->item(0);
+        if ($body === null) {
+            return '';
+        }
+        $out = '';
+        foreach ($body->childNodes as $child) {
+            $serialised = $doc->saveXML($child);
+            if (is_string($serialised)) {
+                $out .= $serialised;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Rewrite <img src="/tools/articles/{id}/edit/image/{name}"> URLs to
+     * absolute file-system paths so PhpWord can read the bytes off disk
+     * instead of trying to fetch them through HTTP.
+     */
+    private function resolveEditorImageUrls(string $html, int $articleId): string
+    {
+        $storage = (string) config('paths.storage') . '/article_images/';
+        $prefix  = '/tools/articles/' . $articleId . '/edit/image/';
+        return (string) preg_replace_callback(
+            '#src=(["\'])' . preg_quote($prefix, '#') . '([^"\'<>]+)\1#i',
+            static function (array $m) use ($storage): string {
+                $name = (string) $m[2];
+                // Only resolve names that match the article-id prefix
+                // contract enforced by serveImage(); otherwise leave the
+                // attribute alone so PhpWord just drops the image.
+                if (preg_match('/^\d+_[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]{1,5}$/', $name) !== 1) {
+                    return $m[0];
+                }
+                $abs = $storage . $name;
+                if (!is_file($abs)) {
+                    return $m[0];
+                }
+                return 'src=' . $m[1] . htmlspecialchars($abs, ENT_QUOTES) . $m[1];
+            },
+            $html
+        );
+    }
+
+    private function sectionIsEmpty(\PhpOffice\PhpWord\Element\Section $section): bool
+    {
+        foreach ($section->getElements() as $el) {
+            // A non-empty Text / TextRun / Image / Table / etc. counts.
+            return false;
+        }
+        return true;
     }
 
     /** @return array<string,mixed> */
