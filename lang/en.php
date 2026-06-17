@@ -1321,6 +1321,7 @@ return [
         'no_reasons'         => 'No exclusion reasons defined.',
         'metric_imported'     => 'Imported',
         'metric_duplicate'    => 'Duplicates',
+        'metric_duplicates_removed' => 'Duplicates removed',
         'metric_ta_screening' => 'Title/Abstract',
         'metric_ta_included'  => 'Included T/A',
         'metric_ft_screening' => 'Full text',

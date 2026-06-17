@@ -131,6 +131,30 @@ final class Review
     }
 
     /**
+     * Increment the persistent duplicates-removed counter (mig. 037).
+     * Called from the references bulk-delete / single-delete flow whenever
+     * the user wipes a row whose status was 'duplicate'. The counter is
+     * what feeds the PRISMA "Duplicates removed" cell after the rows
+     * themselves no longer exist in the live table. Tolerant of pre-
+     * migration installs — silent no-op when the column is missing.
+     */
+    public static function addDuplicatesRemoved(int $reviewId, int $count): void
+    {
+        if ($count <= 0) {
+            return;
+        }
+        $table = Database::table('reviews');
+        try {
+            Database::affecting(
+                "UPDATE `{$table}` SET duplicates_removed = duplicates_removed + ? WHERE id = ?",
+                [$count, $reviewId]
+            );
+        } catch (\Throwable) {
+            // pre-migration install — degrade silently.
+        }
+    }
+
+    /**
      * Persist the free-text screening guide for the review (migration 036).
      * Tolerant of installs that haven't run the migration yet.
      */
@@ -311,7 +335,7 @@ final class Review
     public static function metrics(int $reviewId): array
     {
         $base = [
-            'total' => 0, 'imported' => 0, 'duplicate' => 0,
+            'total' => 0, 'imported' => 0, 'duplicate' => 0, 'duplicates_removed' => 0,
             'ta_screening' => 0, 'ta_included' => 0, 'ta_excluded' => 0,
             'ft_screening' => 0, 'ft_included' => 0, 'ft_excluded' => 0,
             'extracted' => 0,
@@ -328,6 +352,19 @@ final class Review
             }
         } catch (\Throwable) {
             // references table not present yet.
+        }
+        // Persistent counter (mig. 037) for duplicates that have been
+        // hard-deleted from the references table. Tolerant of pre-
+        // migration installs.
+        try {
+            $reviews = Database::table('reviews');
+            $row = Database::selectOne(
+                "SELECT duplicates_removed FROM `{$reviews}` WHERE id = ?",
+                [$reviewId]
+            );
+            $base['duplicates_removed'] = (int) ($row['duplicates_removed'] ?? 0);
+        } catch (\Throwable) {
+            // column missing — already initialised to 0 above.
         }
         return $base;
     }
