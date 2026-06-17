@@ -1731,6 +1731,12 @@ return [
         'budget'       => 'S\'ha esgotat el pressupost mensual de IA del lloc.',
         'disabled'     => 'El Copilot està desactivat des del panell d\'administració.',
         'no_api_key'   => 'No hi ha clau d\'API de Claude configurada. Un administrador la pot afegir a Configuració → Claude.',
+        'action_accept'   => 'Acceptar i executar',
+        'action_reject'   => 'Rebutjar',
+        'action_pending'  => 'Pendent',
+        'action_executed' => 'Executat',
+        'action_rejected' => 'Rebutjat',
+        'action_failed'   => 'Ha fallat',
     ],
 
     'legal' => [

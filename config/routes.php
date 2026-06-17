@@ -140,6 +140,7 @@ $router->get('/reviews/{id}/ai-usage', [AiUsageController::class, 'index'], ['au
 $router->get('/reviews/{id}/copilot/history', [ReviewsController::class, 'copilotHistory'], ['auth']);
 $router->post('/reviews/{id}/copilot/clear', [ReviewsController::class, 'copilotClear'], ['auth']);
 $router->post('/reviews/{id}/copilot', [ReviewsController::class, 'copilot'], ['auth']);
+$router->post('/reviews/{id}/copilot/act', [ReviewsController::class, 'copilotAct'], ['auth']);
 
 // Global Copilot — same widget, no review context. Used on every other
 // authenticated page so the user can ask "how do I import a CSV?" or

@@ -1728,6 +1728,12 @@ return [
         'budget'       => 'Se ha alcanzado el presupuesto mensual de IA del sitio.',
         'disabled'     => 'El Copilot está desactivado desde el panel de administración.',
         'no_api_key'   => 'No hay clave de API de Claude configurada. Un administrador puede añadirla en Configuración → Claude.',
+        'action_accept'   => 'Aceptar y ejecutar',
+        'action_reject'   => 'Rechazar',
+        'action_pending'  => 'Pendiente',
+        'action_executed' => 'Ejecutado',
+        'action_rejected' => 'Rechazado',
+        'action_failed'   => 'Ha fallado',
     ],
 
     'legal' => [
