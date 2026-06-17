@@ -145,6 +145,9 @@ final class ReviewsController
         }
 
         Review::update((int) $id, $data);
+        // Persisted separately so the main update SQL stays untouched
+        // and a pre-migration install still saves the other fields.
+        Review::saveScreeningGuide((int) $id, trim((string) ($_POST['screening_guide'] ?? '')));
         ExclusionReason::replaceForReview((int) $id, $this->splitLines((string) ($_POST['exclusion_reasons'] ?? '')));
         ActivityLog::record('review.updated', ['review_id' => (int) $id], (int) $id);
         Session::flash('success', __('reviews.saved'));

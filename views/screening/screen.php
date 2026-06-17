@@ -88,6 +88,28 @@ $pctOf = static function (int $n) use ($denom): int {
     <?php else: ?>
         <div class="screen-3col">
 
+            <?php if (!empty($review['screening_guide'])): ?>
+                <!-- ── Screening guide (collapsed by default) ──────────── -->
+                <aside class="screen-3col__protocol section-card collapse-card screen-guide-card"
+                       data-collapsible data-collapsed-default>
+                    <button type="button" class="collapse-card__head"
+                            data-collapsible-toggle aria-controls="screenGuideBody" aria-expanded="false">
+                        <span class="collapse-card__title">
+                            &#128218; <?= e(__('reviews.screening_guide')) ?>
+                        </span>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="icon icon--chevron" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="collapse-card__body screen-guide__body"
+                         id="screenGuideBody" data-collapsible-body hidden>
+                        <div class="screen-guide__text"><?= nl2br(e((string) $review['screening_guide'])) ?></div>
+                    </div>
+                </aside>
+            <?php endif; ?>
+
             <!-- ── 1/4 — Protocol (collapsed by default) ─────────────── -->
             <aside class="screen-3col__protocol section-card collapse-card"
                    data-collapsible data-collapsed-default>

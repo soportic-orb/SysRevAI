@@ -130,6 +130,23 @@ final class Review
         }
     }
 
+    /**
+     * Persist the free-text screening guide for the review (migration 036).
+     * Tolerant of installs that haven't run the migration yet.
+     */
+    public static function saveScreeningGuide(int $id, string $text): void
+    {
+        $table = Database::table('reviews');
+        try {
+            Database::affecting(
+                "UPDATE `{$table}` SET screening_guide = ? WHERE id = ?",
+                [$text !== '' ? $text : null, $id]
+            );
+        } catch (\Throwable) {
+            // pre-migration install — degrade silently.
+        }
+    }
+
     public static function update(int $id, array $data): void
     {
         $table = Database::table('reviews');

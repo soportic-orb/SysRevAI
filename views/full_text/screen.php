@@ -145,6 +145,28 @@ $pctOf = static function (int $n) use ($denom): int {
             <!-- ── 2/6 — Protocol (collapsed) · Chat · Decision ────────── -->
             <aside class="ft-screen-grid__side">
 
+                <?php if (!empty($review['screening_guide'])): ?>
+                    <!-- Screening guide — collapsed by default -->
+                    <section class="section-card collapse-card screen-guide-card"
+                             data-collapsible data-collapsed-default>
+                        <button type="button" class="collapse-card__head"
+                                data-collapsible-toggle aria-controls="ftGuideBody" aria-expanded="false">
+                            <span class="collapse-card__title">
+                                &#128218; <?= e(__('reviews.screening_guide')) ?>
+                            </span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                 class="icon icon--chevron" aria-hidden="true">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="collapse-card__body screen-guide__body"
+                             id="ftGuideBody" data-collapsible-body hidden>
+                            <div class="screen-guide__text"><?= nl2br(e((string) $review['screening_guide'])) ?></div>
+                        </div>
+                    </section>
+                <?php endif; ?>
+
                 <!-- Protocol — collapsed by default -->
                 <section class="section-card collapse-card screen-protocol-card"
                          data-collapsible data-collapsed-default>
