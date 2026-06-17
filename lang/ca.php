@@ -1034,6 +1034,8 @@ return [
         'abstract_any'          => 'Resum: qualsevol',
         'abstract_with'         => 'Amb resum',
         'abstract_without'      => 'Sense resum',
+        'source_filter_label'   => 'Filtrar per font',
+        'source_any'            => 'Font: qualsevol',
         'has_abstract'          => 'La referència té resum',
         'has_abstract_short'    => 'Amb resum',
         'search'       => 'Cercar',

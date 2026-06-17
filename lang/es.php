@@ -1031,6 +1031,8 @@ return [
         'abstract_any'          => 'Resumen: cualquiera',
         'abstract_with'         => 'Con resumen',
         'abstract_without'      => 'Sin resumen',
+        'source_filter_label'   => 'Filtrar por fuente',
+        'source_any'            => 'Fuente: cualquiera',
         'has_abstract'          => 'La referencia tiene resumen',
         'has_abstract_short'    => 'Con resumen',
         'search'       => 'Buscar',

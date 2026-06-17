@@ -13,6 +13,8 @@ use SysRevAI\Core\Session;
 /** @var string $status */
 /** @var string $search */
 /** @var string $abstract  '' | 'with' | 'without' */
+/** @var string $source */
+/** @var string[] $sourceOptions */
 /** @var string[] $statuses */
 /** @var array $metrics */
 /** @var int $pendingDups */
@@ -38,9 +40,9 @@ $ftIcon = static function (?array $row, bool $queued): array {
     }
     return ['class' => 'ft-dot ft-dot--none', 'label' => __('fulltext.dot_none')];
 };
-$qs = static function (array $extra) use ($status, $search, $abstract, $perPage): string {
+$qs = static function (array $extra) use ($status, $search, $abstract, $source, $perPage): string {
     return http_build_query(array_merge(
-        ['status' => $status, 'q' => $search, 'abstract' => $abstract, 'per_page' => $perPage],
+        ['status' => $status, 'q' => $search, 'abstract' => $abstract, 'source' => $source, 'per_page' => $perPage],
         $extra
     ));
 };
@@ -103,6 +105,15 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $perPage)
             <option value="with"    <?= $abstract === 'with'    ? 'selected' : '' ?>><?= e(__('references.abstract_with')) ?></option>
             <option value="without" <?= $abstract === 'without' ? 'selected' : '' ?>><?= e(__('references.abstract_without')) ?></option>
         </select>
+        <?php if ($sourceOptions !== []): ?>
+            <select class="select select--sm" name="source" onchange="this.form.submit()"
+                    aria-label="<?= e(__('references.source_filter_label')) ?>">
+                <option value=""><?= e(__('references.source_any')) ?></option>
+                <?php foreach ($sourceOptions as $src): ?>
+                    <option value="<?= e($src) ?>" <?= $source === $src ? 'selected' : '' ?>><?= e($src) ?></option>
+                <?php endforeach; ?>
+            </select>
+        <?php endif; ?>
         <input class="input" name="q" value="<?= e($search) ?>" placeholder="<?= e(__('references.search')) ?>">
         <button class="btn btn--ghost btn--sm"><?= e(__('references.search')) ?></button>
         <!-- Per-page selector. Submitting from the change handler resets
@@ -200,6 +211,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $perPage)
                 <input type="hidden" name="status" value="<?= e($status) ?>">
                 <input type="hidden" name="q" value="<?= e($search) ?>">
                 <input type="hidden" name="abstract" value="<?= e($abstract) ?>">
+                <input type="hidden" name="source" value="<?= e($source) ?>">
                 <input type="hidden" name="back" value="/reviews/<?= $id ?>/references?<?= e($qs([])) ?>">
             </form>
         <?php endif; ?>

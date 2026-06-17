@@ -29,6 +29,15 @@ final class ReferencesController
         $abstract = in_array(($_GET['abstract'] ?? ''), ['with', 'without'], true)
             ? (string) $_GET['abstract']
             : '';
+        // Source filter — populated from the distinct source_file values
+        // recorded on this review's references. We validate the GET value
+        // against that list so a forged query string can't reveal whether
+        // a foreign source name exists in another review.
+        $sourceOptions = Reference::distinctSources($rid);
+        $source = (string) ($_GET['source'] ?? '');
+        if ($source !== '' && !in_array($source, $sourceOptions, true)) {
+            $source = '';
+        }
         // Per-page selector with a whitelisted set so a forged query
         // string can't ask for an unbounded LIMIT. 100 is the default
         // — fits most screens without paging through five tabs to
@@ -39,7 +48,7 @@ final class ReferencesController
             $perPage = 100;
         }
 
-        $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract);
+        $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract, $source);
 
         echo View::render('references/index', [
             'review'        => $review,
@@ -51,6 +60,8 @@ final class ReferencesController
             'status'        => $status,
             'search'        => $search,
             'abstract'      => $abstract,
+            'source'        => $source,
+            'sourceOptions' => $sourceOptions,
             'statuses'      => Reference::STATUSES,
             'metrics'       => Review::metrics($rid),
             'pendingDups'   => Duplicate::pendingCount($rid),
@@ -147,7 +158,8 @@ final class ReferencesController
             $abstract = in_array(($_POST['abstract'] ?? ''), ['with', 'without'], true)
                 ? (string) $_POST['abstract']
                 : '';
-            $ids = Reference::idsForReview($rid, $status, $search, $abstract);
+            $source   = trim((string) ($_POST['source'] ?? ''));
+            $ids = Reference::idsForReview($rid, $status, $search, $abstract, $source);
         } else {
             $raw = (array) ($_POST['reference_ids'] ?? []);
             $ids = array_values(array_unique(array_map('intval', $raw)));
