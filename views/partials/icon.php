@@ -99,6 +99,9 @@ $path = match ($iconName ?? '') {
                  . '<path d="M18 16a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>'
                  . '<path d="M4 8a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>'
                  . '<path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>',
+    // Tabler "eye" — replaces the "Veure" link on the full-text column.
+    'eye'           => '<path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>'
+                 . '<path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"></path>',
     // Tabler "language" — translation action on Summary / Peer-review.
     'language'      => '<path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"></path>'
                  . '<path d="M4 6.371h7"></path>'
