@@ -702,6 +702,7 @@ return [
     'summary' => [
         'title'           => 'Resum',
         'action_title'    => 'Resum de l\'article',
+        'back_to_references' => 'Tornar a Referències',
         'abstract'        => 'Resum (abstract)',
         'ai_summary'      => 'Resum amb IA',
         'empty'           => 'Encara no s\'ha generat cap resum en aquest idioma.',

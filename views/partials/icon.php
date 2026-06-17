@@ -99,6 +99,13 @@ $path = match ($iconName ?? '') {
                  . '<path d="M18 16a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>'
                  . '<path d="M4 8a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>'
                  . '<path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>',
+    // Tabler "language" — translation action on Summary / Peer-review.
+    'language'      => '<path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"></path>'
+                 . '<path d="M4 6.371h7"></path>'
+                 . '<path d="M5 9c0 2.144 2.252 3.908 6 4"></path>'
+                 . '<path d="M12 20l4 -9l4 9"></path>'
+                 . '<path d="M19.1 18h-6.2"></path>'
+                 . '<path d="M6.694 3l.793 .582"></path>',
     // Document page with text lines — used to mark references that
     // already carry an abstract on the references table.
     'abstract'  => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>'
