@@ -2270,3 +2270,54 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .screen-guide-card { border-left: 3px solid var(--c-accent, #4f46e5); }
 .screen-guide__body { padding: 12px 14px; }
 .screen-guide__text { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.55; }
+
+/* References table — visual fix so the row sits ENTIRELY inside the
+   card, no horizontal scroll. The default .table relies on intrinsic
+   column widths, which on long DOIs / journal names pushes the table
+   wider than its parent and clipping starts. table-layout:fixed lets
+   us hand each column an explicit share and allow text wrapping. */
+.references-page .references-table-wrap { overflow-x: hidden; }
+.references-page .references-table {
+    table-layout: fixed;
+    width: 100%;
+    word-break: break-word;
+}
+.references-page .references-table th,
+.references-page .references-table td {
+    vertical-align: top;
+    word-break: break-word;
+    overflow-wrap: anywhere;   /* break long DOIs / URLs */
+}
+/* Column widths: checkbox tiny, identifiers / source / status compact,
+   study soaks up the remainder, actions cap at ~180 px so the stacked
+   buttons stay readable without dominating the row. */
+.references-page .references-table th:nth-child(1),
+.references-page .references-table td:nth-child(1) { width: 30px; }
+.references-page .references-table th:nth-child(3),
+.references-page .references-table td:nth-child(3) { width: 22%; }
+.references-page .references-table th:nth-child(4),
+.references-page .references-table td:nth-child(4) { width: 14%; }
+.references-page .references-table th:nth-child(5),
+.references-page .references-table td:nth-child(5) { width: 90px; }
+.references-page .references-table th:last-child,
+.references-page .references-table td:last-child {
+    width: 160px;
+    white-space: normal;
+}
+/* Action stack: allow wrap inside the cell, kill the nowrap default
+   that was forcing the column wider than its allowance. */
+.references-page .ref-actions { white-space: normal; }
+.references-page .ref-actions__btn {
+    font-size: 12px;
+    padding: 5px 8px;
+    white-space: normal;
+}
+/* Source cell: drop the 200 px / nowrap clamp inherited from the
+   global rule — we now let the constrained column do the work and
+   wrap multi-word labels instead of truncating them. */
+.references-page .refs-source {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}

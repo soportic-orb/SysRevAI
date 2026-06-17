@@ -44,7 +44,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract): string {
     ));
 };
 ?>
-<div class="page">
+<div class="page references-page">
     <div class="page__head page__head--row">
         <div>
             <h1 class="page__title"><?= e(__('references.title')) ?> <span class="muted">(<?= $total ?>)</span></h1>
@@ -191,8 +191,8 @@ $qs = static function (array $extra) use ($status, $search, $abstract): string {
         <?php endif; ?>
 
         <div class="section-card" style="padding:0; margin-top: 12px">
-            <div class="table-wrap">
-                <table class="table">
+            <div class="table-wrap references-table-wrap">
+                <table class="table references-table">
                     <thead><tr>
                         <th class="search-external-table__check"></th>
                         <th><?= e(__('references.col_study')) ?></th>
