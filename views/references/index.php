@@ -71,8 +71,29 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         <div class="alert alert--error"><?= e((string) $err) ?></div>
     <?php endif; ?>
 
+    <!-- Single collapsible card grouping every top-of-table control:
+         full-text bulk actions, filter form (status / abstract / source /
+         search / per-page) and the bulk-selection toolbar (convert /
+         delete / find duplicates). Reuses the platform's collapse-card
+         data-attributes pattern so the toggle behaviour matches the
+         protocol cards on the screening boards. -->
+    <section class="section-card collapse-card references-toolbar-card"
+             data-collapsible>
+        <button type="button" class="collapse-card__head"
+                data-collapsible-toggle
+                aria-controls="referencesToolbarBody" aria-expanded="true">
+            <span class="collapse-card__title"><?= e(__('references.toolbar_title')) ?></span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                 class="icon icon--chevron" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+        <div class="collapse-card__body references-toolbar-card__body"
+             id="referencesToolbarBody" data-collapsible-body>
+
     <?php if ($ftEnabled && $rows !== []): ?>
-        <div class="section-card section-card--inline" style="margin-bottom:16px">
+        <div class="references-toolbar__row references-toolbar__row--ft">
             <span class="muted"><?= e(__('fulltext.bulk_title')) ?>:</span>
             <form method="post" action="/reviews/<?= $id ?>/full-text/enqueue-all" style="display:inline">
                 <?= csrf_field() ?>
@@ -131,11 +152,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         </label>
     </form>
 
-    <?php if ($rows === []): ?>
-        <div class="empty-state"><p><?= e(__('references.none')) ?></p>
-            <a class="btn btn--primary" href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a>
-        </div>
-    <?php else: ?>
+    <?php if ($rows !== []): ?>
         <!-- Citation-normalise bulk action.
              The form holds only the hidden CSRF + style. Row checkboxes
              carry form="referencesConvertForm" via the HTML5 attribute so
@@ -145,7 +162,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         <form method="post"
               action="/reviews/<?= $id ?>/references/convert"
               id="referencesConvertForm"
-              class="section-card search-bulk-card"
+              class="search-bulk-card references-toolbar__row references-toolbar__row--bulk"
               data-ai-action>
             <?= csrf_field() ?>
             <input type="hidden" name="style" id="referencesConvertStyle" value="apa">
@@ -182,7 +199,16 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                 </button>
             </div>
         </form>
+    <?php endif; ?>
 
+        </div><!-- /collapse-card body opened around the toolbars -->
+    </section><!-- /references-toolbar-card -->
+
+    <?php if ($rows === []): ?>
+        <div class="empty-state"><p><?= e(__('references.none')) ?></p>
+            <a class="btn btn--primary" href="/reviews/<?= $id ?>/import"><?= e(__('import.title')) ?></a>
+        </div>
+    <?php else: ?>
         <!-- Sibling form for the find-duplicates action. Lives outside
              #referencesConvertForm so the submit button above can target
              it without nesting forms. data-ai-action raises the

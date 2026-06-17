@@ -1040,6 +1040,7 @@ return [
         'abstract_without'      => 'Sense resum',
         'source_filter_label'   => 'Filtrar per font',
         'source_any'            => 'Font: qualsevol',
+        'toolbar_title'         => 'Filtres i accions massives',
         'has_abstract'          => 'La referència té resum',
         'has_abstract_short'    => 'Amb resum',
         'search'       => 'Cercar',

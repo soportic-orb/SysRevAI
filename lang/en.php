@@ -1037,6 +1037,7 @@ return [
         'abstract_without'      => 'Without abstract',
         'source_filter_label'   => 'Filter by source',
         'source_any'            => 'Source: any',
+        'toolbar_title'         => 'Filters & bulk actions',
         'has_abstract'          => 'Reference has an abstract',
         'has_abstract_short'    => 'Has abstract',
         'search'       => 'Search',
