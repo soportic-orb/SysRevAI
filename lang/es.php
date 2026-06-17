@@ -675,6 +675,7 @@ return [
     'peer_review' => [
         'title'           => 'Revisión por pares (IA)',
         'button'          => 'Peer review',
+        'action_title'    => 'Revisión por pares',
         'empty_intro'     => 'Pide al modelo una evaluación 0-100 en cinco ejes (metodología, claridad, novedad, evidencia, limitaciones), un resumen ejecutivo y un contra-argumento de abogado del diablo. El modelo solo puntúa lo que el texto del PDF respalda.',
         'empty_no_text'   => 'Esta referencia aún no tiene texto completo extraído. Recupera el PDF y vuelve.',
         'generate_btn'    => 'Generar evaluación',
@@ -697,6 +698,7 @@ return [
 
     'summary' => [
         'title'           => 'Resumen',
+        'action_title'    => 'Resumen del artículo',
         'abstract'        => 'Resumen (abstract)',
         'ai_summary'      => 'Resumen con IA',
         'empty'           => 'Todavía no se ha generado ningún resumen en este idioma.',
@@ -848,6 +850,7 @@ return [
         'chat_err_invalid'  => 'El mensaje está vacío o es demasiado largo (máx. 4.000 caracteres).',
         'col_ft'          => 'Texto completo',
         'retrieve'        => 'Recuperar',
+        'retrieve_title'  => 'Recuperar el texto completo',
         'view'            => 'Ver',
         'retrieved_via'   => 'PDF encontrado vía %s.',
         'not_found_anywhere' => 'Ninguna fuente encontró el texto completo.',
