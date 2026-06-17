@@ -311,6 +311,17 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                                     <?= e($src) ?>
                                                 </span>
                                             <?php endif; ?>
+                                            <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
+                                                <!-- Abstract-present pill — sits next to the
+                                                     source chip so it reads as another piece
+                                                     of metadata about the reference. Replaces
+                                                     the old "Amb resum" badge in the action
+                                                     column. -->
+                                                <span class="refs-study-cell__abstract" title="<?= e(__('references.has_abstract')) ?>">
+                                                    <?php $iconName = 'page_break'; $iconClass = 'refs-study-cell__abstract-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                                    <?= e(__('references.abstract_available')) ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -384,14 +395,9 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                                 <?php $iconName = 'analyze'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
                                             </a>
                                         <?php endif; ?>
-                                        <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
-                                            <div class="ref-actions__abstract"
-                                                 title="<?= e(__('references.has_abstract')) ?>"
-                                                 aria-label="<?= e(__('references.has_abstract')) ?>">
-                                                <?php $iconName = 'abstract'; $iconClass = 'ref-actions__abstract-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
-                                                <span class="ref-actions__abstract-label"><?= e(__('references.has_abstract_short')) ?></span>
-                                            </div>
-                                        <?php endif; ?>
+                                        <?php /* Abstract-present badge moved next to the source
+                                                 pill in the Estudi cell. The action column is now
+                                                 strictly for actionable buttons. */ ?>
                                     </div>
                                 </td>
                             </tr>
