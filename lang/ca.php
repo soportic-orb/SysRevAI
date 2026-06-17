@@ -15,6 +15,7 @@ return [
 
     'common' => [
         'working'      => 'Treballant, espera…',
+        'per_page'     => 'Registres per pàgina:',
         'expand'       => 'Desplegar',
         'collapse'     => 'Plegar',
         'close'        => 'Tancar',

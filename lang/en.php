@@ -14,6 +14,7 @@ return [
 
     'common' => [
         'working'      => 'Working, please wait…',
+        'per_page'     => 'Records per page:',
         'expand'       => 'Expand',
         'collapse'     => 'Collapse',
         'close'        => 'Close',
