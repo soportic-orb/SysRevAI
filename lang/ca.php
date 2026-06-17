@@ -81,6 +81,11 @@ return [
         'subtitle'     => 'Resum de la teva activitat de revisió.',
         'no_reviews'   => 'Encara no tens cap revisió.',
         'create_first' => 'Crear la primera revisió',
+        'active_reviews'        => 'Les meves revisions actives',
+        'active_articles'       => 'Els meus articles actius',
+        'no_articles'           => 'Encara no tens cap article carregat.',
+        'upload_first_article'  => 'Pujar el primer article',
+        'view_all'              => 'Veure tots',
         'metrics'      => [
             'imported'     => 'Importats',
             'duplicates'   => 'Duplicats',

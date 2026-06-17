@@ -80,6 +80,11 @@ return [
         'subtitle'     => 'An overview of your review activity.',
         'no_reviews'   => 'You don\'t have any reviews yet.',
         'create_first' => 'Create your first review',
+        'active_reviews'        => 'My active reviews',
+        'active_articles'       => 'My active articles',
+        'no_articles'           => 'You haven\'t uploaded any article yet.',
+        'upload_first_article'  => 'Upload your first article',
+        'view_all'              => 'View all',
         'metrics'      => [
             'imported'     => 'Imported',
             'duplicates'   => 'Duplicates',
