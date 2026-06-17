@@ -2257,3 +2257,9 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .article-card__title { margin: 0; font-size: 14.5px; font-weight: 700; line-height: 1.35; }
 .article-card__source { margin: 2px 0 6px; font-size: 12px; }
 .article-card__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+
+/* AI-usage declaration page — totals list under the summary section,
+   plus a tighter look for the table column alignment. */
+.ai-declaration__totals { list-style: none; padding: 0; margin: 10px 0 0; font-size: 12.5px; display: flex; gap: 16px; flex-wrap: wrap; }
+.ai-declaration__totals li { padding: 0; }
+.ai-declaration__table .num { text-align: right; }
