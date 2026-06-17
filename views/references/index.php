@@ -307,58 +307,60 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                         <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
-                                <td class="ref-actions">
-                                    <?php
-                                    // Full-text "Retrieve" sits at the top of the action stack
-                                    // when the column is enabled and the file hasn't been
-                                    // fetched yet (and isn't already queued). The status dot
-                                    // stays in its own column as the at-a-glance indicator.
-                                    $canRetrieveFt = $ftEnabled && !$queued
-                                        && !($statusRow !== null && (int) $statusRow['has_fulltext'] === 1);
-                                    if ($canRetrieveFt):
-                                    ?>
-                                        <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/full-text"
-                                              class="ref-actions__btn-form">
-                                            <?= csrf_field() ?>
-                                            <button class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
-                                                    data-busy-label="<?= e(__('common.working')) ?>"
-                                                    title="<?= e(__('fulltext.retrieve_title')) ?>"
-                                                    aria-label="<?= e(__('fulltext.retrieve_title')) ?>">
-                                                <?php $iconName = 'book_download'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                    <a class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
-                                       href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary"
-                                       title="<?= e(__('summary.action_title')) ?>"
-                                       aria-label="<?= e(__('summary.action_title')) ?>">
-                                        <?php $iconName = 'text_wrap'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
-                                    </a>
-                                    <?php
-                                    // Peer-review rubric is offered once the full-text has been
-                                    // fetched (status dot is green); the controller re-checks the
-                                    // extracted_text presence on POST so a stale view never leads
-                                    // to a 500. The Reviews module is the only platform tool that
-                                    // currently surfaces this — global Peer-review tool is future
-                                    // work.
-                                    $hasFullText = $statusRow !== null && (int) $statusRow['has_fulltext'] === 1;
-                                    if ($hasFullText):
-                                    ?>
+                                <td class="ref-actions-cell">
+                                    <div class="ref-actions">
+                                        <?php
+                                        // Full-text "Retrieve" sits at the top of the action stack
+                                        // when the column is enabled and the file hasn't been
+                                        // fetched yet (and isn't already queued). The status dot
+                                        // stays in its own column as the at-a-glance indicator.
+                                        $canRetrieveFt = $ftEnabled && !$queued
+                                            && !($statusRow !== null && (int) $statusRow['has_fulltext'] === 1);
+                                        if ($canRetrieveFt):
+                                        ?>
+                                            <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/full-text"
+                                                  class="ref-actions__btn-form">
+                                                <?= csrf_field() ?>
+                                                <button class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
+                                                        data-busy-label="<?= e(__('common.working')) ?>"
+                                                        title="<?= e(__('fulltext.retrieve_title')) ?>"
+                                                        aria-label="<?= e(__('fulltext.retrieve_title')) ?>">
+                                                    <?php $iconName = 'book_download'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                         <a class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
-                                           href="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review"
-                                           title="<?= e(__('peer_review.action_title')) ?>"
-                                           aria-label="<?= e(__('peer_review.action_title')) ?>">
-                                            <?php $iconName = 'analyze'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                           href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary"
+                                           title="<?= e(__('summary.action_title')) ?>"
+                                           aria-label="<?= e(__('summary.action_title')) ?>">
+                                            <?php $iconName = 'text_wrap'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
                                         </a>
-                                    <?php endif; ?>
-                                    <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
-                                        <div class="ref-actions__abstract"
-                                             title="<?= e(__('references.has_abstract')) ?>"
-                                             aria-label="<?= e(__('references.has_abstract')) ?>">
-                                            <?php $iconName = 'abstract'; $iconClass = 'ref-actions__abstract-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
-                                            <span class="ref-actions__abstract-label"><?= e(__('references.has_abstract_short')) ?></span>
-                                        </div>
-                                    <?php endif; ?>
+                                        <?php
+                                        // Peer-review rubric is offered once the full-text has been
+                                        // fetched (status dot is green); the controller re-checks the
+                                        // extracted_text presence on POST so a stale view never leads
+                                        // to a 500. The Reviews module is the only platform tool that
+                                        // currently surfaces this — global Peer-review tool is future
+                                        // work.
+                                        $hasFullText = $statusRow !== null && (int) $statusRow['has_fulltext'] === 1;
+                                        if ($hasFullText):
+                                        ?>
+                                            <a class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
+                                               href="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review"
+                                               title="<?= e(__('peer_review.action_title')) ?>"
+                                               aria-label="<?= e(__('peer_review.action_title')) ?>">
+                                                <?php $iconName = 'analyze'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
+                                            <div class="ref-actions__abstract"
+                                                 title="<?= e(__('references.has_abstract')) ?>"
+                                                 aria-label="<?= e(__('references.has_abstract')) ?>">
+                                                <?php $iconName = 'abstract'; $iconClass = 'ref-actions__abstract-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                                <span class="ref-actions__abstract-label"><?= e(__('references.has_abstract_short')) ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

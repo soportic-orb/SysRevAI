@@ -2424,3 +2424,39 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     background: var(--c-hover, rgba(0,0,0,.06));
     border-color: transparent;
 }
+
+/* References — REVERT the borderless icon experiment. Buttons get
+   their .btn--ghost border back (cleaner readable click target).
+   The earlier "discontinuous bottom line" wasn't caused by the
+   button borders — it was caused by `class="ref-actions"` sitting
+   ON THE <td>, which made the td a flex container and broke its
+   display:table-cell behaviour, so the row separator stopped
+   rendering in that column. The view now wraps the buttons in an
+   inner <div class="ref-actions"> and the td has its own
+   .ref-actions-cell class with proper table-cell semantics. */
+.references-page .ref-actions__btn.btn--icon,
+.references-page .ref-actions__btn.btn--icon.btn--ghost,
+.references-page .ft-view-link {
+    border-color: var(--c-border);
+    background: var(--c-surface);
+}
+.references-page .ref-actions__btn.btn--icon:hover,
+.references-page .ft-view-link:hover {
+    background: var(--c-hover, rgba(0,0,0,.04));
+    border-color: var(--c-border);
+}
+
+/* Action cell — keep table-cell semantics so the td renders its
+   border-bottom in line with the rest of the row. The flex layout
+   moves to the inner .ref-actions wrapper. */
+.references-page .ref-actions-cell {
+    display: table-cell;
+    vertical-align: middle;
+}
+.references-page .ref-actions-cell .ref-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
