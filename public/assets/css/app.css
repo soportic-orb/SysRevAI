@@ -2351,3 +2351,33 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     color: #B0271A;
     border-color: #F4C9C3;
 }
+
+/* References row polish — three small fixes:
+   1) Status pills (Importat / Duplicat / …) never wrap; the chip
+      always renders on a single line.
+   2) Row separator is one continuous line under every td in the
+      row, including the action cell — vertical-align:middle stops
+      the perceived "broken line" feeling where icon buttons sat
+      near the top while text cells spanned the full row height.
+   3) "Veure" link in the full-text column is now an eye icon. */
+.tag { white-space: nowrap; }
+.references-page .references-table th,
+.references-page .references-table td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--c-border);
+}
+.references-page .ft-view-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; height: 30px;
+    border: 1px solid var(--c-border);
+    border-radius: 999px;
+    color: var(--c-text);
+    text-decoration: none;
+    background: var(--c-surface);
+    margin-left: 4px;
+    transition: background .12s ease;
+}
+.references-page .ft-view-link:hover { background: var(--c-hover, rgba(0,0,0,.04)); }
+.references-page .ft-view-link__icon { width: 16px; height: 16px; }

@@ -297,7 +297,13 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                     <td>
                                         <span class="<?= e($icon['class']) ?>" title="<?= e($icon['label']) ?>"></span>
                                         <?php if ($statusRow !== null && (int) $statusRow['has_fulltext'] === 1 && !empty($statusRow['fulltext_url'])): ?>
-                                            <a class="link-ext" href="<?= e((string) $statusRow['fulltext_url']) ?>" target="_blank" rel="noopener noreferrer"><?= e(__('fulltext.view')) ?></a>
+                                            <a class="link-ext ft-view-link"
+                                               href="<?= e((string) $statusRow['fulltext_url']) ?>"
+                                               target="_blank" rel="noopener noreferrer"
+                                               title="<?= e(__('fulltext.view')) ?>"
+                                               aria-label="<?= e(__('fulltext.view')) ?>">
+                                                <?php $iconName = 'eye'; $iconClass = 'ft-view-link__icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                            </a>
                                         <?php endif; ?>
                                     </td>
                                 <?php endif; ?>
