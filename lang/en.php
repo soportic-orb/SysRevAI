@@ -675,6 +675,7 @@ return [
     'peer_review' => [
         'title'           => 'Peer review (AI)',
         'button'          => 'Peer review',
+        'action_title'    => 'Peer review',
         'empty_intro'     => 'Ask the model for a 0-100 evaluation on five axes (methodology, clarity, novelty, evidence, limitations), an executive summary and a devil\'s-advocate counter-argument. Scores reflect only what the PDF text supports.',
         'empty_no_text'   => 'This reference doesn\'t have extracted full-text yet. Retrieve the PDF and come back.',
         'generate_btn'    => 'Generate evaluation',
@@ -697,6 +698,7 @@ return [
 
     'summary' => [
         'title'           => 'Summary',
+        'action_title'    => 'Article summary',
         'abstract'        => 'Abstract',
         'ai_summary'      => 'AI summary',
         'empty'           => 'No summary has been generated in this language yet.',
@@ -848,6 +850,7 @@ return [
         'chat_err_invalid'  => 'The message is empty or too long (max 4 000 characters).',
         'col_ft'          => 'Full text',
         'retrieve'        => 'Retrieve',
+        'retrieve_title'  => 'Retrieve the full text',
         'view'            => 'View',
         'retrieved_via'   => 'PDF found via %s.',
         'not_found_anywhere' => 'No source found the full text.',

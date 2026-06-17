@@ -83,6 +83,22 @@ $path = match ($iconName ?? '') {
                  . '<path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>'
                  . '<path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>'
                  . '<path d="M10 12l4 4m0 -4l-4 4"></path>',
+    // Tabler "book-download" — full-text retrieval action button on
+    // the references table.
+    'book_download' => '<path d="M12 20h-6a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12v5"></path>'
+                 . '<path d="M13 16h-7a2 2 0 0 0 -2 2"></path>'
+                 . '<path d="M15 19l3 3l3 -3"></path>'
+                 . '<path d="M18 22v-9"></path>',
+    // Tabler "text-wrap-disabled" — represents the AI summary action.
+    'text_wrap'     => '<path d="M4 6l10 0"></path>'
+                 . '<path d="M4 18l10 0"></path>'
+                 . '<path d="M4 12h17l-3 -3m0 6l3 -3"></path>',
+    // Tabler "analyze" — represents the peer-review rubric action.
+    'analyze'       => '<path d="M20 11a8.1 8.1 0 0 0 -6.986 -6.918a8.095 8.095 0 0 0 -8.019 3.918"></path>'
+                 . '<path d="M4 13a8.1 8.1 0 0 0 15 3"></path>'
+                 . '<path d="M18 16a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>'
+                 . '<path d="M4 8a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>'
+                 . '<path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>',
     // Document page with text lines — used to mark references that
     // already carry an abstract on the references table.
     'abstract'  => '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>'

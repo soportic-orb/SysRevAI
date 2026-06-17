@@ -304,13 +304,20 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                         <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/full-text"
                                               class="ref-actions__btn-form">
                                             <?= csrf_field() ?>
-                                            <button class="btn btn--ghost btn--sm ref-actions__btn"
-                                                    data-busy-label="<?= e(__('common.working')) ?>">
-                                                <?= e(__('fulltext.retrieve')) ?>
+                                            <button class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
+                                                    data-busy-label="<?= e(__('common.working')) ?>"
+                                                    title="<?= e(__('fulltext.retrieve_title')) ?>"
+                                                    aria-label="<?= e(__('fulltext.retrieve_title')) ?>">
+                                                <?php $iconName = 'book_download'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
                                             </button>
                                         </form>
                                     <?php endif; ?>
-                                    <a class="btn btn--ghost btn--sm ref-actions__btn" href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary">&#10024; <?= e(__('summary.title')) ?></a>
+                                    <a class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
+                                       href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary"
+                                       title="<?= e(__('summary.action_title')) ?>"
+                                       aria-label="<?= e(__('summary.action_title')) ?>">
+                                        <?php $iconName = 'text_wrap'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                                    </a>
                                     <?php
                                     // Peer-review rubric is offered once the full-text has been
                                     // fetched (status dot is green); the controller re-checks the
@@ -321,8 +328,11 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                     $hasFullText = $statusRow !== null && (int) $statusRow['has_fulltext'] === 1;
                                     if ($hasFullText):
                                     ?>
-                                        <a class="btn btn--ghost btn--sm ref-actions__btn" href="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review">
-                                            &#10024; <?= e(__('peer_review.button')) ?>
+                                        <a class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
+                                           href="/reviews/<?= $id ?>/references/<?= $refId ?>/peer-review"
+                                           title="<?= e(__('peer_review.action_title')) ?>"
+                                           aria-label="<?= e(__('peer_review.action_title')) ?>">
+                                            <?php $iconName = 'analyze'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
                                         </a>
                                     <?php endif; ?>
                                     <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>
@@ -332,26 +342,6 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                             <?php $iconName = 'abstract'; $iconClass = 'ref-actions__abstract-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
                                             <span class="ref-actions__abstract-label"><?= e(__('references.has_abstract_short')) ?></span>
                                         </div>
-                                    <?php endif; ?>
-                                    <?php
-                                    // Delete is offered only while the reference hasn't yet
-                                    // been pulled into any reviewer's decision history. We
-                                    // approximate that by the row's status; the controller
-                                    // re-checks against screening_decisions on POST so the
-                                    // client can't bypass the guard.
-                                    $canDeleteRow = $canDelete && in_array((string) $r['status'], ['imported', 'duplicate'], true);
-                                    if ($canDeleteRow):
-                                    ?>
-                                        <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/delete"
-                                              style="display:inline"
-                                              data-confirm="<?= e(__('references.delete_confirm')) ?>"
-                                              data-confirm-tone="danger"
-                                              data-confirm-button="<?= e(__('references.delete')) ?>">
-                                            <?= csrf_field() ?>
-                                            <button type="submit" class="btn btn--ghost btn--sm btn--danger"
-                                                    title="<?= e(__('references.delete')) ?>"
-                                                    aria-label="<?= e(__('references.delete')) ?>">&times;</button>
-                                        </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>

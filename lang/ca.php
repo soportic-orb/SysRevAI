@@ -678,6 +678,7 @@ return [
     'peer_review' => [
         'title'           => 'Revisió per parells (IA)',
         'button'          => 'Peer review',
+        'action_title'    => 'Revisió per parells',
         'empty_intro'     => 'Demana al model una avaluació 0-100 en cinc eixos (metodologia, claredat, novetat, evidència, limitacions), un resum executiu i un contraargument d\'advocat del diable. El model només puntua el que el text del PDF avala.',
         'empty_no_text'   => 'Aquesta referència encara no té text complet extret. Recupera el PDF i torna.',
         'generate_btn'    => 'Generar avaluació',
@@ -700,6 +701,7 @@ return [
 
     'summary' => [
         'title'           => 'Resum',
+        'action_title'    => 'Resum de l\'article',
         'abstract'        => 'Resum (abstract)',
         'ai_summary'      => 'Resum amb IA',
         'empty'           => 'Encara no s\'ha generat cap resum en aquest idioma.',
@@ -851,6 +853,7 @@ return [
         'chat_err_invalid'  => 'El missatge és buit o és massa llarg (màx. 4.000 caràcters).',
         'col_ft'          => 'Text complet',
         'retrieve'        => 'Recuperar',
+        'retrieve_title'  => 'Recuperar el text complet',
         'view'            => 'Veure',
         'retrieved_via'   => 'PDF trobat via %s.',
         'not_found_anywhere' => 'Cap font ha trobat el text complet.',
