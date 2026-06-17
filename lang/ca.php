@@ -1324,6 +1324,7 @@ return [
         'no_reasons'         => 'Sense motius d\'exclusió definits.',
         'metric_imported'     => 'Importats',
         'metric_duplicate'    => 'Duplicats',
+        'metric_duplicates_removed' => 'Duplicats eliminats',
         'metric_ta_screening' => 'Cribratge T/R',
         'metric_ta_included'  => 'Inclosos T/R',
         'metric_ft_screening' => 'Text complet',

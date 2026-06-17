@@ -1321,6 +1321,7 @@ return [
         'no_reasons'         => 'Sin motivos de exclusión definidos.',
         'metric_imported'     => 'Importados',
         'metric_duplicate'    => 'Duplicados',
+        'metric_duplicates_removed' => 'Duplicados eliminados',
         'metric_ta_screening' => 'Cribado T/R',
         'metric_ta_included'  => 'Incluidos T/R',
         'metric_ft_screening' => 'Texto completo',

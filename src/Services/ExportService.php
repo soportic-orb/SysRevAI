@@ -44,7 +44,23 @@ final class ExportService
             $identified = array_sum($byStatus);
         }
 
-        $duplicates = $byStatus['duplicate'] ?? 0;
+        // Duplicates removed = currently flagged as status='duplicate'
+        // (rows still on the table) + the persistent counter populated
+        // every time the user bulk-deletes a duplicate from the
+        // references list. Without the counter the PRISMA cell would
+        // fall to 0 the moment the user cleaned up duplicates.
+        $duplicatesPersisted = 0;
+        try {
+            $reviews = Database::table('reviews');
+            $reviewRow = Database::selectOne(
+                "SELECT duplicates_removed FROM `{$reviews}` WHERE id = ?",
+                [$reviewId]
+            );
+            $duplicatesPersisted = (int) ($reviewRow['duplicates_removed'] ?? 0);
+        } catch (\Throwable) {
+            // Pre-migration install — column doesn't exist yet.
+        }
+        $duplicates = ($byStatus['duplicate'] ?? 0) + $duplicatesPersisted;
         $afterDedup = max(0, $identified - $duplicates);
         $screenedTa = ($byStatus['ta_screening'] ?? 0)
             + ($byStatus['ta_included'] ?? 0)

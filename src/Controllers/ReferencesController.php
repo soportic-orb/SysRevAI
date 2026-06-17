@@ -107,11 +107,16 @@ final class ReferencesController
             FileStorage::delete((string) $ft['pdf_path']);
         }
 
+        $wasDuplicate = (string) ($ref['status'] ?? '') === 'duplicate';
         Reference::delete($referenceId);
+        if ($wasDuplicate) {
+            Review::addDuplicatesRemoved($rid, 1);
+        }
 
         ActivityLog::record('references.deleted', [
-            'reference_id' => $referenceId,
-            'title'        => (string) ($ref['title'] ?? ''),
+            'reference_id'      => $referenceId,
+            'title'             => (string) ($ref['title'] ?? ''),
+            'was_duplicate'     => $wasDuplicate,
         ], $rid);
 
         Session::flash('success', __('references.delete_ok'));
@@ -182,6 +187,10 @@ final class ReferencesController
         $deleted = 0;
         $locked  = 0;
         $errors  = 0;
+        // Track how many of the deleted rows were duplicates so the
+        // PRISMA "Duplicates removed" cell can keep reflecting them
+        // after the rows themselves are gone.
+        $duplicatesRemoved = 0;
         foreach ($ids as $refId) {
             $ref = Reference::find((int) $refId);
             if ($ref === null || (int) $ref['review_id'] !== $rid) {
@@ -196,18 +205,24 @@ final class ReferencesController
                 if ($ft !== null && !empty($ft['pdf_path'])) {
                     FileStorage::delete((string) $ft['pdf_path']);
                 }
+                $wasDuplicate = (string) ($ref['status'] ?? '') === 'duplicate';
                 Reference::delete((int) $refId);
                 $deleted++;
+                if ($wasDuplicate) {
+                    $duplicatesRemoved++;
+                }
             } catch (\Throwable) {
                 $errors++;
             }
         }
+        Review::addDuplicatesRemoved($rid, $duplicatesRemoved);
 
         ActivityLog::record('references.deleted_bulk', [
-            'scope'   => $scope === 'filtered' ? 'filtered' : 'ids',
-            'deleted' => $deleted,
-            'locked'  => $locked,
-            'errors'  => $errors,
+            'scope'              => $scope === 'filtered' ? 'filtered' : 'ids',
+            'deleted'            => $deleted,
+            'locked'             => $locked,
+            'errors'             => $errors,
+            'duplicates_removed' => $duplicatesRemoved,
         ], $rid);
 
         if ($deleted === 0 && $locked > 0) {

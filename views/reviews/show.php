@@ -12,7 +12,7 @@ use SysRevAI\Core\Session;
 /** @var array $reasons */
 $id = (int) $review['id'];
 $isOwner = (int) $review['owner_id'] === (int) Auth::id();
-$metricKeys = ['imported', 'duplicate', 'ta_screening', 'ta_included', 'ft_screening', 'ft_included', 'ft_excluded', 'extracted'];
+$metricKeys = ['imported', 'duplicate', 'duplicates_removed', 'ta_screening', 'ta_included', 'ft_screening', 'ft_included', 'ft_excluded', 'extracted'];
 
 /** Tiny inline-SVG library used by the protocol cards. Each icon is 18×18 px
  *  and inherits the surrounding text colour via currentColor.                */
