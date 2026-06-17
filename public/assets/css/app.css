@@ -2404,3 +2404,23 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 }
 .references-page .ft-view-link:hover { background: var(--c-hover, rgba(0,0,0,.04)); }
 .references-page .ft-view-link__icon { width: 16px; height: 16px; }
+
+/* References action cell — kill the per-button border so each icon
+   doesn't draw its own rectangle inside the cell. The row separator
+   (.references-table td border-bottom) becomes the only horizontal
+   line in the action column, matching the rest of the row visually.
+   Hover keeps a soft background tint so the affordance is still
+   obvious. Applies to the icon buttons in .ref-actions AND to the
+   "view full text" eye link in the Text complet column. */
+.references-page .ref-actions__btn.btn--icon,
+.references-page .ref-actions__btn.btn--icon.btn--ghost,
+.references-page .ft-view-link {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+.references-page .ref-actions__btn.btn--icon:hover,
+.references-page .ft-view-link:hover {
+    background: var(--c-hover, rgba(0,0,0,.06));
+    border-color: transparent;
+}
