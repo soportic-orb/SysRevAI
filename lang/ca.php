@@ -1043,6 +1043,7 @@ return [
         'toolbar_title'         => 'Filtres i accions massives',
         'has_abstract'          => 'La referència té resum',
         'has_abstract_short'    => 'Amb resum',
+        'abstract_available'    => 'Abstract disponible',
         'search'       => 'Cercar',
         'none'         => 'Encara no hi ha referències. Importa\'n per començar.',
         'col_study'    => 'Estudi',

@@ -102,6 +102,13 @@ $path = match ($iconName ?? '') {
     // Tabler "eye" — replaces the "Veure" link on the full-text column.
     'eye'           => '<path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>'
                  . '<path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"></path>',
+    // Tabler "page-break" — marks references that have an abstract
+    // available, shown as a small pill next to the import source on
+    // the references table.
+    'page_break'    => '<path d="M14 3v4a1 1 0 0 0 1 1h4"></path>'
+                 . '<path d="M19 18v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1"></path>'
+                 . '<path d="M3 14h3m4.5 0h3m4.5 0h3"></path>'
+                 . '<path d="M5 10v-5a2 2 0 0 1 2 -2h7l5 5v2"></path>',
     // Tabler "language" — translation action on Summary / Peer-review.
     'language'      => '<path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"></path>'
                  . '<path d="M4 6.371h7"></path>'

@@ -1040,6 +1040,7 @@ return [
         'toolbar_title'         => 'Filters & bulk actions',
         'has_abstract'          => 'Reference has an abstract',
         'has_abstract_short'    => 'Has abstract',
+        'abstract_available'    => 'Abstract available',
         'search'       => 'Search',
         'none'         => 'No references yet. Import some to get started.',
         'col_study'    => 'Study',

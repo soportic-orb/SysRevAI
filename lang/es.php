@@ -1040,6 +1040,7 @@ return [
         'toolbar_title'         => 'Filtros y acciones masivas',
         'has_abstract'          => 'La referencia tiene resumen',
         'has_abstract_short'    => 'Con resumen',
+        'abstract_available'    => 'Abstract disponible',
         'search'       => 'Buscar',
         'none'         => 'Todavía no hay referencias. Importa para empezar.',
         'col_study'    => 'Estudio',
