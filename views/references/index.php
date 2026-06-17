@@ -222,8 +222,6 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                     <thead><tr>
                         <th class="search-external-table__check"></th>
                         <th><?= e(__('references.col_study')) ?></th>
-                        <th><?= e(__('references.col_ids')) ?></th>
-                        <th><?= e(__('references.col_source')) ?></th>
                         <th><?= e(__('references.col_status')) ?></th>
                         <?php if ($ftEnabled): ?><th><?= e(__('fulltext.col_ft')) ?></th><?php endif; ?>
                         <th></th>
@@ -245,42 +243,50 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                            value="<?= (int) $r['id'] ?>"
                                            aria-label="<?= e(__('search.select_row')) ?>">
                                 </td>
-                                <td>
-                                    <strong><?= e((string) ($r['title'] ?: '—')) ?></strong><br>
-                                    <span class="muted">
+                                <td class="refs-study-cell">
+                                    <?php
+                                    // Single "Estudi" cell — title, authors, identifiers
+                                    // and source are stacked vertically so the column can
+                                    // soak up the bulk of the row width. Each block is
+                                    // one line of metadata under the title; resolver
+                                    // URLs let the reviewer jump to the original record
+                                    // in one click (rel="noopener noreferrer" isolates
+                                    // the opener tab).
+                                    $doi  = trim((string) ($r['doi']  ?? ''));
+                                    $pmid = trim((string) ($r['pmid'] ?? ''));
+                                    $src  = trim((string) ($r['source_file'] ?? ''));
+                                    ?>
+                                    <strong class="refs-study-cell__title"><?= e((string) ($r['title'] ?: '—')) ?></strong>
+                                    <div class="muted refs-study-cell__authors">
                                         <?= e(implode('; ', array_slice($authors, 0, 3))) ?><?= count($authors) > 3 ? ' et al.' : '' ?>
                                         <?php if (!empty($r['year'])): ?> · <?= (int) $r['year'] ?><?php endif; ?>
                                         <?php if (!empty($r['journal'])): ?> · <?= e((string) $r['journal']) ?><?php endif; ?>
-                                    </span>
-                                </td>
-                                <td class="muted">
-                                    <?php
-                                    // Resolver URLs for the platform's identifiers — same
-                                    // pattern used by the search-results table so the
-                                    // reviewer can jump to the original record in one
-                                    // click. rel="noopener noreferrer" keeps the opener
-                                    // tab isolated from window.opener access on the
-                                    // destination page.
-                                    $doi  = trim((string) ($r['doi']  ?? ''));
-                                    $pmid = trim((string) ($r['pmid'] ?? ''));
-                                    ?>
-                                    <?php if ($doi !== ''): ?>
-                                        DOI:
-                                        <a class="link-ext"
-                                           href="https://doi.org/<?= e(rawurlencode($doi)) ?>"
-                                           target="_blank" rel="noopener noreferrer"><?= e($doi) ?></a>
-                                        <br>
+                                    </div>
+                                    <?php if ($doi !== '' || $pmid !== '' || $src !== ''): ?>
+                                        <div class="refs-study-cell__meta muted">
+                                            <?php if ($doi !== ''): ?>
+                                                <span class="refs-study-cell__id">
+                                                    DOI:
+                                                    <a class="link-ext"
+                                                       href="https://doi.org/<?= e(rawurlencode($doi)) ?>"
+                                                       target="_blank" rel="noopener noreferrer"><?= e($doi) ?></a>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($pmid !== ''): ?>
+                                                <span class="refs-study-cell__id">
+                                                    PMID:
+                                                    <a class="link-ext"
+                                                       href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode($pmid)) ?>/"
+                                                       target="_blank" rel="noopener noreferrer"><?= e($pmid) ?></a>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($src !== ''): ?>
+                                                <span class="refs-study-cell__source" title="<?= e(__('references.col_source')) ?>">
+                                                    <?= e($src) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php endif; ?>
-                                    <?php if ($pmid !== ''): ?>
-                                        PMID:
-                                        <a class="link-ext"
-                                           href="https://pubmed.ncbi.nlm.nih.gov/<?= e(rawurlencode($pmid)) ?>/"
-                                           target="_blank" rel="noopener noreferrer"><?= e($pmid) ?></a>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="muted refs-source">
-                                    <?php $src = trim((string) ($r['source_file'] ?? '')); ?>
-                                    <?= $src !== '' ? e($src) : '<span class="muted">—</span>' ?>
                                 </td>
                                 <td>
                                     <?php
