@@ -60,4 +60,14 @@ $registry  = $isScoping ? 'OSF' : 'PROSPERO';
             </a>
         </div>
     </div>
+
+    <div class="section-card">
+        <h2 class="section__subtitle"><?= e(__('exports.ai_declaration_title')) ?></h2>
+        <p class="muted"><?= e(__('exports.ai_declaration_help')) ?></p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/reviews/<?= $id ?>/ai-declaration">
+                &#9881; <?= e(__('exports.ai_declaration_open')) ?>
+            </a>
+        </div>
+    </div>
 </div>

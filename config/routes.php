@@ -39,6 +39,7 @@ use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Controllers\ChatController;
 use SysRevAI\Controllers\ExportController;
 use SysRevAI\Controllers\ReviewRegistrationController;
+use SysRevAI\Controllers\AiDeclarationController;
 use SysRevAI\Controllers\ReviewSearchSyntaxController;
 use SysRevAI\Controllers\ExtractionController;
 use SysRevAI\Controllers\FullTextScreeningController;
@@ -223,6 +224,8 @@ $router->post('/reviews/{id}/exports/registration/save', [ReviewRegistrationCont
 $router->post('/reviews/{id}/exports/registration/ai-fill', [ReviewRegistrationController::class, 'aiFill'], ['auth']);
 $router->get('/reviews/{id}/exports/registration/word', [ReviewRegistrationController::class, 'word'], ['auth']);
 $router->get('/reviews/{id}/exports/registration/pdf', [ReviewRegistrationController::class, 'pdf'], ['auth']);
+$router->get('/reviews/{id}/ai-declaration', [AiDeclarationController::class, 'show'], ['auth']);
+$router->get('/reviews/{id}/ai-declaration/word', [AiDeclarationController::class, 'word'], ['auth']);
 $router->get('/reviews/{id}/search-syntaxes', [ReviewSearchSyntaxController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/search-syntaxes', [ReviewSearchSyntaxController::class, 'save'], ['auth']);
 $router->post('/reviews/{id}/search-syntaxes/ai-import', [ReviewSearchSyntaxController::class, 'aiImport'], ['auth']);
