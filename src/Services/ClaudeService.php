@@ -32,7 +32,10 @@ final class ClaudeService
         private readonly string $apiKey,
         private readonly string $modelComplex = 'claude-opus-4-7',
         private readonly string $modelLight = 'claude-haiku-4-5-20251001',
-        private readonly int $maxTokens = 4096,
+        // 8192 gives headroom for long chat answers (full methodology
+        // walk-throughs, PRISMA write-ups, multi-paragraph rewrites).
+        // The admin can override this via claude.max_tokens.
+        private readonly int $maxTokens = 8192,
     ) {
     }
 
@@ -42,7 +45,7 @@ final class ClaudeService
             (string) (setting('claude.api_key') ?? ''),
             (string) (setting('claude.model_complex') ?? 'claude-opus-4-7'),
             (string) (setting('claude.model_light') ?? 'claude-haiku-4-5-20251001'),
-            (int) (setting('claude.max_tokens') ?? 4096),
+            (int) (setting('claude.max_tokens') ?? 8192),
         );
     }
 
@@ -627,11 +630,12 @@ final class ClaudeService
         }
         $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-        // Use the "light" model and a tighter token cap: conversational
-        // answers are typically short and the Copilot needs to feel snappy.
-        // The admin can swap the light slot to Sonnet/Opus if they want
-        // more depth at the cost of latency.
-        $res = $this->request($this->modelLight, $system, $messages, 800, 'copilot', $reviewId, false);
+        // Generous output budget — the 800-token cap that originally
+        // shipped here truncated mid-sentence on longer answers
+        // (multi-paragraph methodology explanations, tables, etc.).
+        // 8 k is well inside Haiku 4.5's per-request quota; the admin
+        // can swap the light slot to Sonnet if they want more depth.
+        $res = $this->request($this->modelLight, $system, $messages, 8000, 'copilot', $reviewId, false);
         return $res['ok']
             ? ['ok' => true, 'reply' => (string) $res['text']]
             : ['ok' => false, 'error' => $res['error']];
@@ -687,7 +691,10 @@ final class ClaudeService
         }
         $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-        $res = $this->request($this->modelLight, $system, $messages, 800, 'copilot', null, false);
+        // 8 k output cap — matches copilotChat() so the global (no-review)
+        // Copilot keeps parity with the review-scoped one and stops
+        // truncating long answers (PRISMA checklists, methods write-ups).
+        $res = $this->request($this->modelLight, $system, $messages, 8000, 'copilot', null, false);
         return $res['ok']
             ? ['ok' => true, 'reply' => (string) $res['text']]
             : ['ok' => false, 'error' => $res['error']];
@@ -751,7 +758,10 @@ final class ClaudeService
         }
         $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-        $res = $this->request($this->modelLight, $system, $messages, 1200, 'copilot', null, false);
+        // 8 k cap — same reasoning as copilotChat/assistantChat. Article
+        // discussions often want full paragraph rewrites or section
+        // walk-throughs that don't fit in 1.2 k tokens.
+        $res = $this->request($this->modelLight, $system, $messages, 8000, 'copilot', null, false);
         return $res['ok']
             ? ['ok' => true, 'reply' => (string) $res['text']]
             : ['ok' => false, 'error' => $res['error']];
