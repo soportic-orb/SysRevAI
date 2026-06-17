@@ -2263,3 +2263,10 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .ai-declaration__totals { list-style: none; padding: 0; margin: 10px 0 0; font-size: 12.5px; display: flex; gap: 16px; flex-wrap: wrap; }
 .ai-declaration__totals li { padding: 0; }
 .ai-declaration__table .num { text-align: right; }
+
+/* Screening guide card — sibling of the protocol collapse-card on
+   T/R + full-text screens. Soft accent border so it reads as the
+   reviewer rubric while still feeling like the same family. */
+.screen-guide-card { border-left: 3px solid var(--c-accent, #4f46e5); }
+.screen-guide__body { padding: 12px 14px; }
+.screen-guide__text { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.55; }

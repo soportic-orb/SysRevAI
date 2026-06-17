@@ -113,6 +113,14 @@ $extractUrl = $isEdit
         </div>
 
         <div class="field">
+            <label class="field-label" for="screening_guide"><?= e(__('reviews.screening_guide')) ?></label>
+            <textarea class="input" id="screening_guide" name="screening_guide" rows="10"
+                      placeholder="<?= e(__('reviews.screening_guide_placeholder')) ?>"
+            ><?= e((string) ($review['screening_guide'] ?? '')) ?></textarea>
+            <span class="field-help"><?= e(__('reviews.screening_guide_help')) ?></span>
+        </div>
+
+        <div class="field">
             <label class="field-label" for="screening_mode"><?= e(__('reviews.screening_mode')) ?></label>
             <select class="select" id="screening_mode" name="screening_mode">
                 <?php foreach (Review::SCREENING_MODES as $m): ?>
