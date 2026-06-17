@@ -1031,6 +1031,8 @@ return [
         'abstract_any'          => 'Abstract: any',
         'abstract_with'         => 'With abstract',
         'abstract_without'      => 'Without abstract',
+        'source_filter_label'   => 'Filter by source',
+        'source_any'            => 'Source: any',
         'has_abstract'          => 'Reference has an abstract',
         'has_abstract_short'    => 'Has abstract',
         'search'       => 'Search',

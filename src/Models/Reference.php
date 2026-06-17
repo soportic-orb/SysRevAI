@@ -70,15 +70,18 @@ final class Reference
      *
      * @return array{rows:array,total:int}
      */
-    public static function forReview(int $reviewId, string $status = '', string $search = '', int $page = 1, int $perPage = 25, string $abstract = ''): array
+    public static function forReview(int $reviewId, string $status = '', string $search = '', int $page = 1, int $perPage = 25, string $abstract = '', string $source = ''): array
     {
         $table = Database::table('references');
-        [$where, $params] = self::buildFilter($reviewId, $status, $search, $abstract);
+        [$where, $params] = self::buildFilter($reviewId, $status, $search, $abstract, $source);
 
         $countRow = Database::selectOne("SELECT COUNT(*) AS c FROM `{$table}` WHERE {$where}", $params);
         $total = (int) ($countRow['c'] ?? 0);
 
-        $perPage = max(1, min($perPage, 100));
+        // Per-page cap kept generous so the controller's whitelist
+        // (50/100/200/500/1000) can actually reach the bigger sizes —
+        // the previous 100 cap silently clamped 200/500/1000 down.
+        $perPage = max(1, min($perPage, 1000));
         $offset = max(0, ($page - 1) * $perPage);
         $rows = Database::select(
             "SELECT id, title, authors_json, year, journal, doi, pmid, status, source_file,
@@ -88,6 +91,29 @@ final class Reference
         );
 
         return ['rows' => $rows, 'total' => $total];
+    }
+
+    /**
+     * Distinct, non-empty source labels recorded on the review's
+     * references. Used to populate the "Font" filter dropdown on the
+     * references page so the user only sees options that actually
+     * exist in this review.
+     *
+     * @return string[]
+     */
+    public static function distinctSources(int $reviewId): array
+    {
+        $table = Database::table('references');
+        $rows = Database::select(
+            "SELECT DISTINCT source_file
+               FROM `{$table}`
+              WHERE review_id = ?
+                AND source_file IS NOT NULL
+                AND CHAR_LENGTH(TRIM(source_file)) > 0
+           ORDER BY source_file",
+            [$reviewId]
+        );
+        return array_values(array_map(static fn ($r): string => (string) $r['source_file'], $rows));
     }
 
     /**
@@ -140,10 +166,10 @@ final class Reference
      * Every reference id matching the same filter as the paginated
      * index — used by the "select all across pages" bulk-delete flow.
      */
-    public static function idsForReview(int $reviewId, string $status = '', string $search = '', string $abstract = ''): array
+    public static function idsForReview(int $reviewId, string $status = '', string $search = '', string $abstract = '', string $source = ''): array
     {
         $table = Database::table('references');
-        [$where, $params] = self::buildFilter($reviewId, $status, $search, $abstract);
+        [$where, $params] = self::buildFilter($reviewId, $status, $search, $abstract, $source);
         $rows = Database::select("SELECT id FROM `{$table}` WHERE {$where}", $params);
         return array_map(static fn (array $r): int => (int) $r['id'], $rows);
     }
@@ -155,7 +181,7 @@ final class Reference
      *
      * @return array{0:string,1:array<int,mixed>}
      */
-    private static function buildFilter(int $reviewId, string $status, string $search, string $abstract): array
+    private static function buildFilter(int $reviewId, string $status, string $search, string $abstract, string $source = ''): array
     {
         $where  = 'review_id = ?';
         $params = [$reviewId];
@@ -172,6 +198,10 @@ final class Reference
             $where .= ' AND abstract IS NOT NULL AND CHAR_LENGTH(abstract) > 0';
         } elseif ($abstract === 'without') {
             $where .= ' AND (abstract IS NULL OR CHAR_LENGTH(abstract) = 0)';
+        }
+        if ($source !== '') {
+            $where .= ' AND source_file = ?';
+            $params[] = $source;
         }
         return [$where, $params];
     }
