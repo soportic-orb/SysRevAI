@@ -282,7 +282,17 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                     <?php $src = trim((string) ($r['source_file'] ?? '')); ?>
                                     <?= $src !== '' ? e($src) : '<span class="muted">—</span>' ?>
                                 </td>
-                                <td><span class="tag tag--soft"><?= e(__('references.st_' . $r['status'])) ?></span></td>
+                                <td>
+                                    <?php
+                                    // Status-specific class so we can colour
+                                    // the badge per state (Duplicat in red,
+                                    // others stay neutral soft). Kind-shape
+                                    // mirrors the existing tag--{status}
+                                    // pattern used by the review subnav.
+                                    $statusCode = (string) $r['status'];
+                                    ?>
+                                    <span class="tag tag--soft tag--st-<?= e($statusCode) ?>"><?= e(__('references.st_' . $statusCode)) ?></span>
+                                </td>
                                 <?php if ($ftEnabled): ?>
                                     <td>
                                         <span class="<?= e($icon['class']) ?>" title="<?= e($icon['label']) ?>"></span>
