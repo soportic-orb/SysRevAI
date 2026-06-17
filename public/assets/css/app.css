@@ -2288,21 +2288,38 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     word-break: break-word;
     overflow-wrap: anywhere;   /* break long DOIs / URLs */
 }
-/* Column widths: checkbox tiny, identifiers / source / status compact,
-   study soaks up the remainder, actions cap at ~180 px so the stacked
-   buttons stay readable without dominating the row. */
+/* Column widths after the merge: checkbox tiny, "Estudi" cell soaks
+   up everything else (title + authors + IDs + source stacked), and
+   the remaining columns (status / full-text / actions) hug their
+   content via width:1% + white-space:nowrap. */
 .references-page .references-table th:nth-child(1),
 .references-page .references-table td:nth-child(1) { width: 30px; }
+.references-page .references-table th:nth-child(2),
+.references-page .references-table td:nth-child(2) { width: auto; }
 .references-page .references-table th:nth-child(3),
-.references-page .references-table td:nth-child(3) { width: 22%; }
+.references-page .references-table td:nth-child(3),
 .references-page .references-table th:nth-child(4),
-.references-page .references-table td:nth-child(4) { width: 14%; }
-.references-page .references-table th:nth-child(5),
-.references-page .references-table td:nth-child(5) { width: 90px; }
+.references-page .references-table td:nth-child(4),
 .references-page .references-table th:last-child,
 .references-page .references-table td:last-child {
-    width: 160px;
-    white-space: normal;
+    width: 1%;
+    white-space: nowrap;
+}
+
+/* Stacked "Estudi" cell — title bold and lines below it muted. The
+   meta row (IDs + source) wraps with small gaps so long DOIs break
+   onto a new line instead of stretching the table. */
+.references-page .refs-study-cell { padding: 12px 14px; }
+.references-page .refs-study-cell__title { display: block; font-weight: 700; line-height: 1.35; margin-bottom: 4px; }
+.references-page .refs-study-cell__authors { font-size: 12.5px; line-height: 1.45; margin-bottom: 4px; }
+.references-page .refs-study-cell__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; line-height: 1.4; }
+.references-page .refs-study-cell__id { word-break: break-all; }
+.references-page .refs-study-cell__source {
+    display: inline-flex; align-items: center;
+    padding: 1px 8px; border-radius: 999px;
+    background: var(--c-hover, rgba(0,0,0,.04));
+    color: var(--c-muted);
+    font-size: 11.5px;
 }
 /* Action stack: allow wrap inside the cell, kill the nowrap default
    that was forcing the column wider than its allowance. */
