@@ -1089,6 +1089,60 @@ final class ClaudeService
         return ['ok' => true, 'data' => $out];
     }
 
+    /**
+     * Translate plain text from $source into $target using Claude.
+     *
+     * Used as the default translation engine when the admin hasn't
+     * uploaded a Google Cloud service-account JSON — the platform
+     * still ships a working "Translate" button on Summary / Peer-
+     * review pages without requiring extra setup.
+     *
+     * Source 'auto' is honoured by leaving the language detection
+     * to the model. The system prompt insists on returning only
+     * the translation, no quoting or commentary, so the response
+     * can be cached and re-rendered verbatim.
+     *
+     * @return array{ok:bool,text:?string,error:?string}
+     */
+    public function translateText(string $text, string $target, string $source = 'auto'): array
+    {
+        if ($e = $this->guard('copilot')) {
+            // guard returns the same shape ClaudeService methods use
+            // ({ok:false,error:…}); collapse into the translate shape
+            // so the caller never has to handle two error envelopes.
+            return ['ok' => false, 'text' => null, 'error' => (string) ($e['error'] ?? 'feature_disabled')];
+        }
+        if (trim($text) === '') {
+            return ['ok' => true, 'text' => $text, 'error' => null];
+        }
+        $sourceClause = $source !== '' && $source !== 'auto'
+            ? "from $source "
+            : '(auto-detect the source language) ';
+        $system = "You are a professional translator. Translate the user message "
+            . $sourceClause . "into " . $target . ". "
+            . "Rules: reply ONLY with the translated text — no quoting, no commentary, "
+            . "no language-detection note. Preserve every line break and every paragraph "
+            . "break. Preserve any markdown formatting (asterisks, lists, headings, links) "
+            . "byte-for-byte. Keep proper nouns, citations, units and numbers untouched.";
+        // 16 k output cap so long article abstracts / peer-review
+        // sections aren't truncated mid-sentence.
+        $res = $this->request(
+            $this->modelLight,
+            $system,
+            [['role' => 'user', 'content' => $text]],
+            16000,
+            'content',
+            null,
+            false,
+            240,
+            2
+        );
+        if (!$res['ok']) {
+            return ['ok' => false, 'text' => null, 'error' => (string) ($res['error'] ?? 'translate_failed')];
+        }
+        return ['ok' => true, 'text' => trim((string) $res['text']), 'error' => null];
+    }
+
     public function articleCriticalReport(array $article, string $targetLanguage = 'en'): array
     {
         if ($e = $this->guard('peer_review')) {

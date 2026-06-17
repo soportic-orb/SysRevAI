@@ -51,7 +51,19 @@ final class TranslateService
 
     /**
      * Translate text into the target language. Empty/blank input is passed
-     * through. Returns ['ok'=>bool,'text'=>?,'error'=>?].
+     * through. Engine selection:
+     *
+     *   1. Cached translations always win (regardless of engine).
+     *   2. Google Cloud Translation v3 when the admin has configured a
+     *      project_id AND uploaded a service-account JSON.
+     *   3. Otherwise — or if a Google call fails — fall back to
+     *      Anthropic Claude, which the platform already requires.
+     *
+     * This is what makes the Translate button work out-of-the-box on a
+     * fresh install: the user never sees a `no_token` error just
+     * because Google credentials haven't been uploaded yet.
+     *
+     * Returns ['ok'=>bool,'text'=>?,'error'=>?].
      */
     public static function translate(string $text, string $target, string $source = 'auto'): array
     {
@@ -59,6 +71,8 @@ final class TranslateService
         if (trim($text) === '') {
             return ['ok' => true, 'text' => $text, 'error' => null];
         }
+
+        $googleReady = self::googleConfigured();
 
         $chunks = self::splitIntoChunks($text);
         $out = [];
@@ -68,15 +82,51 @@ final class TranslateService
                 $out[] = $cached;
                 continue;
             }
-            $result = self::callApi($chunk, $target, $source);
-            if (!$result['ok']) {
-                return $result;
+
+            $result = null;
+            if ($googleReady) {
+                $result = self::callApi($chunk, $target, $source);
+            }
+            if ($result === null || !$result['ok']) {
+                // Either Google isn't configured at all, or the
+                // request just failed (auth blip, quota, etc.). Fall
+                // back to Claude so the user still gets a translation.
+                $result = self::claudeFallback($chunk, $target, $source);
+                if (!$result['ok']) {
+                    return $result;
+                }
             }
             $translated = (string) $result['text'];
             Translation::store($chunk, $source, $target, $translated);
             $out[] = $translated;
         }
         return ['ok' => true, 'text' => implode("\n\n", $out), 'error' => null];
+    }
+
+    /** True when both project_id + service-account JSON are in place. */
+    private static function googleConfigured(): bool
+    {
+        $projectId = (string) (setting('google.project_id') ?? '');
+        if ($projectId === '') {
+            return false;
+        }
+        $credPath = (string) (setting('google.credentials_path') ?? '');
+        return $credPath !== '' && is_file($credPath);
+    }
+
+    /**
+     * Translate a single chunk via Claude. Same return shape as
+     * callApi() so the orchestrator above doesn't have to branch.
+     *
+     * @return array{ok:bool,text:?string,error:?string}
+     */
+    private static function claudeFallback(string $text, string $target, string $source): array
+    {
+        try {
+            return ClaudeService::fromSettings()->translateText($text, $target, $source);
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'text' => null, 'error' => $e->getMessage()];
+        }
     }
 
     /* ── HTTP + auth ───────────────────────────────────────────────────── */
