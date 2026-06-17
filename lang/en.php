@@ -699,6 +699,7 @@ return [
     'summary' => [
         'title'           => 'Summary',
         'action_title'    => 'Article summary',
+        'back_to_references' => 'Back to References',
         'abstract'        => 'Abstract',
         'ai_summary'      => 'AI summary',
         'empty'           => 'No summary has been generated in this language yet.',
