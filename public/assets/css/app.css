@@ -2341,3 +2341,13 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     padding: 0;
 }
 .references-page .ref-actions__btn-form { display: inline-block; }
+
+/* Per-status colour for the references status badges. The neutral
+   .tag--soft stays the default; the duplicate state uses the red
+   chip the user requested (#B0271A on #FFEDEB) so duplicates pop
+   out of the otherwise grey row. */
+.tag--st-duplicate {
+    background: #FFEDEB;
+    color: #B0271A;
+    border-color: #F4C9C3;
+}
