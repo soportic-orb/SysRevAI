@@ -2271,38 +2271,35 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .screen-guide__body { padding: 12px 14px; }
 .screen-guide__text { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.55; }
 
-/* References table — visual fix so the row sits ENTIRELY inside the
-   card, no horizontal scroll. The default .table relies on intrinsic
-   column widths, which on long DOIs / journal names pushes the table
-   wider than its parent and clipping starts. table-layout:fixed lets
-   us hand each column an explicit share and allow text wrapping. */
+/* References table — table-layout:auto so the content-driven
+   widths actually work (table-layout:fixed ignores per-cell width
+   negotiation and was making the Estudi cell push everything else
+   off-screen after the column merge in #139). */
 .references-page .references-table-wrap { overflow-x: hidden; }
 .references-page .references-table {
-    table-layout: fixed;
+    table-layout: auto;
     width: 100%;
     word-break: break-word;
 }
 .references-page .references-table th,
 .references-page .references-table td {
-    vertical-align: top;
+    vertical-align: middle;
     word-break: break-word;
-    overflow-wrap: anywhere;   /* break long DOIs / URLs */
+    overflow-wrap: anywhere;
 }
-/* Column widths after the merge: checkbox tiny, "Estudi" cell soaks
-   up everything else (title + authors + IDs + source stacked), and
-   the remaining columns (status / full-text / actions) hug their
-   content via width:1% + white-space:nowrap. */
+/* Checkbox column tiny, Estudi soaks up the rest (100% / nowrap:false
+   so it absorbs the remainder), Estat / Text complet / Accions hug
+   their content. */
 .references-page .references-table th:nth-child(1),
 .references-page .references-table td:nth-child(1) { width: 30px; }
 .references-page .references-table th:nth-child(2),
-.references-page .references-table td:nth-child(2) { width: auto; }
-.references-page .references-table th:nth-child(3),
-.references-page .references-table td:nth-child(3),
-.references-page .references-table th:nth-child(4),
-.references-page .references-table td:nth-child(4),
-.references-page .references-table th:last-child,
-.references-page .references-table td:last-child {
-    width: 1%;
+.references-page .references-table td:nth-child(2) {
+    width: 100%;
+    white-space: normal;
+}
+.references-page .references-table th:nth-child(n+3),
+.references-page .references-table td:nth-child(n+3) {
+    width: 1px;       /* shrink-to-fit alongside white-space:nowrap */
     white-space: nowrap;
 }
 
