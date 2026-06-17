@@ -14,6 +14,7 @@ return [
 
     'common' => [
         'working'      => 'Trabajando, espera…',
+        'per_page'     => 'Registros por página:',
         'expand'       => 'Desplegar',
         'collapse'     => 'Plegar',
         'close'        => 'Cerrar',

@@ -29,15 +29,25 @@ final class ReferencesController
         $abstract = in_array(($_GET['abstract'] ?? ''), ['with', 'without'], true)
             ? (string) $_GET['abstract']
             : '';
+        // Per-page selector with a whitelisted set so a forged query
+        // string can't ask for an unbounded LIMIT. 100 is the default
+        // — fits most screens without paging through five tabs to
+        // find a known reference.
+        $perPageOptions = [50, 100, 200, 500, 1000];
+        $perPage = (int) ($_GET['per_page'] ?? 100);
+        if (!in_array($perPage, $perPageOptions, true)) {
+            $perPage = 100;
+        }
 
-        $result = Reference::forReview($rid, $status, $search, $page, 25, $abstract);
+        $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract);
 
         echo View::render('references/index', [
             'review'        => $review,
             'rows'          => $result['rows'],
             'total'         => $result['total'],
             'page'          => $page,
-            'perPage'       => 25,
+            'perPage'       => $perPage,
+            'perPageOptions' => $perPageOptions,
             'status'        => $status,
             'search'        => $search,
             'abstract'      => $abstract,

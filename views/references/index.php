@@ -9,6 +9,7 @@ use SysRevAI\Core\Session;
 /** @var int $total */
 /** @var int $page */
 /** @var int $perPage */
+/** @var int[] $perPageOptions */
 /** @var string $status */
 /** @var string $search */
 /** @var string $abstract  '' | 'with' | 'without' */
@@ -37,9 +38,9 @@ $ftIcon = static function (?array $row, bool $queued): array {
     }
     return ['class' => 'ft-dot ft-dot--none', 'label' => __('fulltext.dot_none')];
 };
-$qs = static function (array $extra) use ($status, $search, $abstract): string {
+$qs = static function (array $extra) use ($status, $search, $abstract, $perPage): string {
     return http_build_query(array_merge(
-        ['status' => $status, 'q' => $search, 'abstract' => $abstract],
+        ['status' => $status, 'q' => $search, 'abstract' => $abstract, 'per_page' => $perPage],
         $extra
     ));
 };
@@ -104,6 +105,19 @@ $qs = static function (array $extra) use ($status, $search, $abstract): string {
         </select>
         <input class="input" name="q" value="<?= e($search) ?>" placeholder="<?= e(__('references.search')) ?>">
         <button class="btn btn--ghost btn--sm"><?= e(__('references.search')) ?></button>
+        <!-- Per-page selector. Submitting from the change handler resets
+             to page 1 so the user never lands on a page beyond the new
+             total. The hidden input rather than the select itself
+             carries the value back so we can omit name="page" cleanly. -->
+        <label class="muted toolbar__perpage">
+            <?= e(__('common.per_page')) ?>
+            <select class="select select--sm" name="per_page" onchange="this.form.submit()"
+                    aria-label="<?= e(__('common.per_page')) ?>">
+                <?php foreach ($perPageOptions as $opt): ?>
+                    <option value="<?= (int) $opt ?>" <?= $perPage === $opt ? 'selected' : '' ?>><?= (int) $opt ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
     </form>
 
     <?php if ($rows === []): ?>
