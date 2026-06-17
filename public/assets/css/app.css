@@ -2474,3 +2474,19 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     align-items: center;
     gap: 6px;
 }
+
+/* References — single collapsible "Filtres i accions massives" card
+   wrapping the FT bulk row, the filter form and the bulk-selection
+   toolbar so they share one outline / one toggle. The inner rows
+   keep their existing flex layouts but lose any per-row card chrome
+   so the wrapper card is the only visible border. */
+.references-toolbar-card { margin-bottom: 12px; }
+.references-toolbar-card__body { display: flex; flex-direction: column; gap: 12px; padding: 14px 20px 18px; }
+.references-toolbar-card__body .toolbar,
+.references-toolbar-card__body .search-bulk-toolbar { margin: 0; }
+.references-toolbar__row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    margin: 0;
+}
+.references-toolbar__row--ft { padding: 0; }
+.references-toolbar__row--bulk { padding: 0; }
