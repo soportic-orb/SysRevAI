@@ -699,6 +699,7 @@ return [
     'summary' => [
         'title'           => 'Resumen',
         'action_title'    => 'Resumen del artículo',
+        'back_to_references' => 'Volver a Referencias',
         'abstract'        => 'Resumen (abstract)',
         'ai_summary'      => 'Resumen con IA',
         'empty'           => 'Todavía no se ha generado ningún resumen en este idioma.',

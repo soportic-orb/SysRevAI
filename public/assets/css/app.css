@@ -2352,6 +2352,29 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     border-color: #F4C9C3;
 }
 
+/* Summary page head — back-arrow link to the left of the H1. The
+   arrow sits in a 36 px circle so it has a comfortable hit target
+   without overpowering the title block. */
+.summary-head {
+    display: flex; align-items: flex-start; gap: 12px;
+}
+.summary-head__main { flex: 1 1 auto; min-width: 0; }
+.back-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; flex-shrink: 0;
+    margin-top: 4px;
+    border: 1px solid var(--c-border); border-radius: 999px;
+    color: var(--c-text); text-decoration: none;
+    background: var(--c-surface);
+    transition: background .12s ease, transform .08s ease;
+}
+.back-link:hover { background: var(--c-hover, rgba(0,0,0,.04)); transform: translateX(-1px); }
+
+/* Translate button — icon + label tucked together inside the .btn
+   shell so the chrome stays consistent with other inline actions. */
+.summary-translate-btn { display: inline-flex; align-items: center; gap: 6px; }
+.summary-translate-btn__icon { width: 16px; height: 16px; }
+
 /* References row polish — three small fixes:
    1) Status pills (Importat / Duplicat / …) never wrap; the chip
       always renders on a single line.

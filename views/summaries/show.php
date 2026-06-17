@@ -21,13 +21,25 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
      data-loading="<?= e(__('summary.translating')) ?>"
      data-error="<?= e(__('summary.translate_failed')) ?>">
 
-    <div class="page__head">
-        <h1 class="page__title"><?= e(__('summary.title')) ?></h1>
-        <p class="muted">
-            <strong><?= e((string) ($reference['title'] ?: '—')) ?></strong><br>
-            <?= e(implode('; ', array_slice($authors, 0, 4))) ?>
-            <?php if (!empty($reference['year'])): ?> · <?= (int) $reference['year'] ?><?php endif; ?>
-        </p>
+    <div class="page__head summary-head">
+        <a class="back-link" href="/reviews/<?= $id ?>/references"
+           title="<?= e(__('summary.back_to_references')) ?>"
+           aria-label="<?= e(__('summary.back_to_references')) ?>">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="summary-head__main">
+            <h1 class="page__title"><?= e(__('summary.title')) ?></h1>
+            <p class="muted">
+                <strong><?= e((string) ($reference['title'] ?: '—')) ?></strong><br>
+                <?= e(implode('; ', array_slice($authors, 0, 4))) ?>
+                <?php if (!empty($reference['year'])): ?> · <?= (int) $reference['year'] ?><?php endif; ?>
+            </p>
+        </div>
     </div>
 
     <?php if (($flash = Session::pullFlash('success')) !== null): ?>
@@ -47,7 +59,10 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
                             <option value="<?= e($l) ?>" <?= $l === $lang ? 'selected' : '' ?>><?= e($langNames[$l] ?? $l) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <button type="button" class="btn btn--ghost btn--sm" data-translate-btn>&#9883; <?= e(__('summary.translate')) ?></button>
+                    <button type="button" class="btn btn--ghost btn--sm summary-translate-btn" data-translate-btn>
+                        <?php $iconName = 'language'; $iconClass = 'summary-translate-btn__icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                        <span><?= e(__('summary.translate')) ?></span>
+                    </button>
                 </div>
             </div>
             <div data-translate-src><?= nl2br(e((string) $reference['abstract'])) ?></div>
@@ -117,7 +132,9 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
             if (!text) return;
 
             btn.disabled = true;
-            var originalLabel = btn.textContent;
+            // Save the WHOLE button markup (icon + label) so the icon
+            // survives the loading-state toggle when we restore below.
+            var originalHtml = btn.innerHTML;
             btn.textContent = loading;
             if (dest) { dest.hidden = false; dest.textContent = loading; }
             window.SysRevAI && window.SysRevAI.showAiOverlay && window.SysRevAI.showAiOverlay();
@@ -138,7 +155,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
                 })
                 .catch(function () { if (dest) dest.textContent = errorMsg; })
                 .finally(function () {
-                    btn.disabled = false; btn.textContent = originalLabel;
+                    btn.disabled = false; btn.innerHTML = originalHtml;
                     window.SysRevAI && window.SysRevAI.hideAiOverlay && window.SysRevAI.hideAiOverlay();
                 });
         });
