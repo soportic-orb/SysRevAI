@@ -80,6 +80,11 @@ return [
         'subtitle'     => 'Resumen de tu actividad de revisión.',
         'no_reviews'   => 'Todavía no tienes ninguna revisión.',
         'create_first' => 'Crear la primera revisión',
+        'active_reviews'        => 'Mis revisiones activas',
+        'active_articles'       => 'Mis artículos activos',
+        'no_articles'           => 'Todavía no has cargado ningún artículo.',
+        'upload_first_article'  => 'Subir el primer artículo',
+        'view_all'              => 'Ver todos',
         'metrics'      => [
             'imported'     => 'Importados',
             'duplicates'   => 'Duplicados',
