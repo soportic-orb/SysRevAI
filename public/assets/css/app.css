@@ -2529,3 +2529,18 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .copilot__action-badge--rejected { background: #F3F4F6; color: #4B5563; }
 .copilot__action-badge--failed   { background: #FFEDEB; color: #B0271A; }
 .copilot__action-badge--pending  { background: var(--c-surface); color: var(--c-muted); }
+
+/* PRISMA manual editor — one form-field per cell laid out in a 2-up
+   grid so the user can scan the nine values quickly. */
+.prisma-edit__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 22px;
+}
+.prisma-edit__cell label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.prisma-edit__cell small { display: block; margin-top: 4px; font-size: 11.5px; }
+.prisma-edit__hint { margin: 0 0 14px; font-size: 13px; }
+.prisma-edit__reset { margin-top: 18px; }
+@media (max-width: 640px) {
+    .prisma-edit__grid { grid-template-columns: 1fr; }
+}

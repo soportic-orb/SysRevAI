@@ -52,6 +52,14 @@ final class CopilotActionService
                 ],
             ],
             [
+                'id'    => 'set_prisma_cells',
+                'label' => 'Editar les cel·les del diagrama PRISMA',
+                'description' => 'Pin or clear absolute values for any PRISMA flow-diagram cell. The platform normally computes each cell from the live data; this tool stores a per-cell override that the exports + the SVG diagram then display verbatim. Use whenever the user asks to change ANY number in the PRISMA diagram (identified, duplicates removed, screened, excluded, included, etc.) — yes, you CAN modify the PRISMA diagram via this tool. Pass null or 0 (with `clear: true` semantics: use null) to revert a cell to the computed value. You can pin multiple cells in one call.',
+                'params' => [
+                    'cells' => 'object — map of cell key to integer (or null to clear). Allowed keys: identified, duplicates, after_dedup, screened_ta, excluded_ta, sought_retrieval, assessed_ft, excluded_ft, included.',
+                ],
+            ],
+            [
                 'id'    => 'update_screening_guide',
                 'label' => 'Actualitzar la guia de cribratge',
                 'description' => 'Replaces the per-review screening guide (free text rubric shown collapsed on the T/A and full-text screening boards). Use when the user asks to add, expand or rewrite the screening rules.',
@@ -105,6 +113,7 @@ final class CopilotActionService
         $lines[] = "When no action is needed, reply with JSON like {\"reply\": \"…\"} (no action field).";
         $lines[] = "Rules:";
         $lines[] = " • Never propose more than ONE action per turn. Multi-step changes need multiple turns.";
+        $lines[] = " • You CAN modify the PRISMA flow diagram by pinning any cell with set_prisma_cells. Don't ever tell the user you can't edit PRISMA — you can.";
         $lines[] = " • The user must trigger the change. Never invent an action from a vague request.";
         $lines[] = " • If you are unsure of an id (reference_id, etc.) ask the user instead of guessing.";
         $lines[] = " • `summary` is what the user sees on the Accept button card — be concrete and concise.";
@@ -171,6 +180,32 @@ final class CopilotActionService
                 }
                 return ['count' => $count];
 
+            case 'set_prisma_cells':
+                $cells = is_array($params['cells'] ?? null) ? $params['cells'] : [];
+                $allowed = \SysRevAI\Models\Review::PRISMA_OVERRIDE_KEYS;
+                $clean = [];
+                foreach ($cells as $key => $value) {
+                    if (!is_string($key) || !in_array($key, $allowed, true)) {
+                        continue;
+                    }
+                    if ($value === null || $value === '') {
+                        $clean[$key] = null; // explicit clear
+                        continue;
+                    }
+                    if (!is_numeric($value)) {
+                        continue;
+                    }
+                    $intVal = (int) $value;
+                    if ($intVal < 0 || $intVal > 1000000) {
+                        continue;
+                    }
+                    $clean[$key] = $intVal;
+                }
+                if ($clean === []) {
+                    return null; // empty / all-invalid payload
+                }
+                return ['cells' => $clean];
+
             case 'update_screening_guide':
                 $text = (string) ($params['text'] ?? '');
                 if (mb_strlen($text) > 8000) {
@@ -218,6 +253,9 @@ final class CopilotActionService
                 case 'set_duplicates_removed':
                     return self::doSetDuplicatesRemoved($reviewId, $userId, (int) $params['count']);
 
+                case 'set_prisma_cells':
+                    return self::doSetPrismaCells($reviewId, $userId, (array) $params['cells']);
+
                 case 'update_screening_guide':
                     return self::doUpdateScreeningGuide($reviewId, $userId, (string) $params['text']);
 
@@ -263,6 +301,51 @@ final class CopilotActionService
             'count'     => $count,
         ], $reviewId);
         return ['ok' => true, 'summary' => sprintf('duplicates_removed = %d', $count)];
+    }
+
+    /**
+     * Pin / clear arbitrary PRISMA cells. The incoming map can mix
+     * integers (pin) and nulls (clear), one entry per cell. We merge
+     * with the persisted overrides so a single call can pin one cell
+     * while leaving everything else alone.
+     *
+     * @param array<string,int|null> $cells
+     */
+    private static function doSetPrismaCells(int $reviewId, int $userId, array $cells): array
+    {
+        $current = Review::prismaOverrides($reviewId);
+        $merged  = $current;
+        $changed = [];
+        foreach ($cells as $key => $value) {
+            if ($value === null) {
+                if (array_key_exists($key, $merged)) {
+                    unset($merged[$key]);
+                    $changed[$key] = 'cleared';
+                }
+                continue;
+            }
+            $merged[$key] = (int) $value;
+            $changed[$key] = (int) $value;
+        }
+        // savePrismaOverrides expects associative {key=>int|null};
+        // pass nulls for cleared keys so the storage layer wipes them.
+        $payload = $merged;
+        foreach ($current as $k => $_) {
+            if (!array_key_exists($k, $merged)) {
+                $payload[$k] = null;
+            }
+        }
+        Review::savePrismaOverrides($reviewId, $payload);
+        ActivityLog::record('copilot.action.set_prisma_cells', [
+            'review_id' => $reviewId,
+            'user_id'   => $userId,
+            'changed'   => $changed,
+        ], $reviewId);
+        $bits = [];
+        foreach ($changed as $k => $v) {
+            $bits[] = $v === 'cleared' ? ($k . ' → auto') : ($k . ' = ' . $v);
+        }
+        return ['ok' => true, 'summary' => implode(' · ', $bits) ?: 'PRISMA actualitzat'];
     }
 
     private static function doUpdateScreeningGuide(int $reviewId, int $userId, string $text): array

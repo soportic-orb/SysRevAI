@@ -38,6 +38,7 @@ use SysRevAI\Controllers\ReferencesController;
 use SysRevAI\Controllers\ReviewsController;
 use SysRevAI\Controllers\ChatController;
 use SysRevAI\Controllers\ExportController;
+use SysRevAI\Controllers\PrismaEditorController;
 use SysRevAI\Controllers\ReviewRegistrationController;
 use SysRevAI\Controllers\AiDeclarationController;
 use SysRevAI\Controllers\ReviewSearchSyntaxController;
@@ -216,6 +217,9 @@ $router->post('/reviews/{id}/translate', [TranslateController::class, 'translate
 // Exports.
 $router->get('/reviews/{id}/exports', [ExportController::class, 'index'], ['auth']);
 $router->get('/reviews/{id}/exports/prisma', [ExportController::class, 'prisma'], ['auth']);
+$router->get('/reviews/{id}/exports/prisma/edit', [PrismaEditorController::class, 'show'], ['auth']);
+$router->post('/reviews/{id}/exports/prisma/edit', [PrismaEditorController::class, 'save'], ['auth']);
+$router->post('/reviews/{id}/exports/prisma/reset', [PrismaEditorController::class, 'reset'], ['auth']);
 $router->get('/reviews/{id}/exports/csv', [ExportController::class, 'csv'], ['auth']);
 $router->get('/reviews/{id}/exports/excel', [ExportController::class, 'excel'], ['auth']);
 $router->get('/reviews/{id}/exports/word', [ExportController::class, 'word'], ['auth']);

@@ -28,6 +28,7 @@ $registry  = $isScoping ? 'OSF' : 'PROSPERO';
         <div class="prisma-preview"><?= $svg ?></div>
         <div class="btn-row">
             <a class="btn btn--primary" href="/reviews/<?= $id ?>/exports/prisma">&#11015; <?= e(__('exports.download_prisma')) ?></a>
+            <a class="btn btn--ghost" href="/reviews/<?= $id ?>/exports/prisma/edit"><?= e(__('exports.prisma_edit_btn')) ?></a>
         </div>
     </div>
 
