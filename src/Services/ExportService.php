@@ -70,7 +70,7 @@ final class ExportService
             + ($byStatus['ft_excluded'] ?? 0)
             + ($byStatus['extracted'] ?? 0);
 
-        return [
+        $computed = [
             'identified'       => $identified,
             'duplicates'       => $duplicates,
             'after_dedup'      => $afterDedup,
@@ -88,6 +88,24 @@ final class ExportService
             'excluded_ft'      => $byStatus['ft_excluded'] ?? 0,
             'included'         => ($byStatus['ft_included'] ?? 0) + ($byStatus['extracted'] ?? 0),
         ];
+
+        // Manual overrides (mig. 039). The user — or the Copilot via the
+        // set_prisma_cells action — can pin any cell to an absolute value
+        // that overrides the computed figure. A NULL / missing key falls
+        // through to the computed result. If the user pinned `identified`
+        // or `duplicates` but not `after_dedup`, recompute the latter so
+        // the diagram stays internally consistent.
+        $overrides = \SysRevAI\Models\Review::prismaOverrides($reviewId);
+        $final = $computed;
+        foreach ($overrides as $k => $v) {
+            $final[$k] = (int) $v;
+        }
+        if (!array_key_exists('after_dedup', $overrides)
+            && (array_key_exists('identified', $overrides) || array_key_exists('duplicates', $overrides))
+        ) {
+            $final['after_dedup'] = max(0, (int) $final['identified'] - (int) $final['duplicates']);
+        }
+        return $final;
     }
 
     /** Produce an SVG of the PRISMA 2020 flow with the given counts. */

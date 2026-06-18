@@ -154,6 +154,88 @@ final class Review
         }
     }
 
+    /** Allowed cell keys for the per-review PRISMA overrides (mig. 039). */
+    public const PRISMA_OVERRIDE_KEYS = [
+        'identified', 'duplicates', 'after_dedup',
+        'screened_ta', 'excluded_ta',
+        'sought_retrieval', 'assessed_ft', 'excluded_ft',
+        'included',
+    ];
+
+    /**
+     * Decode the per-cell PRISMA overrides JSON for the review. Returns
+     * a map of key → int. Missing keys / NULL / non-integer values fall
+     * out so the export layer naturally falls back to the computed
+     * value. Pre-migration installs return [] silently.
+     *
+     * @return array<string,int>
+     */
+    public static function prismaOverrides(int $reviewId): array
+    {
+        $table = Database::table('reviews');
+        try {
+            $row = Database::selectOne(
+                "SELECT prisma_overrides FROM `{$table}` WHERE id = ? LIMIT 1",
+                [$reviewId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+        if ($row === null) {
+            return [];
+        }
+        $raw = $row['prisma_overrides'] ?? null;
+        $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
+        if (!is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $k => $v) {
+            if (!is_string($k) || !in_array($k, self::PRISMA_OVERRIDE_KEYS, true)) {
+                continue;
+            }
+            if ($v === null || $v === '' || !is_numeric($v)) {
+                continue;
+            }
+            $out[$k] = max(0, (int) $v);
+        }
+        return $out;
+    }
+
+    /**
+     * Persist the per-cell PRISMA overrides (mig. 039). Pass an
+     * associative array; NULL / blank values clear that cell so the
+     * computed figure shows through. Tolerant of pre-migration installs.
+     *
+     * @param array<string,int|null> $overrides
+     */
+    public static function savePrismaOverrides(int $reviewId, array $overrides): void
+    {
+        $clean = [];
+        foreach (self::PRISMA_OVERRIDE_KEYS as $key) {
+            if (!array_key_exists($key, $overrides)) {
+                continue;
+            }
+            $value = $overrides[$key];
+            if ($value === null || $value === '') {
+                continue;
+            }
+            if (is_numeric($value)) {
+                $clean[$key] = max(0, (int) $value);
+            }
+        }
+        $json = $clean === [] ? null : json_encode($clean, JSON_UNESCAPED_UNICODE);
+        $table = Database::table('reviews');
+        try {
+            Database::affecting(
+                "UPDATE `{$table}` SET prisma_overrides = ? WHERE id = ?",
+                [$json, $reviewId]
+            );
+        } catch (\Throwable) {
+            // pre-migration install — degrade silently.
+        }
+    }
+
     /**
      * Persist the free-text screening guide for the review (migration 036).
      * Tolerant of installs that haven't run the migration yet.
