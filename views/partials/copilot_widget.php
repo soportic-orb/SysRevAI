@@ -176,7 +176,13 @@ $copilotGreeting = $copilotIsGlobal
         budget:   <?= json_encode(__('copilot.budget')) ?>,
         disabled: <?= json_encode(__('copilot.disabled')) ?>,
         noKey:    <?= json_encode(__('copilot.no_api_key')) ?>,
-        confirm:  <?= json_encode(__('copilot.clear_confirm')) ?>
+        confirm:  <?= json_encode(__('copilot.clear_confirm')) ?>,
+        actionAccept:   <?= json_encode(__('copilot.action_accept')) ?>,
+        actionReject:   <?= json_encode(__('copilot.action_reject')) ?>,
+        actionPending:  <?= json_encode(__('copilot.action_pending')) ?>,
+        actionExecuted: <?= json_encode(__('copilot.action_executed')) ?>,
+        actionRejected: <?= json_encode(__('copilot.action_rejected')) ?>,
+        actionFailed:   <?= json_encode(__('copilot.action_failed')) ?>
     };
 
     var hydrated = false;
@@ -264,7 +270,14 @@ $copilotGreeting = $copilotIsGlobal
         .then(function (res) {
             typing.remove();
             if (res.body && res.body.ok && res.body.reply) {
-                appendBubble('assistant', res.body.reply);
+                var bubble = appendBubble('assistant', res.body.reply);
+                // Agentic action — render the Accept/Reject card right
+                // below the assistant bubble. Only review-scoped chats
+                // get the act endpoint; global Copilot ignores actions.
+                if (res.body.action && res.body.message_id
+                    && root.getAttribute('data-scope') === 'review') {
+                    appendActionCard(bubble, Number(res.body.message_id), res.body.action, 'pending');
+                }
                 return;
             }
             appendBubble('assistant', errorMessage((res.body && res.body.error) || ''));
@@ -304,7 +317,16 @@ $copilotGreeting = $copilotIsGlobal
             .then(function (d) {
                 if (!d || !d.ok || !Array.isArray(d.messages) || d.messages.length === 0) return;
                 if (greeting) greeting.hidden = true;
-                d.messages.forEach(function (m) { appendBubble(m.role, m.content); });
+                d.messages.forEach(function (m) {
+                    var bubble = appendBubble(m.role, m.content);
+                    // Re-attach the action card for any assistant turn
+                    // that carried a proposal so the user sees its
+                    // current state (pending → can still accept;
+                    // executed/rejected/failed → read-only badge).
+                    if (m.action && m.id && root.getAttribute('data-scope') === 'review') {
+                        appendActionCard(bubble, Number(m.id), m.action, m.action_status || 'pending', m.action_result || null);
+                    }
+                });
                 scrollToBottom();
             })
             .catch(function () { /* offline-tolerant */ });
@@ -348,6 +370,92 @@ $copilotGreeting = $copilotIsGlobal
     }
 
     function scrollToBottom() { msgs.scrollTop = msgs.scrollHeight; }
+
+    /* ── Agentic action cards ──────────────────────────────────────────
+       Render a small Accept / Reject card under an assistant bubble
+       when Claude proposed a concrete mutation. The card POSTs the
+       message id to /reviews/{id}/copilot/act; the server reads the
+       proposal back from the DB (the client can't override what gets
+       executed). Once resolved, the card collapses into a read-only
+       status badge so the transcript still tells the story. */
+    function appendActionCard(afterBubble, messageId, action, status, result) {
+        var actUrl = sendUrl + '/act';
+        var card = document.createElement('div');
+        card.className = 'copilot__action copilot__action--' + (status || 'pending');
+        card.setAttribute('data-message-id', String(messageId));
+
+        var head = document.createElement('div');
+        head.className = 'copilot__action-head';
+        head.textContent = action.label || 'Acció proposada';
+        var summary = document.createElement('p');
+        summary.className = 'copilot__action-summary';
+        summary.textContent = action.summary || '';
+        card.appendChild(head);
+        if ((action.summary || '') !== '') card.appendChild(summary);
+
+        var bar = document.createElement('div');
+        bar.className = 'copilot__action-bar';
+        function renderResolved(newStatus, resultPayload) {
+            bar.innerHTML = '';
+            var badge = document.createElement('span');
+            badge.className = 'copilot__action-badge copilot__action-badge--' + newStatus;
+            badge.textContent = badgeLabel(newStatus, resultPayload);
+            bar.appendChild(badge);
+            card.classList.remove('copilot__action--pending');
+            card.classList.add('copilot__action--' + newStatus);
+        }
+
+        if ((status || 'pending') !== 'pending') {
+            renderResolved(status, result);
+        } else {
+            var accept = document.createElement('button');
+            accept.type = 'button';
+            accept.className = 'btn btn--primary btn--sm';
+            accept.textContent = labels.actionAccept;
+            var reject = document.createElement('button');
+            reject.type = 'button';
+            reject.className = 'btn btn--ghost btn--sm';
+            reject.textContent = labels.actionReject;
+            bar.appendChild(accept);
+            bar.appendChild(reject);
+
+            function send(decision) {
+                accept.disabled = true; reject.disabled = true;
+                fetch(actUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+                    body: JSON.stringify({ _csrf: csrfToken, message_id: messageId, decision: decision })
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (body) {
+                    if (body && body.ok) {
+                        renderResolved(body.status, body.summary ? { summary: body.summary } : null);
+                    } else {
+                        renderResolved('failed', { error: (body && body.error) || 'failed' });
+                    }
+                })
+                .catch(function () { renderResolved('failed', { error: 'network' }); });
+            }
+            accept.addEventListener('click', function () { send('accept'); });
+            reject.addEventListener('click', function () { send('reject'); });
+        }
+        card.appendChild(bar);
+        if (afterBubble && afterBubble.parentNode) {
+            afterBubble.parentNode.insertBefore(card, afterBubble.nextSibling);
+        } else {
+            msgs.appendChild(card);
+        }
+        scrollToBottom();
+    }
+
+    function badgeLabel(status, result) {
+        if (status === 'executed') {
+            return labels.actionExecuted + (result && result.summary ? ' — ' + result.summary : '');
+        }
+        if (status === 'rejected') return labels.actionRejected;
+        if (status === 'failed')   return labels.actionFailed + (result && result.error ? ' (' + result.error + ')' : '');
+        return labels.actionPending;
+    }
 
     /* ── Draggable panel ────────────────────────────────────────────
        Grab the header and drag the chat anywhere on the screen — once

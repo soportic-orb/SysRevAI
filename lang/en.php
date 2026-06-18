@@ -1728,6 +1728,12 @@ return [
         'budget'       => 'The monthly AI budget has been reached for this site.',
         'disabled'     => 'The Copilot is disabled in admin settings.',
         'no_api_key'   => 'No Claude API key is configured. An admin can add it under Settings → Claude.',
+        'action_accept'   => 'Accept & run',
+        'action_reject'   => 'Reject',
+        'action_pending'  => 'Pending',
+        'action_executed' => 'Executed',
+        'action_rejected' => 'Rejected',
+        'action_failed'   => 'Failed',
     ],
 
     'legal' => [

@@ -388,9 +388,123 @@ final class ReviewsController
             echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'failed']);
             return;
         }
-        CopilotMessage::add($rid, $uid, 'assistant', $result['reply']);
-        ActivityLog::record('copilot.message', [], $rid);
-        echo json_encode(['ok' => true, 'reply' => $result['reply']], JSON_UNESCAPED_UNICODE);
+
+        // Agentic envelope — if Claude proposed an action, validate it
+        // server-side and persist the cleaned version on the SAME
+        // assistant row. The client never gets to override what the
+        // confirm endpoint will execute; it only sees the message id.
+        $proposalForDb = null;
+        $proposalForUi = null;
+        if (is_array($result['action'] ?? null)) {
+            $validated = \SysRevAI\Services\CopilotActionService::validate($result['action']);
+            if ($validated['ok'] ?? false) {
+                $proposalForDb = [
+                    'tool'    => $validated['tool'],
+                    'params'  => $validated['params'],
+                    'label'   => $validated['label']   ?? '',
+                    'summary' => $validated['summary'] ?? '',
+                ];
+                $proposalForUi = $proposalForDb;
+            }
+        }
+
+        $messageId = CopilotMessage::add($rid, $uid, 'assistant', $result['reply'], null, $proposalForDb);
+        ActivityLog::record('copilot.message', ['proposed_action' => $proposalForDb !== null], $rid);
+        echo json_encode([
+            'ok'         => true,
+            'reply'      => $result['reply'],
+            'message_id' => $messageId,
+            'action'     => $proposalForUi,
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * POST /reviews/{id}/copilot/act — accept or reject a Copilot
+     * action proposal. Body: { message_id, decision: "accept"|"reject" }.
+     *
+     * The action is read back from copilot_messages so the client can't
+     * forge a different tool/params payload. Only the message's author
+     * (or a review owner) can act on it.
+     */
+    public function copilotAct(string $id): void
+    {
+        $review = $this->loadOrDeny((int) $id);
+        header('Content-Type: application/json; charset=utf-8');
+
+        $raw = file_get_contents('php://input') ?: '';
+        $body = json_decode($raw, true);
+        if (!is_array($body)) {
+            $body = $_POST;
+        }
+        $messageId = (int) ($body['message_id'] ?? 0);
+        $decision  = (string) ($body['decision'] ?? '');
+        if ($messageId <= 0 || !in_array($decision, ['accept', 'reject'], true)) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'bad_request']);
+            return;
+        }
+
+        $msg = CopilotMessage::find($messageId);
+        $rid = (int) $id;
+        $uid = (int) Auth::id();
+        if ($msg === null
+            || (int) ($msg['review_id'] ?? 0) !== $rid
+            || (int) ($msg['user_id']   ?? 0) !== $uid
+        ) {
+            http_response_code(403);
+            echo json_encode(['ok' => false, 'error' => 'forbidden']);
+            return;
+        }
+        if (($msg['pending_action_status'] ?? '') !== 'pending') {
+            echo json_encode(['ok' => false, 'error' => 'already_resolved']);
+            return;
+        }
+        $proposal = json_decode((string) ($msg['pending_action'] ?? ''), true);
+        if (!is_array($proposal)) {
+            CopilotMessage::updateActionStatus($messageId, 'failed', ['error' => 'no_proposal']);
+            echo json_encode(['ok' => false, 'error' => 'no_proposal']);
+            return;
+        }
+
+        if ($decision === 'reject') {
+            CopilotMessage::updateActionStatus($messageId, 'rejected');
+            ActivityLog::record('copilot.action.rejected', [
+                'review_id'  => $rid,
+                'message_id' => $messageId,
+                'tool'       => (string) ($proposal['tool'] ?? ''),
+            ], $rid);
+            echo json_encode(['ok' => true, 'status' => 'rejected']);
+            return;
+        }
+
+        // accept → re-validate (in case the schema tightened between
+        // proposal and confirm) and execute.
+        $validated = \SysRevAI\Services\CopilotActionService::validate($proposal);
+        if (!($validated['ok'] ?? false)) {
+            CopilotMessage::updateActionStatus($messageId, 'failed', ['error' => (string) ($validated['error'] ?? 'invalid_params')]);
+            echo json_encode(['ok' => false, 'error' => $validated['error'] ?? 'invalid_params']);
+            return;
+        }
+        $result = \SysRevAI\Services\CopilotActionService::execute($rid, $uid, $validated);
+        if (!($result['ok'] ?? false)) {
+            CopilotMessage::updateActionStatus($messageId, 'failed', ['error' => (string) ($result['error'] ?? 'failed')]);
+            ActivityLog::record('copilot.action.failed', [
+                'review_id'  => $rid,
+                'message_id' => $messageId,
+                'tool'       => (string) ($proposal['tool'] ?? ''),
+                'error'      => (string) ($result['error'] ?? 'failed'),
+            ], $rid);
+            echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'failed']);
+            return;
+        }
+        CopilotMessage::updateActionStatus($messageId, 'executed', [
+            'summary' => (string) ($result['summary'] ?? ''),
+        ]);
+        echo json_encode([
+            'ok'      => true,
+            'status'  => 'executed',
+            'summary' => (string) ($result['summary'] ?? ''),
+        ]);
     }
 
     /** Return the persisted Copilot transcript so the widget can hydrate. */

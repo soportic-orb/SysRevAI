@@ -2503,3 +2503,29 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
     font-size: 11.5px;
 }
 .refs-study-cell__abstract-icon { width: 14px; height: 14px; }
+
+/* Agentic-Copilot action cards rendered under an assistant bubble
+   when the model proposed a concrete write-action. Three states:
+   pending (accept/reject buttons), executed (green badge),
+   rejected/failed (muted/red badge). Lives inside .copilot__messages
+   so the chat scroll picks it up naturally. */
+.copilot__action {
+    margin: 6px 0 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--c-hover, rgba(0,0,0,.04));
+    border: 1px solid var(--c-border);
+    display: flex; flex-direction: column; gap: 6px;
+}
+.copilot__action--pending  { border-left: 3px solid var(--c-accent, #4f46e5); }
+.copilot__action--executed { border-left: 3px solid #16a34a; }
+.copilot__action--rejected { border-left: 3px solid #9ca3af; }
+.copilot__action--failed   { border-left: 3px solid #b91c1c; }
+.copilot__action-head { font-weight: 700; font-size: 12.5px; }
+.copilot__action-summary { margin: 0; font-size: 12.5px; color: var(--c-muted); }
+.copilot__action-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.copilot__action-badge { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; }
+.copilot__action-badge--executed { background: #DCFCE7; color: #166534; }
+.copilot__action-badge--rejected { background: #F3F4F6; color: #4B5563; }
+.copilot__action-badge--failed   { background: #FFEDEB; color: #B0271A; }
+.copilot__action-badge--pending  { background: var(--c-surface); color: var(--c-muted); }

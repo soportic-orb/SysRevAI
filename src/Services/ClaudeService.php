@@ -616,6 +616,13 @@ final class ClaudeService
 
         $system .= self::devilAdvocateOverlay($mode);
 
+        // Agentic-actions catalogue — the model can now PROPOSE
+        // concrete write-actions the user approves with one click.
+        // The system-prompt block here documents the JSON envelope and
+        // the available tools; the server still validates everything
+        // through CopilotActionService::validate() before persisting.
+        $system .= CopilotActionService::systemPromptBlock();
+
         $messages = [];
         // Keep at most the last 16 turns to stay within token budget while
         // still giving the model meaningful continuity across the thread.
@@ -630,15 +637,29 @@ final class ClaudeService
         }
         $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-        // Generous output budget — the 800-token cap that originally
-        // shipped here truncated mid-sentence on longer answers
-        // (multi-paragraph methodology explanations, tables, etc.).
-        // 8 k is well inside Haiku 4.5's per-request quota; the admin
-        // can swap the light slot to Sonnet if they want more depth.
-        $res = $this->request($this->modelLight, $system, $messages, 8000, 'copilot', $reviewId, false);
-        return $res['ok']
-            ? ['ok' => true, 'reply' => (string) $res['text']]
-            : ['ok' => false, 'error' => $res['error']];
+        // 8 k output cap (was 800; long answers were truncating). We ask
+        // for JSON so the front end can recognise both plain replies
+        // and the {reply,action} agentic envelope. expectJson:true makes
+        // request() parse the body via extractJson before returning.
+        $res = $this->request($this->modelLight, $system, $messages, 8000, 'copilot', $reviewId, true);
+        if (!$res['ok']) {
+            return ['ok' => false, 'error' => $res['error']];
+        }
+        $reply  = '';
+        $action = null;
+        if (is_array($res['json'] ?? null)) {
+            $reply = trim((string) ($res['json']['reply'] ?? ''));
+            if (is_array($res['json']['action'] ?? null)) {
+                $action = $res['json']['action'];
+            }
+        }
+        // Fallback: the model returned plain text (no JSON envelope).
+        // Treat the whole text as the reply with no proposed action so
+        // the conversational path still works.
+        if ($reply === '' && is_string($res['text'] ?? null)) {
+            $reply = trim((string) $res['text']);
+        }
+        return ['ok' => true, 'reply' => $reply, 'action' => $action];
     }
 
     /**
