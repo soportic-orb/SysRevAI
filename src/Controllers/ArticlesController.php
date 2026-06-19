@@ -134,10 +134,11 @@ final class ArticlesController
         }
 
         echo View::render('articles/show', [
-            'article'  => $article,
-            'isOwner'  => Article::isOwner($article, $uid),
-            'members'  => ArticleUser::forArticle($aid),
-            'history'  => CopilotMessage::history(null, $uid, 200, $aid),
+            'article'   => $article,
+            'isOwner'   => Article::isOwner($article, $uid),
+            'members'   => ArticleUser::forArticle($aid),
+            'history'   => CopilotMessage::history(null, $uid, 200, $aid),
+            'documents' => \SysRevAI\Models\ArticleDocument::forArticle($aid),
         ]);
     }
 

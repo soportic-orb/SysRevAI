@@ -8,6 +8,7 @@ use SysRevAI\Core\Session;
 /** @var bool  $isOwner */
 /** @var array $members */
 /** @var array $history */
+/** @var array $documents Secondary article documents (from ArticleDocument::forArticle). */
 
 // Suppress the floating Copilot widget — we embed the chat inline here.
 $hideCopilotWidget = true;
@@ -52,6 +53,71 @@ $text = (string) ($article['extracted_text'] ?? '');
             <?php $iconName = 'abstract'; $iconClass = 'article-pane__reopen-icon'; require config('paths.base') . '/views/partials/icon.php'; ?>
         </button>
 
+        <!-- LEFT column wrapper holds the (optional) secondary-documents
+             collapsible card stacked above the article text pane so both
+             share the same width and the collapse of the article text
+             pane still hides only itself. -->
+        <div class="article-left-col">
+
+        <?php if (!empty($documents)): ?>
+            <!-- Secondary documents the user attached — Word / PDF
+                 references the Copilot reads alongside the main paper.
+                 Collapsed by default; reuses the platform's collapse-
+                 card pattern from the screening boards. -->
+            <section class="section-card collapse-card article-docs-card"
+                     data-collapsible data-collapsed-default>
+                <button type="button" class="collapse-card__head"
+                        data-collapsible-toggle aria-controls="articleDocsBody" aria-expanded="false">
+                    <span class="collapse-card__title">
+                        &#128209; <?= e(__('articles.documents_title')) ?>
+                        <span class="muted">(<?= count($documents) ?>)</span>
+                    </span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         class="icon icon--chevron" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="collapse-card__body article-docs-card__body"
+                     id="articleDocsBody" data-collapsible-body hidden>
+                    <ul class="article-docs-list">
+                        <?php foreach ($documents as $doc):
+                            $docId = (int) $doc['id'];
+                            $name  = (string) ($doc['filename'] ?? '—');
+                            $chars = (int) ($doc['char_count'] ?? 0);
+                        ?>
+                            <li class="article-docs-list__item">
+                                <a class="article-docs-list__name"
+                                   href="/tools/articles/<?= $id ?>/documents/<?= $docId ?>/download"
+                                   title="<?= e(__('articles.document_download')) ?>">
+                                    <?= e($name) ?>
+                                </a>
+                                <span class="muted article-docs-list__meta">
+                                    <?php if ($chars > 0): ?>
+                                        <?= e(__('articles.size_chars', $chars)) ?>
+                                    <?php else: ?>
+                                        <?= e(__('articles.no_text_extracted_tag')) ?>
+                                    <?php endif; ?>
+                                </span>
+                                <form method="post"
+                                      action="/tools/articles/<?= $id ?>/documents/<?= $docId ?>/delete"
+                                      class="inline-form"
+                                      data-confirm="<?= e(sprintf(__('articles.document_delete_confirm'), $name)) ?>"
+                                      data-confirm-tone="danger"
+                                      data-confirm-button="<?= e(__('articles.document_delete')) ?>">
+                                    <?= csrf_field() ?>
+                                    <button type="submit"
+                                            class="btn btn--ghost btn--xs btn--danger"
+                                            title="<?= e(__('articles.document_delete')) ?>"
+                                            aria-label="<?= e(__('articles.document_delete')) ?>">&times;</button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <!-- LEFT: article text — full half-width pane while open; the
              header's collapse button hides it entirely and lets the chat
              pane span the workspace. -->
@@ -80,19 +146,61 @@ $text = (string) ($article['extracted_text'] ?? '');
             </div>
         </section>
 
-        <!-- RIGHT: chat — same height as the article pane; the messages
-             container scrolls inside, the input row stays pinned. When
-             the text pane collapses, this section spans the full width. -->
-        <section class="article-pane article-pane--chat section-card" aria-label="<?= e(__('articles.chat_pane_label')) ?>">
-            <?php
-            // Pass needed scope to the partial.
-            $articleChatId   = $id;
-            $articleHistory  = $history;
-            require config('paths.base') . '/views/partials/article_chat_panel.php';
-            ?>
-        </section>
+        </div><!-- /.article-left-col -->
+
+        <!-- RIGHT column: upload-secondary button stacked above the
+             chat pane so the user can attach extra material in the
+             same vertical rhythm as the chat. -->
+        <div class="article-right-col">
+            <div class="article-docs-upload">
+                <button type="button" class="btn btn--ghost btn--sm article-docs-upload__btn"
+                        id="articleDocsUploadBtn">
+                    &#128206; <?= e(__('articles.documents_upload_btn')) ?>
+                </button>
+            </div>
+
+            <!-- RIGHT: chat — same height as the article pane; the messages
+                 container scrolls inside, the input row stays pinned. When
+                 the text pane collapses, this section spans the full width. -->
+            <section class="article-pane article-pane--chat section-card" aria-label="<?= e(__('articles.chat_pane_label')) ?>">
+                <?php
+                // Pass needed scope to the partial.
+                $articleChatId   = $id;
+                $articleHistory  = $history;
+                require config('paths.base') . '/views/partials/article_chat_panel.php';
+                ?>
+            </section>
+        </div>
     </div>
 </div>
+
+<!-- Upload modal: drag-and-drop area + native file input. POSTs to
+     /tools/articles/{id}/documents and reloads the workspace so the
+     server-rendered collapsible card picks up the new attachment. -->
+<dialog class="info-modal article-docs-modal" id="articleDocsModal">
+    <div class="info-modal__inner">
+        <header class="info-modal__head">
+            <h2 class="info-modal__title"><?= e(__('articles.documents_upload_title')) ?></h2>
+            <button type="button" class="info-modal__close" id="articleDocsClose"
+                    aria-label="<?= e(__('common.cancel')) ?>">&times;</button>
+        </header>
+        <p class="info-modal__body muted"><?= e(__('articles.documents_upload_intro')) ?></p>
+        <div class="article-docs-drop" id="articleDocsDrop">
+            <p><?= e(__('articles.documents_drop_hint')) ?></p>
+            <input type="file" id="articleDocsInput" name="file"
+                   accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                   multiple>
+        </div>
+        <ul class="article-docs-modal__status" id="articleDocsStatus" hidden></ul>
+        <footer class="info-modal__foot">
+            <button type="button" class="btn btn--ghost btn--sm" id="articleDocsCancel">
+                <?= e(__('common.cancel')) ?>
+            </button>
+            <a class="btn btn--primary btn--sm" id="articleDocsDone" href="javascript:location.reload()"
+               hidden><?= e(__('articles.documents_done')) ?></a>
+        </footer>
+    </div>
+</dialog>
 
 <script>
 (function () {
@@ -121,5 +229,97 @@ $text = (string) ($article['extracted_text'] ?? '');
     function persist() {
         try { localStorage.setItem(key, collapsed ? '1' : '0'); } catch (e) {}
     }
+})();
+</script>
+
+<script>
+/* Secondary-documents upload: opens a modal with a native file input
+   + drag-drop area, POSTs each file to /tools/articles/{id}/documents
+   and shows per-file status. Reload on Done so the server-rendered
+   collapsible card refreshes with the new attachments. */
+(function () {
+    'use strict';
+    var workspace = document.getElementById('articleWorkspace');
+    if (!workspace) return;
+    var articleId = workspace.getAttribute('data-article-id');
+    var openBtn   = document.getElementById('articleDocsUploadBtn');
+    var modal     = document.getElementById('articleDocsModal');
+    var closeBtn  = document.getElementById('articleDocsClose');
+    var cancelBtn = document.getElementById('articleDocsCancel');
+    var drop      = document.getElementById('articleDocsDrop');
+    var input     = document.getElementById('articleDocsInput');
+    var statusEl  = document.getElementById('articleDocsStatus');
+    var doneBtn   = document.getElementById('articleDocsDone');
+    if (!openBtn || !modal || !drop || !input) return;
+
+    function open() {
+        if (typeof modal.showModal === 'function') modal.showModal();
+        else modal.setAttribute('open', '');
+        statusEl.hidden = true; statusEl.innerHTML = '';
+        doneBtn.hidden = true;
+    }
+    function close() {
+        if (typeof modal.close === 'function') modal.close();
+        else modal.removeAttribute('open');
+    }
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+
+    function addStatus(name, msg, isError) {
+        statusEl.hidden = false;
+        var li = document.createElement('li');
+        li.className = 'article-docs-modal__status-item ' +
+            (isError ? 'article-docs-modal__status-item--error' : 'article-docs-modal__status-item--ok');
+        li.textContent = name + ' — ' + msg;
+        statusEl.appendChild(li);
+    }
+
+    function uploadOne(file) {
+        var fd = new FormData();
+        fd.append('file', file, file.name);
+        var pending = document.createElement('li');
+        pending.className = 'article-docs-modal__status-item article-docs-modal__status-item--pending';
+        pending.textContent = file.name + ' — ' + <?= json_encode(__('articles.documents_uploading')) ?>;
+        statusEl.hidden = false;
+        statusEl.appendChild(pending);
+        return fetch('/tools/articles/' + articleId + '/documents', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (body) {
+                statusEl.removeChild(pending);
+                if (body && body.ok) {
+                    addStatus(file.name, <?= json_encode(__('articles.documents_uploaded_ok')) ?>, false);
+                } else {
+                    addStatus(file.name, (body && body.error) || <?= json_encode(__('articles.documents_uploaded_failed')) ?>, true);
+                }
+            })
+            .catch(function () {
+                if (pending.parentNode) statusEl.removeChild(pending);
+                addStatus(file.name, <?= json_encode(__('articles.documents_uploaded_failed')) ?>, true);
+            });
+    }
+
+    function uploadFiles(files) {
+        if (!files || files.length === 0) return;
+        var queue = Promise.resolve();
+        Array.prototype.forEach.call(files, function (f) {
+            queue = queue.then(function () { return uploadOne(f); });
+        });
+        queue.then(function () { doneBtn.hidden = false; });
+    }
+
+    input.addEventListener('change', function () { uploadFiles(input.files); });
+
+    ['dragenter', 'dragover'].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('is-over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+        drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('is-over'); });
+    });
+    drop.addEventListener('drop', function (e) {
+        if (e.dataTransfer && e.dataTransfer.files) {
+            uploadFiles(e.dataTransfer.files);
+        }
+    });
 })();
 </script>

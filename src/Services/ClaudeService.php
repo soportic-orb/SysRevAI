@@ -731,7 +731,7 @@ final class ClaudeService
      * @param array<string,mixed>                            $article  Article row from the DB.
      * @param array<int,array{role:string,content:string}>  $history  Prior turns (oldest first).
      */
-    public function articleChat(array $article, array $history, string $userMessage, string $mode = 'default', ?array $report = null): array
+    public function articleChat(array $article, array $history, string $userMessage, string $mode = 'default', ?array $report = null, array $secondaryDocuments = []): array
     {
         if ($e = $this->guard('copilot')) {
             return $e;
@@ -751,6 +751,28 @@ final class ClaudeService
             . "ARTICLE TITLE: " . $title . "\n\n"
             . "ARTICLE TEXT (verbatim, may have been truncated for length):\n"
             . $this->truncate($text, 60000);
+
+        // Secondary documents — additional reference material the user
+        // attached so the Copilot can do cross-document comparisons
+        // (methodology contrasts, citation lookups, guideline checks).
+        // Each entry already comes truncated from
+        // ArticleDocument::copilotPayload(); we just frame them so the
+        // model knows they're SUPPORTING material, not the main paper.
+        if ($secondaryDocuments !== []) {
+            $system .= "\n\nADDITIONAL REFERENCE DOCUMENTS (uploaded by the user as supporting "
+                . "material — quote them when the user asks comparative questions, but ALWAYS treat "
+                . "the ARTICLE TEXT above as the manuscript under discussion):";
+            $i = 0;
+            foreach ($secondaryDocuments as $doc) {
+                $i++;
+                $name = (string) ($doc['filename'] ?? ('Document ' . $i));
+                $body = (string) ($doc['text'] ?? '');
+                if (trim($body) === '') {
+                    continue;
+                }
+                $system .= "\n\n--- Document " . $i . ' — "' . $name . "\":\n" . $body;
+            }
+        }
 
         // When a critical report exists for this article, feed a structured
         // summary of it into the system prompt so Copilot can guide the

@@ -55,6 +55,7 @@ use SysRevAI\Controllers\ToolsController;
 use SysRevAI\Controllers\VerificationController;
 use SysRevAI\Controllers\ArticlesController;
 use SysRevAI\Controllers\ArticleChatController;
+use SysRevAI\Controllers\ArticleDocumentsController;
 use SysRevAI\Controllers\ArticleCriticalReportController;
 use SysRevAI\Controllers\ArticleEditorController;
 use SysRevAI\Controllers\ArticleExportController;
@@ -106,6 +107,9 @@ $router->get('/tools/articles/{id}/download', [ArticlesController::class, 'downl
 $router->get('/tools/articles/{id}/chat/history', [ArticleChatController::class, 'history'], ['auth']);
 $router->post('/tools/articles/{id}/chat/clear', [ArticleChatController::class, 'clear'], ['auth']);
 $router->post('/tools/articles/{id}/chat', [ArticleChatController::class, 'send'], ['auth']);
+$router->post('/tools/articles/{id}/documents', [ArticleDocumentsController::class, 'upload'], ['auth']);
+$router->get('/tools/articles/{id}/documents/{docId}/download', [ArticleDocumentsController::class, 'download'], ['auth']);
+$router->post('/tools/articles/{id}/documents/{docId}/delete', [ArticleDocumentsController::class, 'delete'], ['auth']);
 $router->get('/tools/articles/{id}/critical-report', [ArticleCriticalReportController::class, 'show'], ['auth']);
 $router->post('/tools/articles/{id}/critical-report', [ArticleCriticalReportController::class, 'generate'], ['auth']);
 $router->get('/tools/articles/{id}/edit', [ArticleEditorController::class, 'show'], ['auth']);
