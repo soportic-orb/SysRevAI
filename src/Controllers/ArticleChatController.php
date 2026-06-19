@@ -51,7 +51,12 @@ final class ArticleChatController
         $reportRow = ArticleCriticalReport::find($articleId);
         $report = $reportRow !== null ? ArticleCriticalReport::decode($reportRow) : null;
 
-        $result = ClaudeService::fromSettings()->articleChat($article, $history, $message, $mode, $report);
+        // Secondary documents the user has attached — fed as supporting
+        // material so Copilot can answer cross-document questions
+        // (methodology comparisons, citation lookups, …).
+        $secondary = \SysRevAI\Models\ArticleDocument::copilotPayload($articleId, 12000);
+
+        $result = ClaudeService::fromSettings()->articleChat($article, $history, $message, $mode, $report, $secondary);
 
         if (!$result['ok']) {
             ActivityLog::record('articles.chat_failed', ['article_id' => $articleId, 'error' => $result['error'] ?? 'unknown']);
