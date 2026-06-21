@@ -40,7 +40,9 @@ $text = (string) ($article['extracted_text'] ?? '');
         <div class="alert alert--warn"><?= e((string) $warn) ?></div>
     <?php endif; ?>
 
-    <div class="article-workspace" id="articleWorkspace" data-article-id="<?= $id ?>">
+    <div class="article-workspace" id="articleWorkspace"
+         data-article-id="<?= $id ?>"
+         data-csrf="<?= e(csrf_token()) ?>">
         <!-- Slim re-open button shown only when the text pane is collapsed.
              Sits on the far left as a black tile with a white article icon. -->
         <button type="button" class="article-pane__reopen"
@@ -242,6 +244,7 @@ $text = (string) ($article['extracted_text'] ?? '');
     var workspace = document.getElementById('articleWorkspace');
     if (!workspace) return;
     var articleId = workspace.getAttribute('data-article-id');
+    var csrf      = workspace.getAttribute('data-csrf');
     var openBtn   = document.getElementById('articleDocsUploadBtn');
     var modal     = document.getElementById('articleDocsModal');
     var closeBtn  = document.getElementById('articleDocsClose');
@@ -277,13 +280,22 @@ $text = (string) ($article['extracted_text'] ?? '');
 
     function uploadOne(file) {
         var fd = new FormData();
+        // CSRF must travel in the body (router checks $_POST['_csrf']
+        // before $_SERVER['HTTP_X_CSRF_TOKEN']) AND in the header so
+        // both paths in src/Core/Csrf.php accept the request — useful
+        // when an upstream proxy strips one or the other.
+        fd.append('_csrf', csrf);
         fd.append('file', file, file.name);
         var pending = document.createElement('li');
         pending.className = 'article-docs-modal__status-item article-docs-modal__status-item--pending';
         pending.textContent = file.name + ' — ' + <?= json_encode(__('articles.documents_uploading')) ?>;
         statusEl.hidden = false;
         statusEl.appendChild(pending);
-        return fetch('/tools/articles/' + articleId + '/documents', { method: 'POST', body: fd })
+        return fetch('/tools/articles/' + articleId + '/documents', {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRF-Token': csrf }
+        })
             .then(function (r) { return r.json(); })
             .then(function (body) {
                 statusEl.removeChild(pending);
