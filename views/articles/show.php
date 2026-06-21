@@ -157,7 +157,8 @@ $text = (string) ($article['extracted_text'] ?? '');
             <div class="article-docs-upload">
                 <button type="button" class="btn btn--ghost btn--sm article-docs-upload__btn"
                         id="articleDocsUploadBtn">
-                    &#128206; <?= e(__('articles.documents_upload_btn')) ?>
+                    <?php $iconName = 'book_upload'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>
+                    <span><?= e(__('articles.documents_upload_btn')) ?></span>
                 </button>
             </div>
 
