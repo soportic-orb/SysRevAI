@@ -1189,6 +1189,8 @@ return [
     'notifications' => [
         'view_all' => 'View all',
         'mark_all' => 'Mark all as read',
+        'marked_all'       => 'Marked %d notifications as read.',
+        'nothing_to_mark'  => 'You have no unread notifications.',
         'all'      => 'All',
         'unread'   => 'Unread',
         'empty'    => 'You have no notifications.',
