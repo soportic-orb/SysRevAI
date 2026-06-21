@@ -1189,6 +1189,8 @@ return [
     'notifications' => [
         'view_all' => 'Ver todas',
         'mark_all' => 'Marcar todas como leídas',
+        'marked_all'       => 'Se han marcado %d notificaciones como leídas.',
+        'nothing_to_mark'  => 'No tienes notificaciones pendientes de leer.',
         'all'      => 'Todas',
         'unread'   => 'No leídas',
         'empty'    => 'No tienes notificaciones.',

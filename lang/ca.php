@@ -1192,6 +1192,8 @@ return [
     'notifications' => [
         'view_all' => 'Veure totes',
         'mark_all' => 'Marcar totes com a llegides',
+        'marked_all'       => 'S\'han marcat %d notificacions com a llegides.',
+        'nothing_to_mark'  => 'No tens notificacions pendents de llegir.',
         'all'      => 'Totes',
         'unread'   => 'No llegides',
         'empty'    => 'No tens notificacions.',
