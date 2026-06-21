@@ -194,7 +194,7 @@ $text = (string) ($article['extracted_text'] ?? '');
                    multiple>
         </div>
         <ul class="article-docs-modal__status" id="articleDocsStatus" hidden></ul>
-        <footer class="info-modal__foot">
+        <footer class="info-modal__foot article-docs-modal__foot">
             <button type="button" class="btn btn--ghost btn--sm" id="articleDocsCancel">
                 <?= e(__('common.cancel')) ?>
             </button>
@@ -269,46 +269,100 @@ $text = (string) ($article['extracted_text'] ?? '');
     closeBtn.addEventListener('click', close);
     cancelBtn.addEventListener('click', close);
 
-    function addStatus(name, msg, isError) {
+    /**
+     * Build a per-file row: filename on top, animated progress bar
+     * below, status pill on the right. Returns DOM nodes the upload
+     * routine can mutate as the XHR progresses (.progress.fill width,
+     * .pill swap to check icon, …).
+     */
+    function makeRow(file) {
         statusEl.hidden = false;
         var li = document.createElement('li');
-        li.className = 'article-docs-modal__status-item ' +
-            (isError ? 'article-docs-modal__status-item--error' : 'article-docs-modal__status-item--ok');
-        li.textContent = name + ' — ' + msg;
+        li.className = 'article-docs-modal__status-item article-docs-modal__status-item--pending';
+
+        var head = document.createElement('div');
+        head.className = 'article-docs-modal__status-row';
+        var name = document.createElement('span');
+        name.className = 'article-docs-modal__status-name';
+        name.textContent = file.name;
+        var pill = document.createElement('span');
+        pill.className = 'article-docs-modal__status-pill';
+        pill.textContent = <?= json_encode(__('articles.documents_uploading')) ?>;
+        head.appendChild(name);
+        head.appendChild(pill);
+
+        var bar = document.createElement('div');
+        bar.className = 'article-docs-modal__progress';
+        var fill = document.createElement('span');
+        fill.className = 'article-docs-modal__progress-fill';
+        bar.appendChild(fill);
+
+        li.appendChild(head);
+        li.appendChild(bar);
         statusEl.appendChild(li);
+        return { li: li, pill: pill, bar: bar, fill: fill };
     }
 
+    var CHECK_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '
+        + 'stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + '<polyline points="20 6 9 17 4 12"></polyline></svg>';
+
     function uploadOne(file) {
-        var fd = new FormData();
-        // CSRF must travel in the body (router checks $_POST['_csrf']
-        // before $_SERVER['HTTP_X_CSRF_TOKEN']) AND in the header so
-        // both paths in src/Core/Csrf.php accept the request — useful
-        // when an upstream proxy strips one or the other.
-        fd.append('_csrf', csrf);
-        fd.append('file', file, file.name);
-        var pending = document.createElement('li');
-        pending.className = 'article-docs-modal__status-item article-docs-modal__status-item--pending';
-        pending.textContent = file.name + ' — ' + <?= json_encode(__('articles.documents_uploading')) ?>;
-        statusEl.hidden = false;
-        statusEl.appendChild(pending);
-        return fetch('/tools/articles/' + articleId + '/documents', {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-CSRF-Token': csrf }
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (body) {
-                statusEl.removeChild(pending);
-                if (body && body.ok) {
-                    addStatus(file.name, <?= json_encode(__('articles.documents_uploaded_ok')) ?>, false);
+        var row = makeRow(file);
+        return new Promise(function (resolve) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/tools/articles/' + articleId + '/documents');
+            xhr.setRequestHeader('X-CSRF-Token', csrf);
+
+            // Real upload-progress feedback. While the file is in
+            // flight, fill the bar to the byte ratio; once the server
+            // takes over (loaded === total), bump to ~95% and let the
+            // determinate transition land on 100% on success.
+            if (xhr.upload) {
+                xhr.upload.addEventListener('progress', function (e) {
+                    if (!e.lengthComputable) return;
+                    var pct = Math.round(e.loaded / e.total * 90);
+                    row.fill.style.width = pct + '%';
+                });
+                xhr.upload.addEventListener('load', function () {
+                    row.fill.style.width = '95%';
+                });
+            }
+            xhr.onload = function () {
+                var body = null;
+                try { body = JSON.parse(xhr.responseText); } catch (e) {}
+                if (xhr.status === 200 && body && body.ok) {
+                    row.fill.style.width = '100%';
+                    row.li.classList.remove('article-docs-modal__status-item--pending');
+                    row.li.classList.add('article-docs-modal__status-item--ok');
+                    row.pill.innerHTML = CHECK_SVG + '<span>'
+                        + <?= json_encode(__('articles.documents_uploaded_ok')) ?>
+                        + '</span>';
                 } else {
-                    addStatus(file.name, (body && body.error) || <?= json_encode(__('articles.documents_uploaded_failed')) ?>, true);
+                    row.li.classList.remove('article-docs-modal__status-item--pending');
+                    row.li.classList.add('article-docs-modal__status-item--error');
+                    var err = (body && body.error)
+                        || <?= json_encode(__('articles.documents_uploaded_failed')) ?>;
+                    row.pill.textContent = err;
+                    row.bar.classList.add('is-failed');
                 }
-            })
-            .catch(function () {
-                if (pending.parentNode) statusEl.removeChild(pending);
-                addStatus(file.name, <?= json_encode(__('articles.documents_uploaded_failed')) ?>, true);
-            });
+                resolve();
+            };
+            xhr.onerror = function () {
+                row.li.classList.remove('article-docs-modal__status-item--pending');
+                row.li.classList.add('article-docs-modal__status-item--error');
+                row.pill.textContent = <?= json_encode(__('articles.documents_uploaded_failed')) ?>;
+                row.bar.classList.add('is-failed');
+                resolve();
+            };
+
+            var fd = new FormData();
+            // CSRF in body too — covers the path inside src/Core/Csrf.php
+            // that checks $_POST['_csrf'] before HTTP_X_CSRF_TOKEN.
+            fd.append('_csrf', csrf);
+            fd.append('file', file, file.name);
+            xhr.send(fd);
+        });
     }
 
     function uploadFiles(files) {

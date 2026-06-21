@@ -2586,3 +2586,62 @@ textarea.input { resize: vertical; font-family: inherit; line-height: 1.5; }
 .article-docs-modal__status-item--pending { color: var(--c-muted); }
 .article-docs-modal__status-item--ok      { color: #166534; }
 .article-docs-modal__status-item--error   { color: #B0271A; }
+
+/* Article documents card — let the body actually open. The platform's
+   .collapse-card defaults to overflow:hidden which clips the docs
+   list to the head's height when expanded. Override that here and
+   cap the body with overflow-y:auto so a long list scrolls inside
+   instead of pushing the article-pane off the column. */
+.article-docs-card { overflow: visible; }
+.article-docs-card__body {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* Upload modal — per-file row with progress bar + status pill. */
+.article-docs-modal__status { gap: 10px; }
+.article-docs-modal__status-item {
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: var(--c-surface);
+}
+.article-docs-modal__status-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.article-docs-modal__status-name {
+    font-weight: 600; font-size: 12.5px; word-break: break-word; flex: 1 1 auto;
+}
+.article-docs-modal__status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11.5px; padding: 2px 8px; border-radius: 999px;
+    background: var(--c-hover, rgba(0,0,0,.05));
+    color: var(--c-muted);
+    flex-shrink: 0;
+}
+.article-docs-modal__status-item--ok .article-docs-modal__status-pill {
+    background: #DCFCE7; color: #166534;
+}
+.article-docs-modal__status-item--error .article-docs-modal__status-pill {
+    background: #FFEDEB; color: #B0271A;
+}
+.article-docs-modal__progress {
+    height: 6px; margin-top: 6px;
+    background: var(--c-hover, rgba(0,0,0,.06));
+    border-radius: 999px;
+    overflow: hidden;
+}
+.article-docs-modal__progress-fill {
+    display: block; height: 100%; width: 0;
+    background: var(--c-accent, #4f46e5);
+    transition: width .25s ease;
+}
+.article-docs-modal__progress.is-failed .article-docs-modal__progress-fill { background: #B0271A; }
+
+/* Modal footer — centered buttons with extra bottom margin so the
+   action row visually anchors the dialog. */
+.article-docs-modal__foot {
+    display: flex; justify-content: center; align-items: center;
+    gap: 12px;
+    margin-top: 18px; margin-bottom: 18px;
+}

@@ -171,7 +171,7 @@ return [
         'documents_uploading'     => 'subiendo…',
         'documents_uploaded_ok'   => 'subido',
         'documents_uploaded_failed'=> 'no se ha podido subir',
-        'documents_done'          => 'Volver al trabajo',
+        'documents_done'          => 'Volver al artículo',
         'document_download'       => 'Descargar documento',
         'document_delete'         => 'Eliminar documento',
         'document_delete_confirm' => '¿Eliminar "%s"? El Copilot dejará de tenerlo en cuenta.',
