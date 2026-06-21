@@ -89,6 +89,12 @@ $path = match ($iconName ?? '') {
                  . '<path d="M13 16h-7a2 2 0 0 0 -2 2"></path>'
                  . '<path d="M15 19l3 3l3 -3"></path>'
                  . '<path d="M18 22v-9"></path>',
+    // Tabler "book-upload" — used as the "Pujar altres
+    // articles/documents" button on the article workspace.
+    'book_upload'   => '<path d="M14 20h-8a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12v5"></path>'
+                 . '<path d="M11 16h-5a2 2 0 0 0 -2 2"></path>'
+                 . '<path d="M15 16l3 -3l3 3"></path>'
+                 . '<path d="M18 13v9"></path>',
     // Tabler "text-wrap-disabled" — represents the AI summary action.
     'text_wrap'     => '<path d="M4 6l10 0"></path>'
                  . '<path d="M4 18l10 0"></path>'
