@@ -171,7 +171,7 @@ return [
         'documents_uploading'     => 'uploading…',
         'documents_uploaded_ok'   => 'uploaded',
         'documents_uploaded_failed'=> 'upload failed',
-        'documents_done'          => 'Back to work',
+        'documents_done'          => 'Back to article',
         'document_download'       => 'Download document',
         'document_delete'         => 'Delete document',
         'document_delete_confirm' => 'Delete "%s"? Copilot will stop using it.',

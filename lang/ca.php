@@ -172,7 +172,7 @@ return [
         'documents_uploading'     => 'pujant…',
         'documents_uploaded_ok'   => 'pujat',
         'documents_uploaded_failed'=> 'no s\'ha pogut pujar',
-        'documents_done'          => 'Tornar al treball',
+        'documents_done'          => 'Tornar a l\'article',
         'document_download'       => 'Descarregar document',
         'document_delete'         => 'Eliminar document',
         'document_delete_confirm' => 'Vols eliminar "%s"? El Copilot deixarà de tenir-lo en compte.',
