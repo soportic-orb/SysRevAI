@@ -88,58 +88,61 @@ $pctOf = static function (int $n) use ($denom): int {
     <?php else: ?>
         <div class="screen-3col">
 
-            <?php if (!empty($review['screening_guide'])): ?>
-                <!-- ── Screening guide (collapsed by default) ──────────── -->
-                <aside class="screen-3col__protocol section-card collapse-card screen-guide-card"
+            <!-- ── 1/4 — Guide + Protocol, stacked in one column ─────── -->
+            <div class="screen-3col__left">
+                <?php if (!empty($review['screening_guide'])): ?>
+                    <!-- ── Screening guide (collapsed by default) ──────── -->
+                    <aside class="section-card collapse-card screen-guide-card"
+                           data-collapsible data-collapsed-default>
+                        <button type="button" class="collapse-card__head"
+                                data-collapsible-toggle aria-controls="screenGuideBody" aria-expanded="false">
+                            <span class="collapse-card__title">
+                                &#128218; <?= e(__('reviews.screening_guide')) ?>
+                            </span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                 class="icon icon--chevron" aria-hidden="true">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="collapse-card__body screen-guide__body"
+                             id="screenGuideBody" data-collapsible-body hidden>
+                            <div class="screen-guide__text"><?= nl2br(e((string) $review['screening_guide'])) ?></div>
+                        </div>
+                    </aside>
+                <?php endif; ?>
+
+                <!-- ── Protocol (collapsed by default) ─────────────────── -->
+                <aside class="section-card collapse-card"
                        data-collapsible data-collapsed-default>
                     <button type="button" class="collapse-card__head"
-                            data-collapsible-toggle aria-controls="screenGuideBody" aria-expanded="false">
-                        <span class="collapse-card__title">
-                            &#128218; <?= e(__('reviews.screening_guide')) ?>
-                        </span>
+                            data-collapsible-toggle aria-controls="screenProtocolBody" aria-expanded="false">
+                        <span class="collapse-card__title"><?= e(__('reviews.protocol')) ?></span>
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                              class="icon icon--chevron" aria-hidden="true">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
-                    <div class="collapse-card__body screen-guide__body"
-                         id="screenGuideBody" data-collapsible-body hidden>
-                        <div class="screen-guide__text"><?= nl2br(e((string) $review['screening_guide'])) ?></div>
+                    <div class="collapse-card__body screen-protocol__body"
+                         id="screenProtocolBody" data-collapsible-body hidden>
+                        <?php if (!empty($review['question'])): ?>
+                            <p><strong><?= e(__('reviews.question')) ?>:</strong><br><?= nl2br(e((string) $review['question'])) ?></p>
+                        <?php endif; ?>
+                        <?php foreach (['population', 'intervention', 'comparison', 'outcome', 'study_design'] as $f): ?>
+                            <?php if (!empty($pico[$f])): ?>
+                                <p><strong><?= e(__('reviews.pico_' . $f)) ?>:</strong> <?= e((string) $pico[$f]) ?></p>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        <?php if (!empty($review['inclusion_criteria'])): ?>
+                            <p><strong><?= e(__('reviews.inclusion')) ?>:</strong><br><?= nl2br(e((string) $review['inclusion_criteria'])) ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($review['exclusion_criteria'])): ?>
+                            <p><strong><?= e(__('reviews.exclusion')) ?>:</strong><br><?= nl2br(e((string) $review['exclusion_criteria'])) ?></p>
+                        <?php endif; ?>
                     </div>
                 </aside>
-            <?php endif; ?>
-
-            <!-- ── 1/4 — Protocol (collapsed by default) ─────────────── -->
-            <aside class="screen-3col__protocol section-card collapse-card"
-                   data-collapsible data-collapsed-default>
-                <button type="button" class="collapse-card__head"
-                        data-collapsible-toggle aria-controls="screenProtocolBody" aria-expanded="false">
-                    <span class="collapse-card__title"><?= e(__('reviews.protocol')) ?></span>
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                         class="icon icon--chevron" aria-hidden="true">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <div class="collapse-card__body screen-protocol__body"
-                     id="screenProtocolBody" data-collapsible-body hidden>
-                    <?php if (!empty($review['question'])): ?>
-                        <p><strong><?= e(__('reviews.question')) ?>:</strong><br><?= nl2br(e((string) $review['question'])) ?></p>
-                    <?php endif; ?>
-                    <?php foreach (['population', 'intervention', 'comparison', 'outcome', 'study_design'] as $f): ?>
-                        <?php if (!empty($pico[$f])): ?>
-                            <p><strong><?= e(__('reviews.pico_' . $f)) ?>:</strong> <?= e((string) $pico[$f]) ?></p>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                    <?php if (!empty($review['inclusion_criteria'])): ?>
-                        <p><strong><?= e(__('reviews.inclusion')) ?>:</strong><br><?= nl2br(e((string) $review['inclusion_criteria'])) ?></p>
-                    <?php endif; ?>
-                    <?php if (!empty($review['exclusion_criteria'])): ?>
-                        <p><strong><?= e(__('reviews.exclusion')) ?>:</strong><br><?= nl2br(e((string) $review['exclusion_criteria'])) ?></p>
-                    <?php endif; ?>
-                </div>
-            </aside>
+            </div>
 
             <!-- ── 2/4 — Article + metadata ──────────────────────────── -->
             <section class="screen-3col__article screen-card">
