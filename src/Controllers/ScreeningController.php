@@ -54,26 +54,58 @@ class ScreeningController
             return;
         }
 
-        $uid = (int) Auth::id();
-        $reference = ScreeningService::nextReference($rid, $uid, $review, $this->stage);
-        $pending = ScreeningService::pendingForReviewer($rid, $uid, $review, $this->stage);
-        $canCoordinate = $this->canCoordinate($review);
-
+        $state = $this->buildScreenState($review, $rid);
         $data = array_merge([
-            'review'        => $review,
-            'reference'     => $reference,
-            'pico'          => $reference ? Review::pico($review) : [],
-            'reasons'       => ExclusionReason::forReview($rid),
-            'pending'       => $pending,
-            'completed'     => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
-            'totalReferences' => ScreeningService::totalReferences($rid),
-            'totalInStage'    => ScreeningService::totalInStage($rid, $this->stage),
-            'conflicts'     => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
-            'canCoordinate' => $canCoordinate,
-            'stage'         => $this->stage,
-        ], $this->extraScreenData($review, $reference));
+            'review'  => $review,
+            'reasons' => ExclusionReason::forReview($rid),
+            'stage'   => $this->stage,
+        ], $state, $this->extraScreenData($review, $state['reference']));
 
         echo View::render($this->screenView(), $data);
+    }
+
+    /**
+     * The "what should this reviewer see right now" snapshot: shared by the
+     * full page render and the AJAX response after a decision, so the
+     * screening page can swap to the next reference in place (via fetch)
+     * instead of a full navigation — which is what was silently dropping
+     * the browser's Fullscreen API state on every decision.
+     */
+    private function buildScreenState(array $review, int $rid): array
+    {
+        $uid = (int) Auth::id();
+        $reference = ScreeningService::nextReference($rid, $uid, $review, $this->stage);
+        $canCoordinate = $this->canCoordinate($review);
+
+        return [
+            'reference'       => $reference,
+            'pico'            => $reference ? Review::pico($review) : [],
+            'pending'         => ScreeningService::pendingForReviewer($rid, $uid, $review, $this->stage),
+            'completed'       => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
+            'totalReferences' => ScreeningService::totalReferences($rid),
+            'totalInStage'    => ScreeningService::totalInStage($rid, $this->stage),
+            'conflicts'       => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
+            'canCoordinate'   => $canCoordinate,
+        ];
+    }
+
+    private function isAjax(): bool
+    {
+        return ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== '';
+    }
+
+    /** Ends the request: a JSON error for AJAX callers, a flash + redirect otherwise. */
+    private function failOrRedirect(bool $ajax, int $rid, ?string $errorKey): void
+    {
+        if ($ajax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => false, 'error' => $errorKey ?? 'invalid']);
+            exit;
+        }
+        if ($errorKey !== null) {
+            Session::flash('error', __('screening.' . $errorKey));
+        }
+        redirect($this->basePath($rid));
     }
 
     /** Subclasses override to add stage-specific data (e.g. PDF + chat for FT). */
@@ -92,26 +124,25 @@ class ScreeningController
     {
         $review = $this->memberOrDeny((int) $id);
         $rid = (int) $id;
+        $ajax = $this->isAjax();
 
         if ($this->coordinatorActive($rid)) {
-            Session::flash('error', __('screening.coord_no_screen'));
-            redirect($this->basePath($rid));
+            $this->failOrRedirect($ajax, $rid, 'coord_no_screen');
         }
 
         $referenceId = (int) ($_POST['reference_id'] ?? 0);
         $decision = (string) ($_POST['decision'] ?? '');
         if (!in_array($decision, ['include', 'exclude', 'maybe'], true)) {
-            redirect($this->basePath($rid));
+            $this->failOrRedirect($ajax, $rid, null);
         }
         $reference = Reference::find($referenceId);
         if ($reference === null || (int) $reference['review_id'] !== $rid) {
-            redirect($this->basePath($rid));
+            $this->failOrRedirect($ajax, $rid, null);
         }
         if (!ScreeningService::canDecide($reference, (int) Auth::id(), $review, $this->stage)) {
             // Reference already reached its reviewers_required quota (e.g. two
             // other reviewers decided while this one had the page open).
-            Session::flash('error', __('screening.quota_reached'));
-            redirect($this->basePath($rid));
+            $this->failOrRedirect($ajax, $rid, 'quota_reached');
         }
 
         $reason = $decision === 'exclude' ? trim((string) ($_POST['reason'] ?? '')) : null;
@@ -151,6 +182,15 @@ class ScreeningController
         if ($before < $required && $after >= $required
             && $fresh !== null && $fresh['status'] === $screeningStatus) {
             $this->notifyResolvers($review, $rid, (int) Auth::id());
+        }
+
+        if ($ajax) {
+            // Hand back the next reference in place instead of redirecting,
+            // so the page never unloads — that's what kept exiting the
+            // browser's Fullscreen API mode after every decision.
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => true] + $this->buildScreenState($review, $rid), JSON_UNESCAPED_UNICODE);
+            return;
         }
 
         redirect($this->basePath($rid));
