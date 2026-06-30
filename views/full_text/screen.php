@@ -281,6 +281,28 @@ $pctOf = static function (int $n) use ($denom): int {
     <?php endif; ?>
 </div>
 
+<script>
+/* Open the page already scrolled past the title/stats/progress block, so
+   the reviewer lands straight on the screening workspace (protocol/chat,
+   article/PDF, decision). Each decision here is a full page reload, so
+   this re-runs on every reference — which is exactly what keeps the
+   workspace anchored at this height across the whole queue unless the
+   reviewer scrolls manually. */
+(function () {
+    if ('scrollRestoration' in history) {
+        try { history.scrollRestoration = 'manual'; } catch (e) {}
+    }
+    var anchor = document.querySelector('.ft-screen-grid, .empty-state');
+    if (!anchor) return;
+    var topbar = document.querySelector('.topbar');
+    var subnav = document.querySelector('.review-subnav');
+    var offset = (topbar ? topbar.getBoundingClientRect().height : 0)
+               + (subnav ? subnav.getBoundingClientRect().height : 0);
+    var target = Math.max(0, anchor.getBoundingClientRect().top + window.pageYOffset - offset);
+    window.scrollTo(0, target);
+})();
+</script>
+
 <?php if ($reference !== null): ?>
 <script>
 /* Hand the Copilot a context object so it knows which page the user is on

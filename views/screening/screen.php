@@ -265,6 +265,25 @@ window.SysRevAICopilotContext = {
     var active      = document.getElementById('screenActive');
     var start       = Date.now();
 
+    /* Open the page already scrolled past the title/stats/progress block,
+       so the reviewer lands straight on the screening workspace (guide,
+       article, decision). Decisions are submitted via fetch() with no
+       navigation, so once set this position holds across references on
+       its own — unless the reviewer scrolls manually. */
+    (function scrollToWorkspace() {
+        if ('scrollRestoration' in history) {
+            try { history.scrollRestoration = 'manual'; } catch (e) {}
+        }
+        var anchor = (active && !active.hidden) ? active : emptyState;
+        if (!anchor) return;
+        var topbar = document.querySelector('.topbar');
+        var subnav = document.querySelector('.review-subnav');
+        var offset = (topbar ? topbar.getBoundingClientRect().height : 0)
+                   + (subnav ? subnav.getBoundingClientRect().height : 0);
+        var target = Math.max(0, anchor.getBoundingClientRect().top + window.pageYOffset - offset);
+        window.scrollTo(0, target);
+    })();
+
     function fillTemplate(tpl, n) {
         return (tpl || '').replace('%d', String(n));
     }
