@@ -126,6 +126,28 @@ final class ScreeningService
     }
 
     /**
+     * Whether a reviewer is still allowed to submit (or edit) a decision for
+     * this reference right now. The reference must still be open for this
+     * stage, and either the reviewer already decided (editing their own
+     * decision is always allowed) or the reviewers_required quota has not
+     * yet been reached by other reviewers. This is the server-side backstop
+     * for nextReference()'s queue filtering: it guards against a reviewer
+     * who already had the reference loaded (stale page) or a direct POST
+     * with a tampered reference_id from pushing the decision count past the
+     * configured quota.
+     */
+    public static function canDecide(array $reference, int $reviewerId, array $review, string $stage = 'ta'): bool
+    {
+        if ((string) $reference['status'] !== self::screeningStatus($stage)) {
+            return false;
+        }
+        if (ScreeningDecision::reviewerDecision((int) $reference['id'], $reviewerId, $stage) !== null) {
+            return true;
+        }
+        return ScreeningDecision::decidedCount((int) $reference['id'], $stage) < self::requiredReviewers($review);
+    }
+
+    /**
      * After a decision is recorded, finalize the reference if the required
      * reviewers agree; otherwise leave it open as a conflict.
      */

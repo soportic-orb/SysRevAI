@@ -107,6 +107,12 @@ class ScreeningController
         if ($reference === null || (int) $reference['review_id'] !== $rid) {
             redirect($this->basePath($rid));
         }
+        if (!ScreeningService::canDecide($reference, (int) Auth::id(), $review, $this->stage)) {
+            // Reference already reached its reviewers_required quota (e.g. two
+            // other reviewers decided while this one had the page open).
+            Session::flash('error', __('screening.quota_reached'));
+            redirect($this->basePath($rid));
+        }
 
         $reason = $decision === 'exclude' ? trim((string) ($_POST['reason'] ?? '')) : null;
         $notes = trim((string) ($_POST['notes'] ?? '')) ?: null;
@@ -141,8 +147,9 @@ class ScreeningController
         // now a conflict — notify the resolvers once.
         $after = ScreeningDecision::decidedCount($referenceId, $this->stage);
         $fresh = Reference::find($referenceId);
+        $screeningStatus = $this->stage === 'ft' ? 'ft_screening' : 'ta_screening';
         if ($before < $required && $after >= $required
-            && $fresh !== null && $fresh['status'] === 'ta_screening') {
+            && $fresh !== null && $fresh['status'] === $screeningStatus) {
             $this->notifyResolvers($review, $rid, (int) Auth::id());
         }
 

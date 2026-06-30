@@ -971,6 +971,7 @@ return [
         'coord_banner'     => 'Vista de coordinador activa. Estás viendo decisiones de otros revisores. Esta acción queda registrada. No puedes cribar mientras esté activa.',
         'coord_exit'       => 'Salir de la vista de coordinador',
         'coord_no_screen'  => 'No puedes cribar con la vista de coordinador activa.',
+        'quota_reached'    => 'Esta referencia ya ha sido revisada por el número de revisores requerido y ya no admite más decisiones.',
         'decisions'        => 'Decisiones',
         'no_decisions'     => 'Sin decisiones',
         'notif_conflict'   => 'Hay conflictos sin resolver en "%s"',
