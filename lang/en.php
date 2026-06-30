@@ -971,6 +971,7 @@ return [
         'coord_banner'     => 'Coordinator view active. You are seeing other reviewers\' decisions. This action is logged. You cannot screen while it is active.',
         'coord_exit'       => 'Exit coordinator view',
         'coord_no_screen'  => 'You cannot screen while coordinator view is active.',
+        'quota_reached'    => 'This reference has already been screened by the required number of reviewers and no longer accepts decisions.',
         'decisions'        => 'Decisions',
         'no_decisions'     => 'No decisions',
         'notif_conflict'   => 'There are unresolved conflicts in "%s"',
