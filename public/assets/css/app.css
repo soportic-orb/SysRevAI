@@ -1405,7 +1405,7 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
     gap: 16px;
     align-items: start;
 }
-.screen-3col__protocol { padding: 0; }
+.screen-3col__left { display: flex; flex-direction: column; gap: 16px; }
 .screen-protocol__body p { margin: 6px 0; font-size: 13.5px; line-height: 1.5; }
 .screen-3col__article { padding: 22px 24px; }
 .screen-3col__assessment { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
@@ -1417,7 +1417,7 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 
 @media (max-width: 1100px) {
     .screen-3col { grid-template-columns: 1fr 1.6fr; }
-    .screen-3col__protocol { grid-column: 1 / -1; }
+    .screen-3col__left { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
     .screen-3col { grid-template-columns: 1fr; }
