@@ -1396,6 +1396,29 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .screen-stat--total { border-left-color: var(--c-text); }
 .screen-grid { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
 
+/* Compact variant — sits next to the page title instead of its own
+   full-width strip, so the four counters read at a glance without
+   pushing the article/decision cards further down the page. */
+.screen-head-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.screen-head-row .page__title { margin: 0; }
+.screen-head-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.screen-stats--compact {
+    display: flex; flex-wrap: nowrap; gap: 8px; margin-bottom: 0;
+}
+.screen-stats--compact .screen-stat {
+    flex: 0 0 auto; min-width: 96px; padding: 6px 12px;
+    border-left-width: 3px; gap: 0;
+}
+.screen-stats--compact .screen-stat__value { font-size: 17px; }
+.screen-stats--compact .screen-stat__label { font-size: 10px; white-space: nowrap; }
+.screen-stats--compact .screen-stat__pct   { font-size: 9.5px; margin-top: 0; }
+@media (max-width: 900px) {
+    .screen-stats--compact { flex-wrap: wrap; }
+}
+
 /* 3-column screening layout: protocol (1fr) · article (2fr) · assessment (1fr).
    The protocol card collapses by default; the assessment column hosts the AI
    suggestion + reason / notes / decision buttons. */
