@@ -60,7 +60,19 @@ final class ReviewRegistrationController
         $payload = $this->jsonBody();
         $fields = is_array($payload['fields'] ?? null) ? $payload['fields'] : [];
         $clean = RegistrationFields::sanitise($fields, $kind);
-        ReviewRegistration::save((int) $review['id'], $kind, $clean, (int) Auth::id() ?: null);
+        // A DB failure here (e.g. a lost connection on a long-idle form)
+        // must never surface as a silent, still-JSON-looking "ok" response
+        // or — worse — a non-JSON error page that the client can't parse
+        // and just shows a generic, easy-to-miss "Error" for: the whole
+        // point of autosave is that failures need to be loud.
+        try {
+            ReviewRegistration::save((int) $review['id'], $kind, $clean, (int) Auth::id() ?: null);
+        } catch (\Throwable $e) {
+            error_log('registration.save failed: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'save_failed']);
+            return;
+        }
         ActivityLog::record('exports.registration_saved', ['review_id' => (int) $review['id'], 'kind' => $kind], (int) $review['id']);
         echo json_encode(['ok' => true, 'saved_at' => gmdate('c')]);
     }
@@ -98,7 +110,13 @@ final class ReviewRegistrationController
             }
         }
         // Persist so a refresh keeps the AI draft.
-        ReviewRegistration::save((int) $review['id'], $kind, $merged, (int) Auth::id() ?: null);
+        try {
+            ReviewRegistration::save((int) $review['id'], $kind, $merged, (int) Auth::id() ?: null);
+        } catch (\Throwable $e) {
+            error_log('registration.ai_fill save failed: ' . $e->getMessage());
+            echo json_encode(['ok' => false, 'error' => 'save_failed']);
+            return;
+        }
         ActivityLog::record('exports.registration_ai_filled', [
             'review_id' => (int) $review['id'],
             'kind'      => $kind,

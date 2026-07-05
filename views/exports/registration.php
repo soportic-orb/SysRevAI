@@ -173,7 +173,7 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
         saveNow();
     });
 
-    function saveNow() {
+    function saveNow(isRetry) {
         statusEl.textContent = labels.saving;
         saveBtn.disabled = true;
         return fetch(saveUrl, {
@@ -181,14 +181,45 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
             body: JSON.stringify({ _csrf: csrf, fields: collectFields() })
         })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+            // A CSRF/session failure (419) or a server error comes back as
+            // plain text or an HTML error page, not JSON — treat that the
+            // same as an application-level failure rather than letting
+            // r.json() throw past this handler.
+            return r.json().catch(function () { return { ok: false, error: 'bad_response_' + r.status }; });
+        })
         .then(function (body) {
             var ok = !!(body && body.ok);
             statusEl.textContent = ok ? labels.saved : labels.error;
-            if (ok) dirty = false;
+            if (ok) {
+                dirty = false;
+                return;
+            }
+            handleSaveFailure(body && body.error, isRetry);
         })
-        .catch(function () { statusEl.textContent = labels.error; })
+        .catch(function () {
+            statusEl.textContent = labels.error;
+            handleSaveFailure('network', isRetry);
+        })
         .finally(function () { saveBtn.disabled = false; });
+    }
+
+    // A failed save must never pass silently — this is a long form filled
+    // in over several minutes, so a lost connection, an expired session or
+    // a transient DB blip mid-way through must not read as "it's fine". A
+    // loud toast plus one automatic retry covers transient failures without
+    // needing the user to notice the small inline status text.
+    function handleSaveFailure(errorCode, isRetry) {
+        if (window.SysRevAI && typeof window.SysRevAI.toast === 'function') {
+            window.SysRevAI.toast(
+                labels.error + (errorCode ? ' (' + errorCode + ')' : ''),
+                'error',
+                { ttl: 8000 }
+            );
+        }
+        if (!isRetry) {
+            setTimeout(function () { saveNow(true); }, 4000);
+        }
     }
 
     aiBtn.addEventListener('click', function () {
