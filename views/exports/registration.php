@@ -145,8 +145,31 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
         return fields;
     }
 
+    // Nothing here auto-saved before: typing into a field (or an AI-fill
+    // that only patches blank fields client-side) only ever reached the
+    // database on an explicit click of "Desar" — navigating away first
+    // silently dropped everything. Track unsaved edits and (a) auto-save
+    // them a couple of seconds after the user stops typing, and (b) warn
+    // before an accidental navigation if a save is still pending.
+    var dirty = false;
+    var autoSaveTimer = null;
+
+    form.addEventListener('input', function (e) {
+        if (!e.target.matches('[name^="fields["]')) return;
+        dirty = true;
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(function () { saveNow(); }, 1500);
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (!dirty) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
     form.addEventListener('submit', function (e) {
         e.preventDefault();
+        if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
         saveNow();
     });
 
@@ -160,7 +183,9 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
         })
         .then(function (r) { return r.json(); })
         .then(function (body) {
-            statusEl.textContent = (body && body.ok) ? labels.saved : labels.error;
+            var ok = !!(body && body.ok);
+            statusEl.textContent = ok ? labels.saved : labels.error;
+            if (ok) dirty = false;
         })
         .catch(function () { statusEl.textContent = labels.error; })
         .finally(function () { saveBtn.disabled = false; });
@@ -205,7 +230,13 @@ $registryFull = $kind === RegistrationFields::KIND_OSF
                     filled++;
                 }
             });
-            statusEl.textContent = labels.saved;
+            // The server already persisted its own merge, but that merge is
+            // built from the last-SAVED row — any not-yet-saved edits the
+            // user made in other fields before running AI-fill aren't part
+            // of it. Save the form exactly as it now stands (server merge +
+            // those pending edits) so nothing gets silently dropped.
+            dirty = true;
+            return saveNow();
         })
         .catch(function () {
             statusEl.textContent = labels.error;
