@@ -29,10 +29,20 @@ class ScreeningController
     public function start(string $id): void
     {
         $review = $this->ownerOrDeny((int) $id);
-        $moved = ScreeningService::startScreening((int) $id, $this->stage);
-        ActivityLog::record('screening.started', ['stage' => $this->stage, 'moved' => $moved], (int) $id);
+        $rid = (int) $id;
+
+        // Full-text screening can't begin while any reference still hasn't
+        // reached a final T/A outcome — otherwise references could enter FT
+        // screening piecemeal while T/A is still in progress on others.
+        if ($this->stage === 'ft' && !ScreeningService::taScreeningComplete($rid)) {
+            Session::flash('error', __('fulltext.ta_not_finished'));
+            redirect($this->basePath($rid));
+        }
+
+        $moved = ScreeningService::startScreening($rid, $this->stage);
+        ActivityLog::record('screening.started', ['stage' => $this->stage, 'moved' => $moved], $rid);
         Session::flash('success', __('screening.started', $moved));
-        redirect($this->basePath((int) $id));
+        redirect($this->basePath($rid));
     }
 
     /** URL prefix for screen redirects, depending on stage. */

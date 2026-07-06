@@ -187,6 +187,24 @@ final class ScreeningService
     }
 
     /**
+     * Whether every reference in the review has a final T/A outcome —
+     * nothing left at 'imported' (not yet queued) or 'ta_screening'
+     * (still mid-screening). 'duplicate' counts as final: those rows are
+     * never meant to reach T/A at all. Gates
+     * ScreeningController::start() for the 'ft' stage so a reviewer can't
+     * begin full-text screening while T/A is still in progress.
+     */
+    public static function taScreeningComplete(int $reviewId): bool
+    {
+        $refs = Database::table('references');
+        $row = Database::selectOne(
+            "SELECT COUNT(*) AS c FROM `{$refs}` WHERE review_id = ? AND status IN ('imported', 'ta_screening')",
+            [$reviewId]
+        );
+        return (int) ($row['c'] ?? 0) === 0;
+    }
+
+    /**
      * Whether a reviewer is still allowed to submit (or edit) a decision for
      * this reference right now.
      *

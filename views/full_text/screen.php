@@ -20,6 +20,7 @@ declare(strict_types=1);
 /** @var bool $hasNext */
 /** @var ?int $prevReferenceId */
 /** @var ?int $nextReferenceId */
+/** @var bool $taComplete Whether every reference has a final T/A outcome; gates starting FT screening. */
 $id = (int) $review['id'];
 $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
@@ -97,12 +98,17 @@ $pctOf = static function (int $n) use ($denom): int {
 
     <?php if ($reference === null): ?>
         <div class="empty-state">
-            <p><?= e(__('fulltext.all_done')) ?></p>
-            <?php if ($canCoordinate): ?>
-                <form method="post" action="<?= e($basePath) ?>/start" style="display:inline">
-                    <?= csrf_field() ?>
-                    <button class="btn btn--ghost"><?= e(__('fulltext.start')) ?></button>
-                </form>
+            <?php if (!$taComplete): ?>
+                <p><?= e(__('fulltext.ta_not_finished')) ?></p>
+                <a class="btn btn--ghost" href="/reviews/<?= $id ?>/screen"><?= e(__('screening.title')) ?></a>
+            <?php else: ?>
+                <p><?= e(__('fulltext.all_done')) ?></p>
+                <?php if ($canCoordinate): ?>
+                    <form method="post" action="<?= e($basePath) ?>/start" style="display:inline">
+                        <?= csrf_field() ?>
+                        <button class="btn btn--ghost"><?= e(__('fulltext.start')) ?></button>
+                    </form>
+                <?php endif; ?>
             <?php endif; ?>
             <a class="btn btn--primary" href="/reviews/<?= $id ?>"><?= e(__('reviews.protocol')) ?></a>
         </div>
