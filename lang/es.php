@@ -1130,12 +1130,14 @@ return [
         'find_duplicates_btn'        => 'Buscar duplicadas',
         'dedup_done'                 => 'Búsqueda de duplicados completada: %d duplicados exactos marcados y %d candidatos difusos pendientes de revisión.',
         'dedup_failed'               => 'No se ha podido ejecutar la búsqueda de duplicados. Inténtalo de nuevo.',
-        // Enviar seleccionadas a Cribado T/R.
+        // Cribado masivo de las seleccionadas.
         'send_screening_btn'         => 'Hacer el Cribado',
-        'send_screening_none'        => 'No has seleccionado ninguna referencia para enviar a cribado.',
-        'send_screening_ok'          => '%d referencias enviadas al cribado T/R.',
-        'send_screening_partial'     => '%d enviadas al cribado, %d ya no estaban pendientes de importación y se han omitido.',
-        'send_screening_all_skipped' => 'Ninguna referencia enviada: las %d seleccionadas ya no estaban pendientes de importación.',
+        'screen_bulk_modal_title'    => 'Cribado masivo',
+        'screen_bulk_modal_count'    => 'Aplicarás esta decisión a %d referencias seleccionadas.',
+        'screen_bulk_none'           => 'No has seleccionado ninguna referencia para cribar.',
+        'screen_bulk_ok'             => '%d referencias cribadas como «%s».',
+        'screen_bulk_partial'        => '%d cribadas como «%s». %d omitidas: ya no admiten más decisiones.',
+        'screen_bulk_all_skipped'    => 'Ninguna referencia cribada: las %d seleccionadas ya no admiten más decisiones.',
     ],
 
     'duplicates' => [

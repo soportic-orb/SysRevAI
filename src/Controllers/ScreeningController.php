@@ -9,7 +9,6 @@ use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\ExclusionReason;
-use SysRevAI\Models\Notification;
 use SysRevAI\Models\Reference;
 use SysRevAI\Models\Review;
 use SysRevAI\Models\ReviewUser;
@@ -263,19 +262,18 @@ class ScreeningController
             }
         }
 
-        $required = ScreeningService::requiredReviewers($review);
-        $before = ScreeningDecision::decidedCount($referenceId, $this->stage);
-
-        ScreeningDecision::record($referenceId, (int) Auth::id(), $this->stage, $decision, $reason, $notes, $time, $aiJson);
-        ScreeningService::evaluate($referenceId, $review, $this->stage);
-
-        // If this decision completed the required set without finalizing, it is
-        // now a conflict — notify the resolvers once.
-        $after = ScreeningDecision::decidedCount($referenceId, $this->stage);
-        $fresh = Reference::find($referenceId);
-        $screeningStatus = $this->stage === 'ft' ? 'ft_screening' : 'ta_screening';
-        if ($before < $required && $after >= $required
-            && $fresh !== null && $fresh['status'] === $screeningStatus) {
+        $becameConflict = ScreeningService::recordDecision(
+            $review,
+            $referenceId,
+            (int) Auth::id(),
+            $this->stage,
+            $decision,
+            $reason,
+            $notes,
+            $time,
+            $aiJson
+        );
+        if ($becameConflict) {
             $this->notifyResolvers($review, $rid, (int) Auth::id());
         }
 
@@ -386,19 +384,7 @@ class ScreeningController
 
     private function notifyResolvers(array $review, int $reviewId, int $exceptUserId): void
     {
-        foreach (ReviewUser::resolverIds($reviewId, (int) $review['owner_id']) as $resolverId) {
-            if ($resolverId === $exceptUserId) {
-                continue;
-            }
-            Notification::push(
-                $resolverId,
-                'conflict',
-                __('screening.notif_conflict', $review['title']),
-                null,
-                $this->basePath($reviewId) . '/conflicts',
-                $reviewId
-            );
-        }
+        ScreeningService::notifyConflictResolvers($review, $reviewId, $exceptUserId, $this->basePath($reviewId));
     }
 
     private function coordinatorActive(int $reviewId): bool

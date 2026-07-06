@@ -9,12 +9,14 @@ use SysRevAI\Core\Session;
 use SysRevAI\Core\View;
 use SysRevAI\Models\ActivityLog;
 use SysRevAI\Models\Duplicate;
+use SysRevAI\Models\ExclusionReason;
 use SysRevAI\Models\Reference;
 use SysRevAI\Models\ReferenceFullText;
 use SysRevAI\Models\Review;
 use SysRevAI\Models\ScreeningDecision;
 use SysRevAI\Services\DeduplicationService;
 use SysRevAI\Services\FileStorage;
+use SysRevAI\Services\ScreeningService;
 
 final class ReferencesController
 {
@@ -69,6 +71,7 @@ final class ReferencesController
             'ftInFlight'    => \SysRevAI\Models\RetrievalQueue::inFlightForReview($rid),
             'ftEnabled'     => (bool) (setting('fulltext.enabled') ?? false),
             'canDelete'     => $this->canDelete($review),
+            'reasons'       => ExclusionReason::forReview($rid),
         ]);
     }
 
@@ -236,54 +239,82 @@ final class ReferencesController
     }
 
     /**
-     * Move selected references straight into the T/A screening queue —
-     * lets a reviewer search or page through the list, pick specific
-     * rows, and prioritize them without waiting for (or running) the
-     * review-wide "Iniciar cribratge" action. Only rows still at
-     * 'imported' are eligible; anything already past that (duplicate,
-     * already screening, included/excluded, etc.) is silently skipped
-     * and counted.
+     * Bulk-screen selected references straight from the list: lets a
+     * reviewer search or page through, pick specific rows, and record the
+     * same T/A decision (include/maybe/exclude, with an optional reason
+     * and notes) for all of them in one go — instead of waiting for the
+     * review-wide "Iniciar cribratge" action and then deciding them one
+     * at a time. A still-'imported' row is promoted into the queue on
+     * the fly before deciding it. Rows that can't take a new decision
+     * right now (reviewers_required already reached by other reviewers,
+     * and this reviewer hasn't decided it before) are skipped and
+     * counted rather than erroring out the whole batch.
      */
-    public function sendToScreeningBulk(string $id): void
+    public function screenBulk(string $id): void
     {
-        $this->memberOrDeny((int) $id);
+        $review = $this->memberOrDeny((int) $id);
         $rid = (int) $id;
+        $uid = (int) Auth::id();
+
+        $decision = (string) ($_POST['decision'] ?? '');
+        if (!in_array($decision, ['include', 'exclude', 'maybe'], true)) {
+            Session::flash('error', __('references.screen_bulk_none'));
+            redirect('/reviews/' . $rid . '/references');
+        }
+
+        $reason = $decision === 'exclude' ? (trim((string) ($_POST['reason'] ?? '')) ?: null) : null;
+        $notes = trim((string) ($_POST['notes'] ?? '')) ?: null;
 
         $raw = (array) ($_POST['reference_ids'] ?? []);
         $ids = array_values(array_unique(array_map('intval', $raw)));
         $ids = array_values(array_filter($ids, static fn (int $i): bool => $i > 0));
 
         if ($ids === []) {
-            Session::flash('error', __('references.send_screening_none'));
+            Session::flash('error', __('references.screen_bulk_none'));
             redirect('/reviews/' . $rid . '/references');
         }
 
-        $moved = 0;
+        @set_time_limit(180);
+        $stage = 'ta';
+        $decided = 0;
         $skipped = 0;
+        $becameConflict = false;
         foreach ($ids as $refId) {
             $ref = Reference::find($refId);
             if ($ref === null || (int) $ref['review_id'] !== $rid) {
                 continue;
             }
-            if ((string) $ref['status'] !== 'imported') {
+            if ((string) $ref['status'] === 'imported') {
+                Reference::setStatus($refId, 'ta_screening');
+                $ref['status'] = 'ta_screening';
+            }
+            if (!ScreeningService::canDecide($ref, $uid, $review, $stage)) {
                 $skipped++;
                 continue;
             }
-            Reference::setStatus($refId, 'ta_screening');
-            $moved++;
+            if (ScreeningService::recordDecision($review, $refId, $uid, $stage, $decision, $reason, $notes)) {
+                $becameConflict = true;
+            }
+            $decided++;
         }
 
-        ActivityLog::record('references.sent_to_screening', [
-            'moved'   => $moved,
-            'skipped' => $skipped,
+        if ($becameConflict) {
+            ScreeningService::notifyConflictResolvers($review, $rid, $uid, '/reviews/' . $rid . '/screen');
+        }
+
+        ActivityLog::record('references.screened_bulk', [
+            'decision' => $decision,
+            'decided'  => $decided,
+            'skipped'  => $skipped,
         ], $rid);
 
-        if ($moved === 0) {
-            Session::flash('error', __('references.send_screening_all_skipped', $skipped));
+        $decisionLabel = __('screening.' . $decision);
+        if ($decided === 0) {
+            Session::flash('error', __('references.screen_bulk_all_skipped', $skipped));
         } elseif ($skipped > 0) {
-            Session::flash('success', __('references.send_screening_partial', $moved, $skipped));
+            Session::flash('success', __('references.screen_bulk_partial', $decided, $decisionLabel, $skipped));
         } else {
-            Session::flash('success', __('references.send_screening_ok', $moved));
+            Session::flash('success', __('references.screen_bulk_ok', $decided, $decisionLabel));
         }
         redirect('/reviews/' . $rid . '/references');
     }
