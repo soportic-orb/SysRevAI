@@ -195,6 +195,7 @@ $router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'sugge
 $router->get('/reviews/{id}/screen/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
 $router->post('/reviews/{id}/screen/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
 $router->get('/reviews/{id}/screen/history', [ScreeningController::class, 'history'], ['auth']);
+$router->get('/reviews/{id}/screen/pending-others', [ScreeningController::class, 'pendingOthers'], ['auth']);
 $router->get('/reviews/{id}/screen/nav', [ScreeningController::class, 'nav'], ['auth']);
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
@@ -205,6 +206,7 @@ $router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['a
 $router->get('/reviews/{id}/full-text/conflicts', [FullTextScreeningController::class, 'conflicts'], ['auth']);
 $router->post('/reviews/{id}/full-text/conflicts/resolve', [FullTextScreeningController::class, 'resolveConflict'], ['auth']);
 $router->get('/reviews/{id}/full-text/history', [FullTextScreeningController::class, 'history'], ['auth']);
+$router->get('/reviews/{id}/full-text/pending-others', [FullTextScreeningController::class, 'pendingOthers'], ['auth']);
 $router->post('/reviews/{id}/full-text/decide', [FullTextScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/full-text/start', [FullTextScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/full-text/coordinator', [FullTextScreeningController::class, 'toggleCoordinator'], ['auth']);

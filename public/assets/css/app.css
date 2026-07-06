@@ -1393,6 +1393,7 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .screen-stat__label { font-size: 13px; color: var(--c-muted); font-weight: 600; }
 .screen-stat__pct   { font-size: 12px; color: var(--c-muted); margin-top: 2px; }
 .screen-stat--done  { border-left-color: var(--c-ok);   }
+.screen-stat--other { border-left-color: var(--c-accent, #4f46e5); }
 .screen-stat--team  { border-left-color: var(--c-warn); }
 .screen-stat--total { border-left-color: var(--c-text); }
 /* "Ja revisats per tu" links to the reviewer's own screening history. */

@@ -14,6 +14,7 @@ declare(strict_types=1);
 /** @var bool $canCoordinate */
 /** @var bool $hasPrev */
 /** @var bool $hasNext */
+/** @var int $pendingWithOther References pending for this reviewer that already carry one other reviewer's decision. */
 /** @var ?array $ownDecision Reviewer's own past decision on $reference, when reopened from the history list. */
 $id = (int) $review['id'];
 $total = $completed + $pending;
@@ -65,6 +66,12 @@ $pctOf = static function (int $n) use ($denom): int {
                     <span class="screen-stat__value" id="screenStatDoneValue"><?= (int) $completed ?></span>
                     <span class="screen-stat__label"><?= e(__('screening.stat_done')) ?></span>
                     <span class="screen-stat__pct" id="screenStatDonePct"><?= $pctOf((int) $completed) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+                </a>
+                <a class="screen-stat screen-stat--other screen-stat--clickable"
+                   href="/reviews/<?= $id ?>/screen/pending-others" title="<?= e(__('screening.pending_others_title')) ?>">
+                    <span class="screen-stat__value" id="screenStatOtherValue"><?= (int) $pendingWithOther ?></span>
+                    <span class="screen-stat__label"><?= e(__('screening.stat_pending_other')) ?></span>
+                    <span class="screen-stat__pct" id="screenStatOtherPct"><?= $pctOf((int) $pendingWithOther) ?>% <?= e(__('screening.stat_of_total')) ?></span>
                 </a>
                 <div class="screen-stat screen-stat--team">
                     <span class="screen-stat__value" id="screenStatTeamValue"><?= (int) $totalInStage ?></span>
@@ -386,6 +393,8 @@ window.SysRevAICopilotContext = {
         var pendingPctEl = document.getElementById('screenStatPendingPct');
         var doneEl = document.getElementById('screenStatDoneValue');
         var donePctEl = document.getElementById('screenStatDonePct');
+        var otherEl = document.getElementById('screenStatOtherValue');
+        var otherPctEl = document.getElementById('screenStatOtherPct');
         var teamEl = document.getElementById('screenStatTeamValue');
         var teamPctEl = document.getElementById('screenStatTeamPct');
         var totalEl = document.getElementById('screenStatTotalValue');
@@ -393,6 +402,8 @@ window.SysRevAICopilotContext = {
         if (pendingPctEl) pendingPctEl.textContent = pctOf(state.pending, total) + '%';
         if (doneEl) doneEl.textContent = state.completed;
         if (donePctEl) donePctEl.textContent = pctOf(state.completed, total) + '%';
+        if (otherEl) otherEl.textContent = state.pendingWithOther;
+        if (otherPctEl) otherPctEl.textContent = pctOf(state.pendingWithOther, total) + '%';
         if (teamEl) teamEl.textContent = state.totalInStage;
         if (teamPctEl) teamPctEl.textContent = pctOf(state.totalInStage, total) + '%';
         if (totalEl) totalEl.textContent = total;

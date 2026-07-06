@@ -945,6 +945,7 @@ return [
         'stat_done'          => 'You\'ve already reviewed',
         'stat_team_pending'  => 'Total open for the team',
         'stat_total_review'  => 'Total references in the review',
+        'stat_pending_other' => 'Screened by another reviewer',
         'stat_of_total'      => 'of the review',
         'done_you'         => '%d completed',
         'all_done'         => 'You have no articles left to screen.',
@@ -989,6 +990,9 @@ return [
         'nav_prev_none'    => 'There is no previous reference.',
         'nav_next_none'    => 'There is no other reference left to screen.',
         'nav_error'        => 'Could not switch reference. Try again.',
+        'pending_others_title' => 'Screened by another reviewer',
+        'pending_others_intro' => 'References another reviewer has already screened that are still waiting on your decision.',
+        'pending_others_none'  => 'No references in this situation.',
     ],
 
     'import' => [
@@ -1087,6 +1091,9 @@ return [
         'source_filter_label'   => 'Filter by source',
         'source_any'            => 'Source: any',
         'clear_filters'         => 'Clear filters',
+        'status_pending_group' => 'Pending for me',
+        'status_pending_ta'    => 'T/A screening pending',
+        'status_pending_ft'    => 'Full-text screening pending',
         'toolbar_title'         => 'Filters & bulk actions',
         'has_abstract'          => 'Reference has an abstract',
         'has_abstract_short'    => 'Has abstract',

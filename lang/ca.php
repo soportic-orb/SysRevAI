@@ -948,6 +948,7 @@ return [
         'stat_done'          => 'Ja revisats per tu',
         'stat_team_pending'  => 'Total oberts per a l\'equip',
         'stat_total_review'  => 'Total de referències de la revisió',
+        'stat_pending_other' => 'Amb cribratge d\'un altre revisor',
         'stat_of_total'      => 'de la revisió',
         'done_you'         => '%d completades',
         'all_done'         => 'No tens articles pendents de cribar.',
@@ -992,6 +993,9 @@ return [
         'nav_prev_none'    => 'No hi ha cap referència anterior.',
         'nav_next_none'    => 'No hi ha cap altra referència pendent de cribar.',
         'nav_error'        => 'No s\'ha pogut canviar de referència. Torna-ho a provar.',
+        'pending_others_title' => 'Cribades per un altre revisor',
+        'pending_others_intro' => 'Referències que ja ha cribat un altre revisor i encara esperen la teva decisió.',
+        'pending_others_none'  => 'No hi ha cap referència en aquesta situació.',
     ],
 
     'import' => [
@@ -1090,6 +1094,9 @@ return [
         'source_filter_label'   => 'Filtrar per font',
         'source_any'            => 'Font: qualsevol',
         'clear_filters'         => 'Netejar filtres',
+        'status_pending_group' => 'Pendents per a mi',
+        'status_pending_ta'    => 'Cribatge T/R pendent',
+        'status_pending_ft'    => 'Cribatge TextComp pendent',
         'toolbar_title'         => 'Filtres i accions massives',
         'has_abstract'          => 'La referència té resum',
         'has_abstract_short'    => 'Amb resum',

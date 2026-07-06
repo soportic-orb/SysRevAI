@@ -109,6 +109,29 @@ class ScreeningController
         ]);
     }
 
+    /** References still pending for this reviewer that already have one
+     *  other reviewer's decision — a second opinion away from resolving. */
+    public function pendingOthers(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        $uid = (int) Auth::id();
+
+        $refs = ScreeningService::pendingWithOneOtherDecision($rid, $uid, $this->stage);
+        $rows = [];
+        foreach ($refs as $r) {
+            $r['decisions'] = ScreeningDecision::forReference((int) $r['id'], $this->stage);
+            $rows[] = $r;
+        }
+
+        echo View::render('screening/pending_others', [
+            'review'    => $review,
+            'rows'      => $rows,
+            'basePath'  => $this->basePath($rid),
+            'stageName' => $this->stage === 'ft' ? __('fulltext.title') : __('screening.title'),
+        ]);
+    }
+
     /**
      * The "what should this reviewer see right now" snapshot: shared by the
      * full page render and the AJAX response after a decision, so the
@@ -150,18 +173,19 @@ class ScreeningController
             : null;
 
         return [
-            'reference'       => $reference,
-            'pico'            => $reference ? Review::pico($review) : [],
-            'pending'         => ScreeningService::pendingForReviewer($rid, $uid, $review, $this->stage),
-            'completed'       => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
-            'totalReferences' => ScreeningService::totalReferences($rid),
-            'totalInStage'    => ScreeningService::totalInStage($rid, $this->stage),
-            'conflicts'       => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
-            'canCoordinate'   => $canCoordinate,
-            'hasPrev'         => $prevRef !== null,
-            'hasNext'         => $nextRef !== null,
-            'prevReferenceId' => $prevRef !== null ? (int) $prevRef['id'] : null,
-            'nextReferenceId' => $nextRef !== null ? (int) $nextRef['id'] : null,
+            'reference'        => $reference,
+            'pico'             => $reference ? Review::pico($review) : [],
+            'pending'          => ScreeningService::pendingForReviewer($rid, $uid, $review, $this->stage),
+            'completed'        => ScreeningDecision::reviewerCompleted($rid, $uid, $this->stage),
+            'totalReferences'  => ScreeningService::totalReferences($rid),
+            'totalInStage'     => ScreeningService::totalInStage($rid, $this->stage),
+            'conflicts'        => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
+            'canCoordinate'    => $canCoordinate,
+            'hasPrev'          => $prevRef !== null,
+            'hasNext'          => $nextRef !== null,
+            'prevReferenceId'  => $prevRef !== null ? (int) $prevRef['id'] : null,
+            'nextReferenceId'  => $nextRef !== null ? (int) $nextRef['id'] : null,
+            'pendingWithOther' => ScreeningService::pendingWithOneOtherDecisionCount($rid, $uid, $this->stage),
         ];
     }
 
