@@ -1374,6 +1374,7 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 /* Screening */
 .screen-progress { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .screen-progress .progress { flex: 1; }
+.screen-nav { display: flex; gap: 8px; flex: 0 0 auto; }
 
 /* Top stats strip on the screening page — four cards: pending for me,
    done by me, total still open across the team, total references in the

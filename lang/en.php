@@ -980,6 +980,11 @@ return [
         'history_none'     => 'You haven\'t screened any references yet.',
         'editing_previous' => 'You\'re reviewing a past decision: %s. You can change it and save again.',
         'history_back'     => '← Back to history',
+        'nav_prev'         => 'Previous',
+        'nav_next'         => 'Next',
+        'nav_prev_none'    => 'There is no previous reference.',
+        'nav_next_none'    => 'There is no other reference left to screen.',
+        'nav_error'        => 'Could not switch reference. Try again.',
     ],
 
     'import' => [

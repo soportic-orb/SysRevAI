@@ -39,6 +39,21 @@ final class ScreeningService
     }
 
     /**
+     * Every status a reference passes through once it has entered this
+     * stage's pipeline (still screening, or already finalized either way).
+     * Used to validate the prev/next navigation and the history reopen —
+     * both let a reviewer land on a reference outside the normal "next
+     * pending" queue, but only within this stage, never on an 'imported'
+     * or 'duplicate' row that hasn't reached it yet.
+     *
+     * @return string[]
+     */
+    public static function stageStatuses(string $stage = 'ta'): array
+    {
+        return [self::screeningStatus($stage), self::includedStatus($stage), self::excludedStatus($stage)];
+    }
+
+    /**
      * Promote references into a screening queue:
      *   stage = 'ta' → 'imported' becomes 'ta_screening'
      *   stage = 'ft' → 'ta_included' becomes 'ft_screening'
@@ -78,6 +93,50 @@ final class ScreeningService
                     WHERE d2.reference_id = r.id AND d2.reviewer_id = ? AND d2.stage = ? AND d2.is_resolution = 0)
              ORDER BY r.id ASC LIMIT 1",
             [$reviewId, $status, $stage, $required, $reviewerId, $stage]
+        );
+    }
+
+    /**
+     * Same as nextReference(), but skips past $afterId — used by the "next
+     * to screen" nav arrow so clicking it from the reference currently on
+     * screen (which is itself usually the smallest pending id) actually
+     * advances instead of reloading the same one.
+     */
+    public static function nextReferenceAfter(int $reviewId, int $afterId, int $reviewerId, array $review, string $stage = 'ta'): ?array
+    {
+        $refs = Database::table('references');
+        $dec = Database::table('screening_decisions');
+        $required = self::requiredReviewers($review);
+        $status = self::screeningStatus($stage);
+
+        return Database::selectOne(
+            "SELECT r.* FROM `{$refs}` r
+             WHERE r.review_id = ? AND r.status = ? AND r.id > ?
+               AND (SELECT COUNT(DISTINCT d.reviewer_id) FROM `{$dec}` d
+                    WHERE d.reference_id = r.id AND d.stage = ? AND d.is_resolution = 0) < ?
+               AND NOT EXISTS (SELECT 1 FROM `{$dec}` d2
+                    WHERE d2.reference_id = r.id AND d2.reviewer_id = ? AND d2.stage = ? AND d2.is_resolution = 0)
+             ORDER BY r.id ASC LIMIT 1",
+            [$reviewId, $status, $afterId, $stage, $required, $reviewerId, $stage]
+        );
+    }
+
+    /**
+     * The reference right before $beforeId that has entered this stage's
+     * pipeline, regardless of whether it's still pending or already
+     * decided — the "previous" nav arrow deliberately lets a reviewer step
+     * back through anything already screened, not just their own history.
+     */
+    public static function previousReference(int $reviewId, int $beforeId, string $stage = 'ta'): ?array
+    {
+        $refs = Database::table('references');
+        $statuses = self::stageStatuses($stage);
+
+        return Database::selectOne(
+            "SELECT r.* FROM `{$refs}` r
+             WHERE r.review_id = ? AND r.id < ? AND r.status IN (?, ?, ?)
+             ORDER BY r.id DESC LIMIT 1",
+            array_merge([$reviewId, $beforeId], $statuses)
         );
     }
 

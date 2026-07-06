@@ -980,6 +980,11 @@ return [
         'history_none'     => 'Todavía no has cribado ninguna referencia.',
         'editing_previous' => 'Estás revisando una decisión anterior: %s. Puedes cambiarla y volver a guardar.',
         'history_back'     => '← Volver al historial',
+        'nav_prev'         => 'Anterior',
+        'nav_next'         => 'Siguiente',
+        'nav_prev_none'    => 'No hay ninguna referencia anterior.',
+        'nav_next_none'    => 'No hay ninguna otra referencia pendiente de cribar.',
+        'nav_error'        => 'No se ha podido cambiar de referencia. Inténtalo de nuevo.',
     ],
 
     'import' => [

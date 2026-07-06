@@ -16,6 +16,10 @@ declare(strict_types=1);
 /** @var ?array $fullText */
 /** @var array $chatHistory */
 /** @var ?array $ownDecision Reviewer's own past decision on $reference, when reopened from the history list. */
+/** @var bool $hasPrev */
+/** @var bool $hasNext */
+/** @var ?int $prevReferenceId */
+/** @var ?int $nextReferenceId */
 $id = (int) $review['id'];
 $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
@@ -75,7 +79,20 @@ $pctOf = static function (int $n) use ($denom): int {
 
     <div class="screen-progress">
         <div class="progress"><div class="progress__bar" style="width: <?= $pct ?>%"></div></div>
-        <span class="muted"><?= e(__('screening.pending_you', $pending)) ?> · <?= e(__('screening.done_you', $completed)) ?></span>
+        <div class="screen-nav">
+            <?php if ($hasPrev): ?>
+                <a class="btn btn--ghost btn--sm" href="<?= e($basePath) ?>?reference_id=<?= $prevReferenceId ?>"
+                   title="<?= e(__('screening.nav_prev')) ?>">&larr; <?= e(__('screening.nav_prev')) ?></a>
+            <?php else: ?>
+                <button type="button" class="btn btn--ghost btn--sm" disabled>&larr; <?= e(__('screening.nav_prev')) ?></button>
+            <?php endif; ?>
+            <?php if ($hasNext): ?>
+                <a class="btn btn--ghost btn--sm" href="<?= e($basePath) ?>?reference_id=<?= $nextReferenceId ?>"
+                   title="<?= e(__('screening.nav_next')) ?>"><?= e(__('screening.nav_next')) ?> &rarr;</a>
+            <?php else: ?>
+                <button type="button" class="btn btn--ghost btn--sm" disabled><?= e(__('screening.nav_next')) ?> &rarr;</button>
+            <?php endif; ?>
+        </div>
     </div>
 
     <?php if ($reference === null): ?>
