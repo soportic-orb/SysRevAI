@@ -22,6 +22,7 @@ use SysRevAI\Core\Session;
 /** @var array $ftInFlight */
 /** @var bool $ftEnabled */
 /** @var bool $canDelete */
+/** @var array $reasons */
 $id = (int) $review['id'];
 $pages = (int) ceil($total / $perPage);
 $inFlight = array_flip($ftInFlight ?? []);
@@ -177,13 +178,13 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                 </label>
                 <span class="muted search-bulk-toolbar__count" id="refsSelectedCount">0</span>
                 <span class="muted import-preview__toolbar-spacer"></span>
-                <!-- Sends the checked rows straight to T/A screening. Targets
-                     the referencesSendScreeningForm sibling below (own form,
+                <!-- Opens the bulk-screening modal for the checked rows.
+                     Submits via referencesScreenBulkForm (own sibling form,
                      not this one) since this form is flagged data-ai-action
                      and would otherwise raise the AI "treballant…" overlay
-                     for a fast, non-AI status change. -->
+                     for a fast, non-AI action. -->
                 <button type="button" class="btn btn--primary btn--sm"
-                        id="sendScreeningBtn" disabled>
+                        id="screenBulkOpenBtn" disabled>
                     <?= e(__('references.send_screening_btn')) ?>
                 </button>
                 <button type="button" class="btn btn--primary btn--sm"
@@ -231,16 +232,20 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
             <?= csrf_field() ?>
         </form>
 
-        <!-- Send-to-screening sibling form. Row checkboxes only carry
+        <!-- Bulk-screening sibling form. Row checkboxes only carry
              form="referencesConvertForm", so on click JS copies the
-             checked ids into hidden inputs here before submitting —
-             same approach as the bulk-delete form below. No modal: unlike
-             delete this isn't destructive, so there's nothing to confirm. -->
+             checked ids into hidden inputs here — same approach as the
+             bulk-delete form below. The decision/reason/notes hidden
+             inputs are filled in by the modal's Incloure/Potser/Excloure
+             buttons just before submit. -->
         <form method="post"
-              action="/reviews/<?= $id ?>/references/send-to-screening"
-              id="referencesSendScreeningForm"
+              action="/reviews/<?= $id ?>/references/screen-bulk"
+              id="referencesScreenBulkForm"
               style="display:none">
             <?= csrf_field() ?>
+            <input type="hidden" name="decision" id="screenBulkDecision" value="">
+            <input type="hidden" name="reason" id="screenBulkReasonInput" value="">
+            <input type="hidden" name="notes" id="screenBulkNotesInput" value="">
         </form>
 
         <?php if ($canDelete): ?>
@@ -462,6 +467,47 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         </dialog>
         <?php endif; ?>
 
+        <!-- Bulk-screening modal. Triggered by #screenBulkOpenBtn once at
+             least one row is checked. Mirrors the "Valoració" box on the
+             screening page (screening/screen.php): reason select, notes,
+             stacked Incloure/Potser/Excloure buttons. Picking a decision
+             fills the hidden inputs on #referencesScreenBulkForm and
+             submits it — no separate confirm step, since the count is
+             already shown right here before the reviewer commits. -->
+        <dialog class="info-modal info-modal--confirm" id="screenBulkModal">
+            <div class="info-modal__inner">
+                <button type="button" class="info-modal__close"
+                        data-info-close
+                        aria-label="<?= e(__('common.close')) ?>">&times;</button>
+                <h3><?= e(__('references.screen_bulk_modal_title')) ?></h3>
+                <p><strong id="screenBulkCount" data-tpl="<?= e(__('references.screen_bulk_modal_count')) ?>"></strong></p>
+                <div class="field">
+                    <label class="field-label" for="screenBulkReason"><?= e(__('screening.exclude_reason')) ?></label>
+                    <select class="select" id="screenBulkReason">
+                        <option value=""><?= e(__('screening.no_reason')) ?></option>
+                        <?php foreach ($reasons as $r): ?>
+                            <option value="<?= e((string) $r['label']) ?>"><?= e((string) $r['label']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="screenBulkNotes"><?= e(__('screening.notes_label')) ?></label>
+                    <textarea class="input" id="screenBulkNotes" rows="3" placeholder="<?= e(__('screening.notes')) ?>"></textarea>
+                </div>
+                <div class="decision-buttons decision-buttons--stack">
+                    <button type="button" class="btn btn--include" data-decision="include">
+                        <?= e(__('screening.include')) ?>
+                    </button>
+                    <button type="button" class="btn btn--maybe" data-decision="maybe">
+                        <?= e(__('screening.maybe')) ?>
+                    </button>
+                    <button type="button" class="btn btn--exclude" data-decision="exclude">
+                        <?= e(__('screening.exclude')) ?>
+                    </button>
+                </div>
+            </div>
+        </dialog>
+
         <!-- Citation-style picker modal. Triggered by #convertOpenBtn,
              dismissed by the close button / backdrop click. Picking a
              style and hitting Confirm writes the selected style into the
@@ -507,8 +553,12 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
     var counter  = document.getElementById('refsSelectedCount');
     var openBtn  = document.getElementById('convertOpenBtn');
     var deleteBtn= document.getElementById('deleteBulkOpenBtn');
-    var sendScreeningBtn = document.getElementById('sendScreeningBtn');
-    var sendScreeningForm = document.getElementById('referencesSendScreeningForm');
+    var screenBulkOpenBtn = document.getElementById('screenBulkOpenBtn');
+    var screenBulkForm = document.getElementById('referencesScreenBulkForm');
+    var screenBulkModal = document.getElementById('screenBulkModal');
+    var screenBulkCount = document.getElementById('screenBulkCount');
+    var screenBulkReason = document.getElementById('screenBulkReason');
+    var screenBulkNotes = document.getElementById('screenBulkNotes');
     var modal    = document.getElementById('convertModal');
     var confirm  = document.getElementById('convertModalConfirm');
     var styleSel = document.getElementById('convertModalStyle');
@@ -535,7 +585,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         counter.textContent = String(effective);
         openBtn.disabled = n === 0; // conversion still operates on visible ids
         if (deleteBtn) deleteBtn.disabled = effective === 0;
-        if (sendScreeningBtn) sendScreeningBtn.disabled = n === 0; // visible-page ids only, same as convert
+        if (screenBulkOpenBtn) screenBulkOpenBtn.disabled = n === 0; // visible-page ids only, same as convert
     }
 
     all.addEventListener('change', function () {
@@ -623,12 +673,14 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         });
     }
 
-    // Send-to-screening: copy the checked (visible-page) ids into the
-    // sibling form and submit directly — no modal, since moving a
-    // reference into the screening queue isn't destructive.
-    if (sendScreeningBtn && sendScreeningForm) {
-        sendScreeningBtn.addEventListener('click', function () {
-            sendScreeningForm.querySelectorAll('input[name="reference_ids[]"]').forEach(function (n) { n.remove(); });
+    // Bulk-screening: copy the checked (visible-page) ids into the sibling
+    // form, show the modal with the count, then let one of the
+    // Incloure/Potser/Excloure buttons fill in decision/reason/notes and
+    // submit — the reviewer commits to the count before picking a decision,
+    // so there's no separate confirmation step needed.
+    if (screenBulkOpenBtn && screenBulkForm) {
+        screenBulkOpenBtn.addEventListener('click', function () {
+            screenBulkForm.querySelectorAll('input[name="reference_ids[]"]').forEach(function (n) { n.remove(); });
             var count = 0;
             rows.forEach(function (c) {
                 if (!c.checked) return;
@@ -636,11 +688,34 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                 i.type = 'hidden';
                 i.name = 'reference_ids[]';
                 i.value = c.value;
-                sendScreeningForm.appendChild(i);
+                screenBulkForm.appendChild(i);
                 count++;
             });
             if (count === 0) return;
-            sendScreeningForm.submit();
+
+            if (screenBulkCount) {
+                screenBulkCount.textContent = (screenBulkCount.getAttribute('data-tpl') || '').replace('%d', String(count));
+            }
+            if (screenBulkReason) screenBulkReason.value = '';
+            if (screenBulkNotes) screenBulkNotes.value = '';
+
+            if (typeof screenBulkModal.showModal === 'function') {
+                screenBulkModal.showModal();
+            } else {
+                screenBulkModal.setAttribute('open', '');
+                screenBulkModal.classList.add('is-open');
+            }
+        });
+
+        screenBulkModal.querySelectorAll('[data-decision]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('screenBulkDecision').value = btn.getAttribute('data-decision');
+                document.getElementById('screenBulkReasonInput').value = screenBulkReason ? screenBulkReason.value : '';
+                document.getElementById('screenBulkNotesInput').value = screenBulkNotes ? screenBulkNotes.value : '';
+                if (typeof screenBulkModal.close === 'function') screenBulkModal.close();
+                else { screenBulkModal.removeAttribute('open'); screenBulkModal.classList.remove('is-open'); }
+                screenBulkForm.submit();
+            });
         });
     }
 })();

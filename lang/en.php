@@ -1130,12 +1130,14 @@ return [
         'find_duplicates_btn'        => 'Find duplicates',
         'dedup_done'                 => 'Duplicate search complete: %d exact duplicates flagged and %d fuzzy candidates pending review.',
         'dedup_failed'               => 'Could not run the duplicate search. Try again.',
-        // Send selected to T/A screening.
+        // Bulk-screen the selected references.
         'send_screening_btn'         => 'Screen selected',
-        'send_screening_none'        => 'You haven\'t selected any reference to send to screening.',
-        'send_screening_ok'          => '%d references sent to T/A screening.',
-        'send_screening_partial'     => '%d sent to screening, %d were no longer pending import and were skipped.',
-        'send_screening_all_skipped' => 'No references sent: the %d selected were no longer pending import.',
+        'screen_bulk_modal_title'    => 'Bulk screening',
+        'screen_bulk_modal_count'    => 'This decision will apply to %d selected references.',
+        'screen_bulk_none'           => 'You haven\'t selected any reference to screen.',
+        'screen_bulk_ok'             => '%d references screened as "%s".',
+        'screen_bulk_partial'        => '%d screened as "%s". %d skipped: no longer eligible for a new decision.',
+        'screen_bulk_all_skipped'    => 'No references screened: the %d selected are no longer eligible for a new decision.',
     ],
 
     'duplicates' => [

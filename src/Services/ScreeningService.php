@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace SysRevAI\Services;
 
 use SysRevAI\Core\Database;
+use SysRevAI\Models\Notification;
 use SysRevAI\Models\Reference;
+use SysRevAI\Models\ReviewUser;
 use SysRevAI\Models\ScreeningDecision;
 
 /**
@@ -210,6 +212,59 @@ final class ScreeningService
             return false;
         }
         return ScreeningDecision::decidedCount((int) $reference['id'], $stage) < self::requiredReviewers($review);
+    }
+
+    /**
+     * Record a reviewer's decision and evaluate the outcome in one step —
+     * shared by the single-reference decide() flow and the references-list
+     * bulk-screen action so both apply the exact same required-reviewers
+     * bookkeeping.
+     *
+     * @return bool True if this decision just completed the
+     *              reviewers_required quota without a unanimous result —
+     *              i.e. a brand new conflict the caller should notify
+     *              resolvers about.
+     */
+    public static function recordDecision(
+        array $review,
+        int $referenceId,
+        int $reviewerId,
+        string $stage,
+        string $decision,
+        ?string $reason,
+        ?string $notes,
+        int $timeSpent = 0,
+        ?string $aiSuggestionJson = null
+    ): bool {
+        $required = self::requiredReviewers($review);
+        $before = ScreeningDecision::decidedCount($referenceId, $stage);
+
+        ScreeningDecision::record($referenceId, $reviewerId, $stage, $decision, $reason, $notes, $timeSpent, $aiSuggestionJson);
+        self::evaluate($referenceId, $review, $stage);
+
+        $after = ScreeningDecision::decidedCount($referenceId, $stage);
+        $fresh = Reference::find($referenceId);
+        return $before < $required && $after >= $required
+            && $fresh !== null && (string) $fresh['status'] === self::screeningStatus($stage);
+    }
+
+    /** Notify every resolver (owner/admin/can_resolve_conflicts) except the
+     *  deciding reviewer that a reference just became a conflict. */
+    public static function notifyConflictResolvers(array $review, int $reviewId, int $exceptUserId, string $basePath): void
+    {
+        foreach (ReviewUser::resolverIds($reviewId, (int) $review['owner_id']) as $resolverId) {
+            if ($resolverId === $exceptUserId) {
+                continue;
+            }
+            Notification::push(
+                $resolverId,
+                'conflict',
+                __('screening.notif_conflict', $review['title']),
+                null,
+                $basePath . '/conflicts',
+                $reviewId
+            );
+        }
     }
 
     /**

@@ -1133,12 +1133,14 @@ return [
         'find_duplicates_btn'        => 'Cercar duplicades',
         'dedup_done'                 => 'Cerca de duplicats completada: %d duplicats exactes marcats i %d candidats difusos pendents de revisió.',
         'dedup_failed'               => 'No s\'ha pogut executar la cerca de duplicats. Torna-ho a provar.',
-        // Enviar seleccionades a Cribratge T/R.
+        // Cribratge massiu de les seleccionades.
         'send_screening_btn'         => 'Fer el Cribatge',
-        'send_screening_none'        => 'No has seleccionat cap referència per enviar a cribratge.',
-        'send_screening_ok'          => '%d referències enviades al cribratge T/R.',
-        'send_screening_partial'     => '%d enviades al cribratge, %d ja no eren pendents d\'importació i s\'han omès.',
-        'send_screening_all_skipped' => 'Cap referència enviada: les %d seleccionades ja no estaven pendents d\'importació.',
+        'screen_bulk_modal_title'    => 'Cribatge massiu',
+        'screen_bulk_modal_count'    => 'Aplicaràs aquesta decisió a %d referències seleccionades.',
+        'screen_bulk_none'           => 'No has seleccionat cap referència per cribar.',
+        'screen_bulk_ok'             => '%d referències cribades com a «%s».',
+        'screen_bulk_partial'        => '%d cribades com a «%s». %d omeses: ja no admeten més decisions.',
+        'screen_bulk_all_skipped'    => 'Cap referència cribada: les %d seleccionades ja no admeten més decisions.',
     ],
 
     'duplicates' => [

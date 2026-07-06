@@ -169,7 +169,7 @@ $router->post('/reviews/{id}/comments', [CommentsController::class, 'store'], ['
 $router->get('/reviews/{id}/references', [ReferencesController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/references/{refId}/delete', [ReferencesController::class, 'delete'], ['auth']);
 $router->post('/reviews/{id}/references/delete-bulk', [ReferencesController::class, 'deleteBulk'], ['auth']);
-$router->post('/reviews/{id}/references/send-to-screening', [ReferencesController::class, 'sendToScreeningBulk'], ['auth']);
+$router->post('/reviews/{id}/references/screen-bulk', [ReferencesController::class, 'screenBulk'], ['auth']);
 $router->post('/reviews/{id}/references/find-duplicates', [ReferencesController::class, 'findDuplicates'], ['auth']);
 $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
