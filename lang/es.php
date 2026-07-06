@@ -945,6 +945,7 @@ return [
         'stat_done'          => 'Ya revisados por ti',
         'stat_team_pending'  => 'Total abiertos para el equipo',
         'stat_total_review'  => 'Total de referencias de la revisión',
+        'stat_pending_other' => 'Con cribado de otro revisor',
         'stat_of_total'      => 'de la revisión',
         'done_you'         => '%d completadas',
         'all_done'         => 'No tienes artículos pendientes de cribar.',
@@ -989,6 +990,9 @@ return [
         'nav_prev_none'    => 'No hay ninguna referencia anterior.',
         'nav_next_none'    => 'No hay ninguna otra referencia pendiente de cribar.',
         'nav_error'        => 'No se ha podido cambiar de referencia. Inténtalo de nuevo.',
+        'pending_others_title' => 'Cribadas por otro revisor',
+        'pending_others_intro' => 'Referencias que ya ha cribado otro revisor y todavía esperan tu decisión.',
+        'pending_others_none'  => 'No hay ninguna referencia en esta situación.',
     ],
 
     'import' => [
@@ -1087,6 +1091,9 @@ return [
         'source_filter_label'   => 'Filtrar por fuente',
         'source_any'            => 'Fuente: cualquiera',
         'clear_filters'         => 'Limpiar filtros',
+        'status_pending_group' => 'Pendientes para mí',
+        'status_pending_ta'    => 'Cribado T/R pendiente',
+        'status_pending_ft'    => 'Cribado TextoComp pendiente',
         'toolbar_title'         => 'Filtros y acciones masivas',
         'has_abstract'          => 'La referencia tiene resumen',
         'has_abstract_short'    => 'Con resumen',

@@ -50,7 +50,22 @@ final class ReferencesController
             $perPage = 100;
         }
 
-        $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract, $source);
+        $pendingStage = $this->pendingStageFor($status);
+        if ($pendingStage !== null) {
+            $result = ScreeningService::pendingForReviewerList(
+                $rid,
+                (int) Auth::id(),
+                $review,
+                $pendingStage,
+                $search,
+                $abstract,
+                $source,
+                $page,
+                $perPage
+            );
+        } else {
+            $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract, $source);
+        }
 
         echo View::render('references/index', [
             'review'        => $review,
@@ -134,6 +149,21 @@ final class ReferencesController
     }
 
     /**
+     * Maps the references-list status filter's two pseudo-status options
+     * ("Cribatge T/R pendent" / "Cribatge TextComp pendent") to a
+     * screening stage — null for a real Reference::STATUSES value (or no
+     * filter), which the caller handles with the normal status query.
+     */
+    private function pendingStageFor(string $status): ?string
+    {
+        return match ($status) {
+            'pending_ta' => 'ta',
+            'pending_ft' => 'ft',
+            default      => null,
+        };
+    }
+
+    /**
      * Bulk delete. Accepts two scopes posted from the references page:
      *
      *   - `scope=filtered` (with the current status/q hidden inputs) —
@@ -167,7 +197,10 @@ final class ReferencesController
                 ? (string) $_POST['abstract']
                 : '';
             $source   = trim((string) ($_POST['source'] ?? ''));
-            $ids = Reference::idsForReview($rid, $status, $search, $abstract, $source);
+            $pendingStage = $this->pendingStageFor($status);
+            $ids = $pendingStage !== null
+                ? ScreeningService::pendingReferenceIds($rid, (int) Auth::id(), $review, $pendingStage, $search, $abstract, $source)
+                : Reference::idsForReview($rid, $status, $search, $abstract, $source);
         } else {
             $raw = (array) ($_POST['reference_ids'] ?? []);
             $ids = array_values(array_unique(array_map('intval', $raw)));

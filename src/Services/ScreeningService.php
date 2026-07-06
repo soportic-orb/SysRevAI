@@ -161,6 +161,138 @@ final class ScreeningService
         return (int) ($row['c'] ?? 0);
     }
 
+    /**
+     * References still pending for this reviewer that already carry
+     * exactly one decision from a different reviewer — worth flagging
+     * separately from the general "pending" count since these are the
+     * ones a second opinion would resolve outright. Backs the "Amb
+     * cribratge d'un altre revisor" stat card and its click-through list.
+     */
+    public static function pendingWithOneOtherDecision(int $reviewId, int $reviewerId, string $stage = 'ta'): array
+    {
+        $refs = Database::table('references');
+        $dec = Database::table('screening_decisions');
+        $status = self::screeningStatus($stage);
+
+        return Database::select(
+            "SELECT r.* FROM `{$refs}` r
+             WHERE r.review_id = ? AND r.status = ?
+               AND (SELECT COUNT(DISTINCT d.reviewer_id) FROM `{$dec}` d
+                    WHERE d.reference_id = r.id AND d.stage = ? AND d.is_resolution = 0) = 1
+               AND NOT EXISTS (SELECT 1 FROM `{$dec}` d2
+                    WHERE d2.reference_id = r.id AND d2.reviewer_id = ? AND d2.stage = ? AND d2.is_resolution = 0)
+             ORDER BY r.id ASC",
+            [$reviewId, $status, $stage, $reviewerId, $stage]
+        );
+    }
+
+    public static function pendingWithOneOtherDecisionCount(int $reviewId, int $reviewerId, string $stage = 'ta'): int
+    {
+        return count(self::pendingWithOneOtherDecision($reviewId, $reviewerId, $stage));
+    }
+
+    /**
+     * Shared WHERE/params for "still pending screening for this reviewer",
+     * extended with the references-list search/abstract/source filters —
+     * same eligibility as nextReference(), but for the full list rather
+     * than just the next one. Backs the references page's "Cribatge T/R
+     * pendent" / "Cribatge TextComp pendent" status-filter options.
+     *
+     * @return array{0:string,1:array<int,mixed>}
+     */
+    private static function pendingFilter(
+        int $reviewId,
+        int $reviewerId,
+        array $review,
+        string $stage,
+        string $search,
+        string $abstract,
+        string $source
+    ): array {
+        $dec = Database::table('screening_decisions');
+        $required = self::requiredReviewers($review);
+        $status = self::screeningStatus($stage);
+
+        $where = 'r.review_id = ? AND r.status = ?
+                   AND (SELECT COUNT(DISTINCT d.reviewer_id) FROM `' . $dec . '` d
+                        WHERE d.reference_id = r.id AND d.stage = ? AND d.is_resolution = 0) < ?
+                   AND NOT EXISTS (SELECT 1 FROM `' . $dec . '` d2
+                        WHERE d2.reference_id = r.id AND d2.reviewer_id = ? AND d2.stage = ? AND d2.is_resolution = 0)';
+        $params = [$reviewId, $status, $stage, $required, $reviewerId, $stage];
+
+        if ($search !== '') {
+            $where .= ' AND (r.title LIKE ? OR r.abstract LIKE ?)';
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+        }
+        if ($abstract === 'with') {
+            $where .= ' AND r.abstract IS NOT NULL AND CHAR_LENGTH(r.abstract) > 0';
+        } elseif ($abstract === 'without') {
+            $where .= ' AND (r.abstract IS NULL OR CHAR_LENGTH(r.abstract) = 0)';
+        }
+        if ($source !== '') {
+            $where .= ' AND r.source_file = ?';
+            $params[] = $source;
+        }
+
+        return [$where, $params];
+    }
+
+    /**
+     * Paginated, searchable list of references still pending screening for
+     * a specific reviewer at a given stage — the same row shape as
+     * Reference::forReview() so the references-list template can render
+     * either without a template branch.
+     *
+     * @return array{rows:array,total:int}
+     */
+    public static function pendingForReviewerList(
+        int $reviewId,
+        int $reviewerId,
+        array $review,
+        string $stage,
+        string $search,
+        string $abstract,
+        string $source,
+        int $page,
+        int $perPage
+    ): array {
+        $refs = Database::table('references');
+        [$where, $params] = self::pendingFilter($reviewId, $reviewerId, $review, $stage, $search, $abstract, $source);
+
+        $countRow = Database::selectOne("SELECT COUNT(*) AS c FROM `{$refs}` r WHERE {$where}", $params);
+        $total = (int) ($countRow['c'] ?? 0);
+
+        $perPage = max(1, min($perPage, 1000));
+        $offset = max(0, ($page - 1) * $perPage);
+        $rows = Database::select(
+            "SELECT r.id, r.title, r.authors_json, r.year, r.journal, r.doi, r.pmid, r.status, r.source_file,
+                    (r.abstract IS NOT NULL AND CHAR_LENGTH(r.abstract) > 0) AS has_abstract
+             FROM `{$refs}` r WHERE {$where} ORDER BY r.id DESC LIMIT {$perPage} OFFSET {$offset}",
+            $params
+        );
+
+        return ['rows' => $rows, 'total' => $total];
+    }
+
+    /** Same eligibility as pendingForReviewerList(), ids only — used by the
+     *  references page's cross-page "select all in review" bulk actions
+     *  when a "Cribatge … pendent" pseudo-status is the active filter. */
+    public static function pendingReferenceIds(
+        int $reviewId,
+        int $reviewerId,
+        array $review,
+        string $stage,
+        string $search,
+        string $abstract,
+        string $source
+    ): array {
+        $refs = Database::table('references');
+        [$where, $params] = self::pendingFilter($reviewId, $reviewerId, $review, $stage, $search, $abstract, $source);
+        $rows = Database::select("SELECT r.id FROM `{$refs}` r WHERE {$where}", $params);
+        return array_map(static fn (array $r): int => (int) $r['id'], $rows);
+    }
+
     /** All references in the review, regardless of stage / status. Used as the
      *  denominator for the per-reviewer screening stats. */
     public static function totalReferences(int $reviewId): int
@@ -312,7 +444,6 @@ final class ScreeningService
         // and is surfaced as a conflict.
     }
 
-    /** References that reached the required decisions but were not unanimous. */
     /**
      * References relevant to the stage's coordinator view — anything that
      * has entered this stage's pipeline (still screening or already
@@ -357,6 +488,7 @@ final class ScreeningService
         return ['rows' => $rows, 'total' => $total];
     }
 
+    /** References that reached the required decisions but were not unanimous. */
     public static function conflicts(int $reviewId, array $review, string $stage = 'ta'): array
     {
         $refs = Database::table('references');

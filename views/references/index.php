@@ -117,6 +117,10 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         <select class="select select--sm" name="status" onchange="this.form.submit()"
                 aria-label="<?= e(__('references.col_status')) ?>">
             <option value=""><?= e(__('references.all_statuses')) ?></option>
+            <optgroup label="<?= e(__('references.status_pending_group')) ?>">
+                <option value="pending_ta" <?= $status === 'pending_ta' ? 'selected' : '' ?>><?= e(__('references.status_pending_ta')) ?></option>
+                <option value="pending_ft" <?= $status === 'pending_ft' ? 'selected' : '' ?>><?= e(__('references.status_pending_ft')) ?></option>
+            </optgroup>
             <?php foreach ($statuses as $s): ?>
                 <option value="<?= $s ?>" <?= $status === $s ? 'selected' : '' ?>><?= e(__('references.st_' . $s)) ?></option>
             <?php endforeach; ?>

@@ -21,6 +21,7 @@ declare(strict_types=1);
 /** @var ?int $prevReferenceId */
 /** @var ?int $nextReferenceId */
 /** @var bool $taComplete Whether every reference has a final T/A outcome; gates starting FT screening. */
+/** @var int $pendingWithOther References pending for this reviewer that already carry one other reviewer's decision. */
 $id = (int) $review['id'];
 $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
@@ -52,6 +53,12 @@ $pctOf = static function (int $n) use ($denom): int {
                     <span class="screen-stat__value"><?= (int) $completed ?></span>
                     <span class="screen-stat__label"><?= e(__('screening.stat_done')) ?></span>
                     <span class="screen-stat__pct"><?= $pctOf((int) $completed) ?>% <?= e(__('screening.stat_of_total')) ?></span>
+                </a>
+                <a class="screen-stat screen-stat--other screen-stat--clickable"
+                   href="<?= e($basePath) ?>/pending-others" title="<?= e(__('screening.pending_others_title')) ?>">
+                    <span class="screen-stat__value"><?= (int) $pendingWithOther ?></span>
+                    <span class="screen-stat__label"><?= e(__('screening.stat_pending_other')) ?></span>
+                    <span class="screen-stat__pct"><?= $pctOf((int) $pendingWithOther) ?>% <?= e(__('screening.stat_of_total')) ?></span>
                 </a>
                 <div class="screen-stat screen-stat--team">
                     <span class="screen-stat__value"><?= (int) $totalInStage ?></span>
