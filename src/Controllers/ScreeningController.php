@@ -397,6 +397,26 @@ class ScreeningController
         redirect($this->basePath($rid));
     }
 
+    /**
+     * A reference row clicked from the coordinator table: exit coordinator
+     * mode (screen() renders it instead of the coordinator table while
+     * that session flag is on) and land straight on that reference's
+     * normal screening view via the same ?reference_id= override the
+     * history/pending-others lists and prev/next nav already use.
+     */
+    public function openFromCoordinator(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        if (!$this->canCoordinate($review)) {
+            redirect($this->basePath($rid));
+        }
+        $referenceId = (int) ($_POST['reference_id'] ?? 0);
+        $_SESSION['coordinator'][$rid] = false;
+        ActivityLog::record('screening.coordinator_off', [], $rid);
+        redirect($this->basePath($rid) . ($referenceId > 0 ? '?reference_id=' . $referenceId : ''));
+    }
+
     /* ── Helpers ───────────────────────────────────────────────────────── */
 
     private function renderCoordinator(array $review): void

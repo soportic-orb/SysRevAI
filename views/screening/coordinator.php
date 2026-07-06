@@ -61,7 +61,19 @@ $qs = static function (array $extra) use ($reviewerFilter, $perPage): string {
                     <tbody>
                         <?php foreach ($rows as $r): ?>
                             <tr>
-                                <td><strong><?= e((string) ($r['title'] ?: '—')) ?></strong></td>
+                                <td>
+                                    <!-- Clicking a reference exits coordinator mode (screen()
+                                         renders the coordinator table instead of the normal
+                                         screening view while that session flag is on) and
+                                         opens this exact reference to screen. -->
+                                    <form method="post" action="<?= e($basePath) ?>/coordinator/open">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="reference_id" value="<?= (int) $r['id'] ?>">
+                                        <button type="submit" class="coord-row-link">
+                                            <strong><?= e((string) ($r['title'] ?: '—')) ?></strong>
+                                        </button>
+                                    </form>
+                                </td>
                                 <td>
                                     <?php if (($r['decisions'] ?? []) === []): ?>
                                         <span class="muted"><?= e(__('screening.no_decisions')) ?></span>
