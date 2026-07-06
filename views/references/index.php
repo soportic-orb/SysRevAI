@@ -177,6 +177,15 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                 </label>
                 <span class="muted search-bulk-toolbar__count" id="refsSelectedCount">0</span>
                 <span class="muted import-preview__toolbar-spacer"></span>
+                <!-- Sends the checked rows straight to T/A screening. Targets
+                     the referencesSendScreeningForm sibling below (own form,
+                     not this one) since this form is flagged data-ai-action
+                     and would otherwise raise the AI "treballant…" overlay
+                     for a fast, non-AI status change. -->
+                <button type="button" class="btn btn--primary btn--sm"
+                        id="sendScreeningBtn" disabled>
+                    <?= e(__('references.send_screening_btn')) ?>
+                </button>
                 <button type="button" class="btn btn--primary btn--sm"
                         id="convertOpenBtn" disabled>
                     <?= e(__('references.convert_btn')) ?>
@@ -218,6 +227,18 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
               action="/reviews/<?= $id ?>/references/find-duplicates"
               id="referencesFindDupsForm"
               data-ai-action
+              style="display:none">
+            <?= csrf_field() ?>
+        </form>
+
+        <!-- Send-to-screening sibling form. Row checkboxes only carry
+             form="referencesConvertForm", so on click JS copies the
+             checked ids into hidden inputs here before submitting —
+             same approach as the bulk-delete form below. No modal: unlike
+             delete this isn't destructive, so there's nothing to confirm. -->
+        <form method="post"
+              action="/reviews/<?= $id ?>/references/send-to-screening"
+              id="referencesSendScreeningForm"
               style="display:none">
             <?= csrf_field() ?>
         </form>
@@ -486,6 +507,8 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
     var counter  = document.getElementById('refsSelectedCount');
     var openBtn  = document.getElementById('convertOpenBtn');
     var deleteBtn= document.getElementById('deleteBulkOpenBtn');
+    var sendScreeningBtn = document.getElementById('sendScreeningBtn');
+    var sendScreeningForm = document.getElementById('referencesSendScreeningForm');
     var modal    = document.getElementById('convertModal');
     var confirm  = document.getElementById('convertModalConfirm');
     var styleSel = document.getElementById('convertModalStyle');
@@ -512,6 +535,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         counter.textContent = String(effective);
         openBtn.disabled = n === 0; // conversion still operates on visible ids
         if (deleteBtn) deleteBtn.disabled = effective === 0;
+        if (sendScreeningBtn) sendScreeningBtn.disabled = n === 0; // visible-page ids only, same as convert
     }
 
     all.addEventListener('change', function () {
@@ -596,6 +620,27 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
             if (typeof deleteModal.close === 'function') deleteModal.close();
             else { deleteModal.removeAttribute('open'); deleteModal.classList.remove('is-open'); }
             deleteForm.submit();
+        });
+    }
+
+    // Send-to-screening: copy the checked (visible-page) ids into the
+    // sibling form and submit directly — no modal, since moving a
+    // reference into the screening queue isn't destructive.
+    if (sendScreeningBtn && sendScreeningForm) {
+        sendScreeningBtn.addEventListener('click', function () {
+            sendScreeningForm.querySelectorAll('input[name="reference_ids[]"]').forEach(function (n) { n.remove(); });
+            var count = 0;
+            rows.forEach(function (c) {
+                if (!c.checked) return;
+                var i = document.createElement('input');
+                i.type = 'hidden';
+                i.name = 'reference_ids[]';
+                i.value = c.value;
+                sendScreeningForm.appendChild(i);
+                count++;
+            });
+            if (count === 0) return;
+            sendScreeningForm.submit();
         });
     }
 })();

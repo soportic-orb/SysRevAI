@@ -12,6 +12,7 @@ declare(strict_types=1);
 /** @var int $totalInStage */
 /** @var int $conflicts */
 /** @var bool $canCoordinate */
+/** @var ?array $ownDecision Reviewer's own past decision on $reference, when reopened from the history list. */
 $id = (int) $review['id'];
 $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
@@ -52,11 +53,12 @@ $pctOf = static function (int $n) use ($denom): int {
                     <span class="screen-stat__label"><?= e(__('screening.stat_pending')) ?></span>
                     <span class="screen-stat__pct" id="screenStatPendingPct"><?= $pctOf((int) $pending) ?>% <?= e(__('screening.stat_of_total')) ?></span>
                 </div>
-                <div class="screen-stat screen-stat--done">
+                <a class="screen-stat screen-stat--done screen-stat--clickable"
+                   href="/reviews/<?= $id ?>/screen/history" title="<?= e(__('screening.history_title')) ?>">
                     <span class="screen-stat__value" id="screenStatDoneValue"><?= (int) $completed ?></span>
                     <span class="screen-stat__label"><?= e(__('screening.stat_done')) ?></span>
                     <span class="screen-stat__pct" id="screenStatDonePct"><?= $pctOf((int) $completed) ?>% <?= e(__('screening.stat_of_total')) ?></span>
-                </div>
+                </a>
                 <div class="screen-stat screen-stat--team">
                     <span class="screen-stat__value" id="screenStatTeamValue"><?= (int) $totalInStage ?></span>
                     <span class="screen-stat__label"><?= e(__('screening.stat_team_pending')) ?></span>
@@ -176,6 +178,23 @@ $pctOf = static function (int $n) use ($denom): int {
         <aside class="screen-3col__assessment section-card">
             <h3 class="section__subtitle"><?= e(__('screening.assessment_title')) ?></h3>
 
+            <!-- Reopened from the "referències revisades" history — shows
+                 what was decided before and lets the reviewer change it;
+                 the reason/notes fields below are pre-filled from this
+                 same row. Hidden by JS after any AJAX-driven decision,
+                 since that always lands on a normal next-in-queue
+                 reference, never a reopened one. -->
+            <div class="alert alert--warn history-edit-banner" id="screenEditBanner" data-no-toast
+                 <?= $ownDecision !== null ? '' : 'hidden' ?>>
+                <?php if ($ownDecision !== null): ?>
+                    <?= e(sprintf(
+                        __('screening.editing_previous'),
+                        __('screening.' . $ownDecision['decision'])
+                    )) ?>
+                <?php endif; ?>
+                <a href="/reviews/<?= $id ?>/screen/history"><?= e(__('screening.history_back')) ?></a>
+            </div>
+
             <div class="ai-suggest">
                 <button type="button" class="btn btn--ghost btn--sm btn--block" id="suggestBtn"
                         data-url="/reviews/<?= $id ?>/screen/suggest?reference_id=<?= (int) $ref['id'] ?>"
@@ -196,19 +215,20 @@ $pctOf = static function (int $n) use ($denom): int {
                      includes a submit button's name/value, only real inputs. -->
                 <input type="hidden" name="decision" id="decisionFallback" value="">
 
+                <?php $ownReason = (string) ($ownDecision['reason'] ?? ''); ?>
                 <div class="field">
                     <label class="field-label" for="reason"><?= e(__('screening.exclude_reason')) ?></label>
                     <select class="select" name="reason" id="reason">
-                        <option value=""><?= e(__('screening.no_reason')) ?></option>
+                        <option value="" <?= $ownReason === '' ? 'selected' : '' ?>><?= e(__('screening.no_reason')) ?></option>
                         <?php foreach ($reasons as $r): ?>
-                            <option value="<?= e((string) $r['label']) ?>"><?= e((string) $r['label']) ?></option>
+                            <option value="<?= e((string) $r['label']) ?>" <?= $ownReason === (string) $r['label'] ? 'selected' : '' ?>><?= e((string) $r['label']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
                 <div class="field">
                     <label class="field-label" for="notes"><?= e(__('screening.notes_label')) ?></label>
-                    <textarea class="input" id="notes" name="notes" rows="3" placeholder="<?= e(__('screening.notes')) ?>"></textarea>
+                    <textarea class="input" id="notes" name="notes" rows="3" placeholder="<?= e(__('screening.notes')) ?>"><?= e((string) ($ownDecision['notes'] ?? '')) ?></textarea>
                 </div>
 
                 <div class="decision-buttons decision-buttons--stack">
@@ -330,6 +350,12 @@ window.SysRevAICopilotContext = {
     /** Apply the JSON state returned by screen()/decide() in place — no navigation. */
     function applyState(state) {
         var total = state.totalReferences || 0;
+
+        // Any AJAX-driven state change always lands on the normal
+        // next-in-queue reference, never a history reopen — hide the
+        // "editing a past decision" banner if it was showing.
+        var editBanner = document.getElementById('screenEditBanner');
+        if (editBanner) editBanner.hidden = true;
 
         var pendingEl = document.getElementById('screenStatPendingValue');
         var pendingPctEl = document.getElementById('screenStatPendingPct');

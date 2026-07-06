@@ -169,6 +169,7 @@ $router->post('/reviews/{id}/comments', [CommentsController::class, 'store'], ['
 $router->get('/reviews/{id}/references', [ReferencesController::class, 'index'], ['auth']);
 $router->post('/reviews/{id}/references/{refId}/delete', [ReferencesController::class, 'delete'], ['auth']);
 $router->post('/reviews/{id}/references/delete-bulk', [ReferencesController::class, 'deleteBulk'], ['auth']);
+$router->post('/reviews/{id}/references/send-to-screening', [ReferencesController::class, 'sendToScreeningBulk'], ['auth']);
 $router->post('/reviews/{id}/references/find-duplicates', [ReferencesController::class, 'findDuplicates'], ['auth']);
 $router->get('/reviews/{id}/import', [ImportController::class, 'form'], ['auth']);
 $router->post('/reviews/{id}/import', [ImportController::class, 'process'], ['auth']);
@@ -193,6 +194,7 @@ $router->post('/reviews/{id}/references/{refId}/full-text', [FullTextRetrievalCo
 $router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'suggest'], ['auth']);
 $router->get('/reviews/{id}/screen/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
 $router->post('/reviews/{id}/screen/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
+$router->get('/reviews/{id}/screen/history', [ScreeningController::class, 'history'], ['auth']);
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/screen/coordinator', [ScreeningController::class, 'toggleCoordinator'], ['auth']);
@@ -201,6 +203,7 @@ $router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['a
 // Full-text screening (stage='ft') reuses the screening machinery.
 $router->get('/reviews/{id}/full-text/conflicts', [FullTextScreeningController::class, 'conflicts'], ['auth']);
 $router->post('/reviews/{id}/full-text/conflicts/resolve', [FullTextScreeningController::class, 'resolveConflict'], ['auth']);
+$router->get('/reviews/{id}/full-text/history', [FullTextScreeningController::class, 'history'], ['auth']);
 $router->post('/reviews/{id}/full-text/decide', [FullTextScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/full-text/start', [FullTextScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/full-text/coordinator', [FullTextScreeningController::class, 'toggleCoordinator'], ['auth']);

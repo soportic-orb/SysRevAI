@@ -1394,6 +1394,10 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .screen-stat--done  { border-left-color: var(--c-ok);   }
 .screen-stat--team  { border-left-color: var(--c-warn); }
 .screen-stat--total { border-left-color: var(--c-text); }
+/* "Ja revisats per tu" links to the reviewer's own screening history. */
+.screen-stat--clickable { text-decoration: none; color: inherit; cursor: pointer; }
+.screen-stat--clickable:hover { border-color: var(--c-muted); text-decoration: none; }
+.history-edit-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .screen-grid { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
 
 /* Compact variant — sits next to the page title instead of its own
@@ -1514,6 +1518,23 @@ kbd { background: rgba(255,255,255,.25); border-radius: 4px; padding: 1px 5px; f
 .tab { padding: 8px 14px; color: var(--c-muted); font-weight: 500; border-bottom: 2px solid transparent; }
 .tab:hover { text-decoration: none; color: var(--c-text); }
 .tab.is-active { color: var(--c-primary); border-bottom-color: var(--c-primary); }
+/* Screening "referències revisades" history — opened from the completed
+   stat card on T/A and full-text screening. Each row is a full-width link
+   back into the screen with ?reference_id=X so the reviewer can reopen
+   and edit that past decision. */
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-list__row { border-bottom: 1px solid var(--c-border); }
+.history-list__row:last-child { border-bottom: none; }
+.history-list__link {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 14px 18px; color: inherit;
+}
+.history-list__link:hover { background: var(--c-surface-2); text-decoration: none; }
+.history-list__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.history-list__title { font-size: 14.5px; }
+.history-list__meta, .history-list__reason { font-size: 12.5px; }
+.history-list__side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; white-space: nowrap; }
+.history-list__date { font-size: 11.5px; }
 .notif-list { list-style: none; margin: 0; padding: 0; }
 .notif-item { border-bottom: 1px solid var(--c-border); }
 .notif-item.is-unread { background: var(--c-tag-completed-bg); }

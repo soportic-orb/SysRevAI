@@ -54,14 +54,50 @@ class ScreeningController
             return;
         }
 
-        $state = $this->buildScreenState($review, $rid);
+        // Reopening a past decision from the "referències revisades"
+        // history: only honoured when the reference actually belongs to
+        // this review AND the current reviewer has a decision of their
+        // own on it for this stage — this can't be used to jump the
+        // normal queue to an arbitrary reference, in this review or any
+        // other the same reviewer happens to also be screening.
+        $uid = (int) Auth::id();
+        $requestedId = (int) ($_GET['reference_id'] ?? 0);
+        $overrideReferenceId = null;
+        $ownDecision = null;
+        if ($requestedId > 0) {
+            $candidate = Reference::find($requestedId);
+            if ($candidate !== null && (int) $candidate['review_id'] === $rid) {
+                $ownDecision = ScreeningDecision::reviewerDecision($requestedId, $uid, $this->stage);
+                if ($ownDecision !== null) {
+                    $overrideReferenceId = $requestedId;
+                }
+            }
+        }
+
+        $state = $this->buildScreenState($review, $rid, $overrideReferenceId);
         $data = array_merge([
-            'review'  => $review,
-            'reasons' => ExclusionReason::forReview($rid),
-            'stage'   => $this->stage,
+            'review'      => $review,
+            'reasons'     => ExclusionReason::forReview($rid),
+            'stage'       => $this->stage,
+            'ownDecision' => $ownDecision,
         ], $state, $this->extraScreenData($review, $state['reference']));
 
         echo View::render($this->screenView(), $data);
+    }
+
+    /** Own past decisions for this review/stage, newest first. */
+    public function history(string $id): void
+    {
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        $uid = (int) Auth::id();
+
+        echo View::render('screening/history', [
+            'review'    => $review,
+            'rows'      => ScreeningDecision::historyForReviewer($rid, $uid, $this->stage),
+            'basePath'  => $this->basePath($rid),
+            'stageName' => $this->stage === 'ft' ? __('fulltext.title') : __('screening.title'),
+        ]);
     }
 
     /**
@@ -70,11 +106,25 @@ class ScreeningController
      * screening page can swap to the next reference in place (via fetch)
      * instead of a full navigation — which is what was silently dropping
      * the browser's Fullscreen API state on every decision.
+     *
+     * @param ?int $overrideReferenceId When set (and the reference belongs
+     *        to this review), shows that specific reference instead of the
+     *        next pending one — used to reopen an already-decided
+     *        reference from the history list.
      */
-    private function buildScreenState(array $review, int $rid): array
+    private function buildScreenState(array $review, int $rid, ?int $overrideReferenceId = null): array
     {
         $uid = (int) Auth::id();
-        $reference = ScreeningService::nextReference($rid, $uid, $review, $this->stage);
+        $reference = null;
+        if ($overrideReferenceId !== null) {
+            $candidate = Reference::find($overrideReferenceId);
+            if ($candidate !== null && (int) $candidate['review_id'] === $rid) {
+                $reference = $candidate;
+            }
+        }
+        if ($reference === null) {
+            $reference = ScreeningService::nextReference($rid, $uid, $review, $this->stage);
+        }
         $canCoordinate = $this->canCoordinate($review);
 
         return [
