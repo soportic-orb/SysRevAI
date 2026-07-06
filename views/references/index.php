@@ -47,6 +47,10 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         $extra
     ));
 };
+// The exact filtered/paginated URL the user is looking at right now —
+// passed as ?back= to row-level pages (the summary view) so their own
+// back arrow returns here instead of resetting to the unfiltered list.
+$listUrl = '/reviews/' . $id . '/references?' . $qs(['page' => $page]);
 ?>
 <div class="page references-page">
     <div class="page__head page__head--row">
@@ -407,7 +411,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
                                             </form>
                                         <?php endif; ?>
                                         <a class="btn btn--ghost btn--sm btn--icon ref-actions__btn"
-                                           href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary"
+                                           href="/reviews/<?= $id ?>/references/<?= $refId ?>/summary?back=<?= rawurlencode($listUrl) ?>"
                                            title="<?= e(__('summary.action_title')) ?>"
                                            aria-label="<?= e(__('summary.action_title')) ?>">
                                             <?php $iconName = 'text_wrap'; $iconClass = 'icon-action'; require config('paths.base') . '/views/partials/icon.php'; ?>

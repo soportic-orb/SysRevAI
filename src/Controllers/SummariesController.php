@@ -27,6 +27,7 @@ final class SummariesController
     {
         [$review, $reference] = $this->loadOrDeny((int) $id, (int) $refId);
         $lang = $this->resolveLang((string) ($_GET['lang'] ?? ''));
+        $back = $this->resolveBack((int) $id, (string) ($_GET['back'] ?? ''));
 
         $summaryRow = AiSummary::find((int) $reference['id'], $lang);
         $summary = $summaryRow !== null ? AiSummary::decode($summaryRow) : null;
@@ -39,6 +40,7 @@ final class SummariesController
             'summary'     => $summary,
             'summaryRow'  => $summaryRow,
             'sections'    => AiSummary::SECTIONS,
+            'backUrl'     => $back,
         ]);
     }
 
@@ -46,18 +48,24 @@ final class SummariesController
     {
         [$review, $reference] = $this->loadOrDeny((int) $id, (int) $refId);
         $lang = $this->resolveLang((string) ($_POST['lang'] ?? ''));
+        // Carried through as a hidden field on the generate/regenerate forms
+        // so the redirect back to show() keeps whatever search/filter
+        // context the reviewer arrived from — not just the language.
+        $back = $this->resolveBack((int) $id, (string) ($_POST['back'] ?? ''));
+        $redirectTo = '/reviews/' . (int) $id . '/references/' . (int) $reference['id'] . '/summary'
+            . '?lang=' . $lang . '&back=' . rawurlencode($back);
 
         $ft = ReferenceFullText::find((int) $reference['id']);
         $text = (string) ($ft['extracted_text'] ?? ($reference['abstract'] ?? ''));
         if (trim($text) === '') {
             Session::flash('error', __('summary.no_text'));
-            redirect('/reviews/' . (int) $id . '/references/' . (int) $reference['id'] . '/summary?lang=' . $lang);
+            redirect($redirectTo);
         }
 
         $result = ClaudeService::fromSettings()->summarize($text, $lang, (int) $id);
         if (!($result['ok'] ?? false) || !is_array($result['data'] ?? null)) {
             Session::flash('error', __('summary.failed'));
-            redirect('/reviews/' . (int) $id . '/references/' . (int) $reference['id'] . '/summary?lang=' . $lang);
+            redirect($redirectTo);
         }
 
         $clean = [];
@@ -74,7 +82,14 @@ final class SummariesController
         );
         ActivityLog::record('summary.generated', ['reference_id' => (int) $reference['id'], 'lang' => $lang], (int) $id);
         Session::flash('success', __('summary.generated'));
-        redirect('/reviews/' . (int) $id . '/references/' . (int) $reference['id'] . '/summary?lang=' . $lang);
+        redirect($redirectTo);
+    }
+
+    /** Only an in-app path is honoured, so a forged ?back= can't redirect
+     *  the reviewer to an attacker-controlled site. */
+    private function resolveBack(int $reviewId, string $back): string
+    {
+        return $back !== '' && str_starts_with($back, '/') ? $back : '/reviews/' . $reviewId . '/references';
     }
 
     private function resolveLang(string $candidate): string

@@ -11,10 +11,12 @@ use SysRevAI\Core\Session;
 /** @var ?array $summary */
 /** @var ?array $summaryRow */
 /** @var string[] $sections */
+/** @var string $backUrl Where the reviewer came from — the exact filtered/paginated references list, or the bare list if they didn't. */
 $id = (int) $review['id'];
 $refId = (int) $reference['id'];
 $authors = json_decode((string) $reference['authors_json'], true) ?: [];
 $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
+$backUrl = $backUrl ?? '/reviews/' . $id . '/references';
 ?>
 <div class="page page--narrow" data-translate-url="/reviews/<?= $id ?>/translate"
      data-csrf="<?= e(csrf_token()) ?>"
@@ -22,7 +24,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
      data-error="<?= e(__('summary.translate_failed')) ?>">
 
     <div class="page__head summary-head">
-        <a class="back-link" href="/reviews/<?= $id ?>/references"
+        <a class="back-link" href="<?= e($backUrl) ?>"
            title="<?= e(__('summary.back_to_references')) ?>"
            aria-label="<?= e(__('summary.back_to_references')) ?>">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
@@ -74,6 +76,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
         <div class="translate-block__head">
             <h2 class="section__subtitle"><?= e(__('summary.ai_summary')) ?></h2>
             <form method="get" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary" class="translate-controls">
+                <input type="hidden" name="back" value="<?= e($backUrl) ?>">
                 <select class="select select--sm" name="lang" onchange="this.form.submit()">
                     <?php foreach ($langs as $l): ?>
                         <option value="<?= e($l) ?>" <?= $l === $lang ? 'selected' : '' ?>><?= e($langNames[$l] ?? $l) ?></option>
@@ -87,6 +90,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
             <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary" data-ai-action>
                 <?= csrf_field() ?>
                 <input type="hidden" name="lang" value="<?= e($lang) ?>">
+                <input type="hidden" name="back" value="<?= e($backUrl) ?>">
                 <button class="btn btn--primary">&#10024; <?= e(__('summary.generate')) ?></button>
             </form>
         <?php else: ?>
@@ -103,6 +107,7 @@ $langNames = ['ca' => 'Català', 'es' => 'Español', 'en' => 'English'];
             <form method="post" action="/reviews/<?= $id ?>/references/<?= $refId ?>/summary" style="display:inline" data-ai-action>
                 <?= csrf_field() ?>
                 <input type="hidden" name="lang" value="<?= e($lang) ?>">
+                <input type="hidden" name="back" value="<?= e($backUrl) ?>">
                 <button class="btn btn--ghost btn--sm">&#10227; <?= e(__('summary.regenerate')) ?></button>
             </form>
         <?php endif; ?>
