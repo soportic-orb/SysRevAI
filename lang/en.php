@@ -975,6 +975,11 @@ return [
         'decisions'        => 'Decisions',
         'no_decisions'     => 'No decisions',
         'notif_conflict'   => 'There are unresolved conflicts in "%s"',
+        'history_title'    => 'Screened references',
+        'history_intro'    => 'References you\'ve already screened. Pick one to review or change your decision.',
+        'history_none'     => 'You haven\'t screened any references yet.',
+        'editing_previous' => 'You\'re reviewing a past decision: %s. You can change it and save again.',
+        'history_back'     => '← Back to history',
     ],
 
     'import' => [
@@ -1120,6 +1125,12 @@ return [
         'find_duplicates_btn'        => 'Find duplicates',
         'dedup_done'                 => 'Duplicate search complete: %d exact duplicates flagged and %d fuzzy candidates pending review.',
         'dedup_failed'               => 'Could not run the duplicate search. Try again.',
+        // Send selected to T/A screening.
+        'send_screening_btn'         => 'Screen selected',
+        'send_screening_none'        => 'You haven\'t selected any reference to send to screening.',
+        'send_screening_ok'          => '%d references sent to T/A screening.',
+        'send_screening_partial'     => '%d sent to screening, %d were no longer pending import and were skipped.',
+        'send_screening_all_skipped' => 'No references sent: the %d selected were no longer pending import.',
     ],
 
     'duplicates' => [

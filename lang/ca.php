@@ -978,6 +978,11 @@ return [
         'decisions'        => 'Decisions',
         'no_decisions'     => 'Sense decisions',
         'notif_conflict'   => 'Hi ha conflictes sense resoldre a "%s"',
+        'history_title'    => 'Referències revisades',
+        'history_intro'    => 'Les referències que ja has cribat. Selecciona\'n una per revisar o modificar la teva decisió.',
+        'history_none'     => 'Encara no has cribat cap referència.',
+        'editing_previous' => 'Estàs revisant una decisió anterior: %s. Pots canviar-la i tornar a desar.',
+        'history_back'     => '← Tornar a l\'historial',
     ],
 
     'import' => [
@@ -1123,6 +1128,12 @@ return [
         'find_duplicates_btn'        => 'Cercar duplicades',
         'dedup_done'                 => 'Cerca de duplicats completada: %d duplicats exactes marcats i %d candidats difusos pendents de revisió.',
         'dedup_failed'               => 'No s\'ha pogut executar la cerca de duplicats. Torna-ho a provar.',
+        // Enviar seleccionades a Cribratge T/R.
+        'send_screening_btn'         => 'Fer el Cribatge',
+        'send_screening_none'        => 'No has seleccionat cap referència per enviar a cribratge.',
+        'send_screening_ok'          => '%d referències enviades al cribratge T/R.',
+        'send_screening_partial'     => '%d enviades al cribratge, %d ja no eren pendents d\'importació i s\'han omès.',
+        'send_screening_all_skipped' => 'Cap referència enviada: les %d seleccionades ja no estaven pendents d\'importació.',
     ],
 
     'duplicates' => [

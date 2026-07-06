@@ -100,6 +100,27 @@ final class ScreeningDecision
         return (int) ($row['c'] ?? 0);
     }
 
+    /**
+     * This reviewer's own decisions for a review/stage, most recent first,
+     * joined with the reference so the history list can show the title —
+     * feeds the "referències revisades" list opened from the screening
+     * stat card, which lets a reviewer reopen and edit a past call.
+     */
+    public static function historyForReviewer(int $reviewId, int $reviewerId, string $stage): array
+    {
+        $dec = Database::table('screening_decisions');
+        $refs = Database::table('references');
+        return Database::select(
+            "SELECT d.reference_id, d.decision, d.reason, d.notes, d.updated_at,
+                    r.title, r.authors_json, r.year, r.journal, r.status
+             FROM `{$dec}` d
+             JOIN `{$refs}` r ON r.id = d.reference_id
+             WHERE r.review_id = ? AND d.reviewer_id = ? AND d.stage = ? AND d.is_resolution = 0
+             ORDER BY d.updated_at DESC, d.id DESC",
+            [$reviewId, $reviewerId, $stage]
+        );
+    }
+
     /** Reviewer's progress numbers for a review/stage. */
     public static function reviewerCompleted(int $reviewId, int $reviewerId, string $stage): int
     {

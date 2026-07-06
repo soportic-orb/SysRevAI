@@ -127,22 +127,28 @@ final class ScreeningService
 
     /**
      * Whether a reviewer is still allowed to submit (or edit) a decision for
-     * this reference right now. The reference must still be open for this
-     * stage, and either the reviewer already decided (editing their own
-     * decision is always allowed) or the reviewers_required quota has not
-     * yet been reached by other reviewers. This is the server-side backstop
-     * for nextReference()'s queue filtering: it guards against a reviewer
-     * who already had the reference loaded (stale page) or a direct POST
-     * with a tampered reference_id from pushing the decision count past the
-     * configured quota.
+     * this reference right now.
+     *
+     * Editing a decision the reviewer already made is always allowed,
+     * regardless of the reference's current status — that's what lets the
+     * "referències revisades" history reopen an already-finalized reference
+     * for correction; evaluate() re-runs afterwards and will flip the
+     * status again if the edit changes the outcome (e.g. into a conflict).
+     *
+     * A brand-new decision requires the reference to still be open for
+     * this stage and the reviewers_required quota to not yet be reached —
+     * the server-side backstop for nextReference()'s queue filtering,
+     * guarding against a reviewer who already had the reference loaded
+     * (stale page) or a direct POST with a tampered reference_id from
+     * pushing the decision count past the configured quota.
      */
     public static function canDecide(array $reference, int $reviewerId, array $review, string $stage = 'ta'): bool
     {
-        if ((string) $reference['status'] !== self::screeningStatus($stage)) {
-            return false;
-        }
         if (ScreeningDecision::reviewerDecision((int) $reference['id'], $reviewerId, $stage) !== null) {
             return true;
+        }
+        if ((string) $reference['status'] !== self::screeningStatus($stage)) {
+            return false;
         }
         return ScreeningDecision::decidedCount((int) $reference['id'], $stage) < self::requiredReviewers($review);
     }

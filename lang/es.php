@@ -975,6 +975,11 @@ return [
         'decisions'        => 'Decisiones',
         'no_decisions'     => 'Sin decisiones',
         'notif_conflict'   => 'Hay conflictos sin resolver en "%s"',
+        'history_title'    => 'Referencias revisadas',
+        'history_intro'    => 'Las referencias que ya has cribado. Selecciona una para revisar o modificar tu decisión.',
+        'history_none'     => 'Todavía no has cribado ninguna referencia.',
+        'editing_previous' => 'Estás revisando una decisión anterior: %s. Puedes cambiarla y volver a guardar.',
+        'history_back'     => '← Volver al historial',
     ],
 
     'import' => [
@@ -1120,6 +1125,12 @@ return [
         'find_duplicates_btn'        => 'Buscar duplicadas',
         'dedup_done'                 => 'Búsqueda de duplicados completada: %d duplicados exactos marcados y %d candidatos difusos pendientes de revisión.',
         'dedup_failed'               => 'No se ha podido ejecutar la búsqueda de duplicados. Inténtalo de nuevo.',
+        // Enviar seleccionadas a Cribado T/R.
+        'send_screening_btn'         => 'Hacer el Cribado',
+        'send_screening_none'        => 'No has seleccionado ninguna referencia para enviar a cribado.',
+        'send_screening_ok'          => '%d referencias enviadas al cribado T/R.',
+        'send_screening_partial'     => '%d enviadas al cribado, %d ya no estaban pendientes de importación y se han omitido.',
+        'send_screening_all_skipped' => 'Ninguna referencia enviada: las %d seleccionadas ya no estaban pendientes de importación.',
     ],
 
     'duplicates' => [

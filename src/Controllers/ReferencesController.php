@@ -236,6 +236,59 @@ final class ReferencesController
     }
 
     /**
+     * Move selected references straight into the T/A screening queue —
+     * lets a reviewer search or page through the list, pick specific
+     * rows, and prioritize them without waiting for (or running) the
+     * review-wide "Iniciar cribratge" action. Only rows still at
+     * 'imported' are eligible; anything already past that (duplicate,
+     * already screening, included/excluded, etc.) is silently skipped
+     * and counted.
+     */
+    public function sendToScreeningBulk(string $id): void
+    {
+        $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+
+        $raw = (array) ($_POST['reference_ids'] ?? []);
+        $ids = array_values(array_unique(array_map('intval', $raw)));
+        $ids = array_values(array_filter($ids, static fn (int $i): bool => $i > 0));
+
+        if ($ids === []) {
+            Session::flash('error', __('references.send_screening_none'));
+            redirect('/reviews/' . $rid . '/references');
+        }
+
+        $moved = 0;
+        $skipped = 0;
+        foreach ($ids as $refId) {
+            $ref = Reference::find($refId);
+            if ($ref === null || (int) $ref['review_id'] !== $rid) {
+                continue;
+            }
+            if ((string) $ref['status'] !== 'imported') {
+                $skipped++;
+                continue;
+            }
+            Reference::setStatus($refId, 'ta_screening');
+            $moved++;
+        }
+
+        ActivityLog::record('references.sent_to_screening', [
+            'moved'   => $moved,
+            'skipped' => $skipped,
+        ], $rid);
+
+        if ($moved === 0) {
+            Session::flash('error', __('references.send_screening_all_skipped', $skipped));
+        } elseif ($skipped > 0) {
+            Session::flash('success', __('references.send_screening_partial', $moved, $skipped));
+        } else {
+            Session::flash('success', __('references.send_screening_ok', $moved));
+        }
+        redirect('/reviews/' . $rid . '/references');
+    }
+
+    /**
      * Run the deduplication pass on demand from the references toolbar.
      * Marks exact matches as duplicates and creates pending fuzzy
      * candidates; the user then lands on the Duplicates page to review

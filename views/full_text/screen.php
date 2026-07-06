@@ -15,6 +15,7 @@ declare(strict_types=1);
 /** @var string $stage */
 /** @var ?array $fullText */
 /** @var array $chatHistory */
+/** @var ?array $ownDecision Reviewer's own past decision on $reference, when reopened from the history list. */
 $id = (int) $review['id'];
 $total = $completed + $pending;
 $pct = $total > 0 ? (int) round($completed / $total * 100) : 100;
@@ -41,11 +42,12 @@ $pctOf = static function (int $n) use ($denom): int {
                     <span class="screen-stat__label"><?= e(__('screening.stat_pending')) ?></span>
                     <span class="screen-stat__pct"><?= $pctOf((int) $pending) ?>% <?= e(__('screening.stat_of_total')) ?></span>
                 </div>
-                <div class="screen-stat screen-stat--done">
+                <a class="screen-stat screen-stat--done screen-stat--clickable"
+                   href="<?= e($basePath) ?>/history" title="<?= e(__('screening.history_title')) ?>">
                     <span class="screen-stat__value"><?= (int) $completed ?></span>
                     <span class="screen-stat__label"><?= e(__('screening.stat_done')) ?></span>
                     <span class="screen-stat__pct"><?= $pctOf((int) $completed) ?>% <?= e(__('screening.stat_of_total')) ?></span>
-                </div>
+                </a>
                 <div class="screen-stat screen-stat--team">
                     <span class="screen-stat__value"><?= (int) $totalInStage ?></span>
                     <span class="screen-stat__label"><?= e(__('screening.stat_team_pending')) ?></span>
@@ -239,6 +241,19 @@ $pctOf = static function (int $n) use ($denom): int {
                     <!-- Decision box (below the AI chat) -->
                     <section class="section-card screen-decision-card">
                         <h3 class="section__subtitle"><?= e(__('screening.assessment_title')) ?></h3>
+
+                        <?php if ($ownDecision !== null): ?>
+                            <!-- Reopened from the "referències revisades" history. -->
+                            <div class="alert alert--warn history-edit-banner" data-no-toast>
+                                <?= e(sprintf(
+                                    __('screening.editing_previous'),
+                                    __('screening.' . $ownDecision['decision'])
+                                )) ?>
+                                <a href="<?= e($basePath) ?>/history"><?= e(__('screening.history_back')) ?></a>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php $ownReason = (string) ($ownDecision['reason'] ?? ''); ?>
                         <form method="post" action="<?= e($basePath) ?>/decide" class="screen-actions" id="screenForm">
                             <?= csrf_field() ?>
                             <input type="hidden" name="reference_id" value="<?= (int) $reference['id'] ?>">
@@ -247,9 +262,9 @@ $pctOf = static function (int $n) use ($denom): int {
                             <div class="field">
                                 <label class="field-label" for="reason"><?= e(__('screening.exclude_reason')) ?></label>
                                 <select class="select" name="reason" id="reason">
-                                    <option value=""><?= e(__('screening.no_reason')) ?></option>
+                                    <option value="" <?= $ownReason === '' ? 'selected' : '' ?>><?= e(__('screening.no_reason')) ?></option>
                                     <?php foreach ($reasons as $r): ?>
-                                        <option value="<?= e((string) $r['label']) ?>"><?= e((string) $r['label']) ?></option>
+                                        <option value="<?= e((string) $r['label']) ?>" <?= $ownReason === (string) $r['label'] ? 'selected' : '' ?>><?= e((string) $r['label']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -257,7 +272,7 @@ $pctOf = static function (int $n) use ($denom): int {
                             <div class="field">
                                 <label class="field-label" for="notes"><?= e(__('screening.notes_label')) ?></label>
                                 <textarea class="input" id="notes" name="notes" rows="2"
-                                          placeholder="<?= e(__('screening.notes')) ?>"></textarea>
+                                          placeholder="<?= e(__('screening.notes')) ?>"><?= e((string) ($ownDecision['notes'] ?? '')) ?></textarea>
                             </div>
 
                             <div class="decision-buttons decision-buttons--stack">
