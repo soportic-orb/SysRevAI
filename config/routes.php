@@ -200,6 +200,7 @@ $router->get('/reviews/{id}/screen/nav', [ScreeningController::class, 'nav'], ['
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/screen/coordinator', [ScreeningController::class, 'toggleCoordinator'], ['auth']);
+$router->post('/reviews/{id}/screen/coordinator/open', [ScreeningController::class, 'openFromCoordinator'], ['auth']);
 $router->get('/reviews/{id}/screen', [ScreeningController::class, 'screen'], ['auth']);
 
 // Full-text screening (stage='ft') reuses the screening machinery.
@@ -210,6 +211,7 @@ $router->get('/reviews/{id}/full-text/pending-others', [FullTextScreeningControl
 $router->post('/reviews/{id}/full-text/decide', [FullTextScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/full-text/start', [FullTextScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/full-text/coordinator', [FullTextScreeningController::class, 'toggleCoordinator'], ['auth']);
+$router->post('/reviews/{id}/full-text/coordinator/open', [FullTextScreeningController::class, 'openFromCoordinator'], ['auth']);
 $router->get('/reviews/{id}/full-text', [FullTextScreeningController::class, 'screen'], ['auth']);
 
 // PDFs and per-article chat (nested under a reference).
