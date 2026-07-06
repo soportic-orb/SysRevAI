@@ -195,6 +195,7 @@ $router->get('/reviews/{id}/screen/suggest', [ScreeningController::class, 'sugge
 $router->get('/reviews/{id}/screen/conflicts', [ScreeningController::class, 'conflicts'], ['auth']);
 $router->post('/reviews/{id}/screen/conflicts/resolve', [ScreeningController::class, 'resolveConflict'], ['auth']);
 $router->get('/reviews/{id}/screen/history', [ScreeningController::class, 'history'], ['auth']);
+$router->get('/reviews/{id}/screen/nav', [ScreeningController::class, 'nav'], ['auth']);
 $router->post('/reviews/{id}/screen/decide', [ScreeningController::class, 'decide'], ['auth']);
 $router->post('/reviews/{id}/screen/start', [ScreeningController::class, 'start'], ['auth']);
 $router->post('/reviews/{id}/screen/coordinator', [ScreeningController::class, 'toggleCoordinator'], ['auth']);

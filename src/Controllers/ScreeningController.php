@@ -54,23 +54,23 @@ class ScreeningController
             return;
         }
 
-        // Reopening a past decision from the "referències revisades"
-        // history: only honoured when the reference actually belongs to
-        // this review AND the current reviewer has a decision of their
-        // own on it for this stage — this can't be used to jump the
-        // normal queue to an arbitrary reference, in this review or any
-        // other the same reviewer happens to also be screening.
+        // Reopening a specific reference — from the "referències
+        // revisades" history, or the prev/next nav arrows — is only
+        // honoured when it actually belongs to this review AND has
+        // entered this stage's pipeline (still pending or already
+        // decided/finalized). This can't be used to jump to an
+        // 'imported'/'duplicate' row that hasn't reached this stage, or
+        // to any reference in a different review.
         $uid = (int) Auth::id();
         $requestedId = (int) ($_GET['reference_id'] ?? 0);
         $overrideReferenceId = null;
         $ownDecision = null;
         if ($requestedId > 0) {
             $candidate = Reference::find($requestedId);
-            if ($candidate !== null && (int) $candidate['review_id'] === $rid) {
+            if ($candidate !== null && (int) $candidate['review_id'] === $rid
+                && in_array((string) $candidate['status'], ScreeningService::stageStatuses($this->stage), true)) {
+                $overrideReferenceId = $requestedId;
                 $ownDecision = ScreeningDecision::reviewerDecision($requestedId, $uid, $this->stage);
-                if ($ownDecision !== null) {
-                    $overrideReferenceId = $requestedId;
-                }
             }
         }
 
@@ -127,6 +127,19 @@ class ScreeningController
         }
         $canCoordinate = $this->canCoordinate($review);
 
+        // Adjacent references for the prev/next nav arrows. "Previous" steps
+        // back through anything already screened; "next" skips ahead to the
+        // next one still pending — see ScreeningService for why they're not
+        // symmetric. Fetched here (not just a boolean) so the full-text view
+        // — which has no AJAX nav and just links to ?reference_id=X — has an
+        // actual id to point at, not only whether one exists.
+        $prevRef = $reference !== null
+            ? ScreeningService::previousReference($rid, (int) $reference['id'], $this->stage)
+            : null;
+        $nextRef = $reference !== null
+            ? ScreeningService::nextReferenceAfter($rid, (int) $reference['id'], $uid, $review, $this->stage)
+            : null;
+
         return [
             'reference'       => $reference,
             'pico'            => $reference ? Review::pico($review) : [],
@@ -136,7 +149,39 @@ class ScreeningController
             'totalInStage'    => ScreeningService::totalInStage($rid, $this->stage),
             'conflicts'       => $canCoordinate ? ScreeningService::conflictCount($rid, $review, $this->stage) : 0,
             'canCoordinate'   => $canCoordinate,
+            'hasPrev'         => $prevRef !== null,
+            'hasNext'         => $nextRef !== null,
+            'prevReferenceId' => $prevRef !== null ? (int) $prevRef['id'] : null,
+            'nextReferenceId' => $nextRef !== null ? (int) $nextRef['id'] : null,
         ];
+    }
+
+    /** AJAX prev/next nav — reopens the adjacent reference without a page reload. */
+    public function nav(string $id): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        $review = $this->memberOrDeny((int) $id);
+        $rid = (int) $id;
+        $uid = (int) Auth::id();
+
+        $currentId = (int) ($_GET['reference_id'] ?? 0);
+        $direction = (string) ($_GET['direction'] ?? '');
+
+        $target = null;
+        if ($currentId > 0 && $direction === 'prev') {
+            $target = ScreeningService::previousReference($rid, $currentId, $this->stage);
+        } elseif ($currentId > 0 && $direction === 'next') {
+            $target = ScreeningService::nextReferenceAfter($rid, $currentId, $uid, $review, $this->stage);
+        }
+
+        if ($target === null) {
+            echo json_encode(['ok' => false]);
+            return;
+        }
+
+        $targetId = (int) $target['id'];
+        $ownDecision = ScreeningDecision::reviewerDecision($targetId, $uid, $this->stage);
+        echo json_encode(['ok' => true, 'ownDecision' => $ownDecision] + $this->buildScreenState($review, $rid, $targetId), JSON_UNESCAPED_UNICODE);
     }
 
     private function isAjax(): bool

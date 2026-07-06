@@ -12,6 +12,8 @@ declare(strict_types=1);
 /** @var int $totalInStage */
 /** @var int $conflicts */
 /** @var bool $canCoordinate */
+/** @var bool $hasPrev */
+/** @var bool $hasNext */
 /** @var ?array $ownDecision Reviewer's own past decision on $reference, when reopened from the history list. */
 $id = (int) $review['id'];
 $total = $completed + $pending;
@@ -35,12 +37,17 @@ $pctOf = static function (int $n) use ($denom): int {
 <div class="page"
      data-screen-url="/reviews/<?= $id ?>/screen"
      data-screen-can-coordinate="<?= $canCoordinate ? '1' : '0' ?>"
-     data-tpl-pending="<?= e(__('screening.pending_you')) ?>"
-     data-tpl-done="<?= e(__('screening.done_you')) ?>"
      data-tpl-conflicts="<?= e(__('screening.conflicts')) ?>"
+     data-tpl-editing="<?= e(__('screening.editing_previous')) ?>"
+     data-dec-include="<?= e(__('screening.include')) ?>"
+     data-dec-maybe="<?= e(__('screening.maybe')) ?>"
+     data-dec-exclude="<?= e(__('screening.exclude')) ?>"
+     data-nav-prev-none="<?= e(__('screening.nav_prev_none')) ?>"
+     data-nav-next-none="<?= e(__('screening.nav_next_none')) ?>"
      data-no-abstract="<?= e(__('screening.no_abstract')) ?>"
      data-err-quota="<?= e(__('screening.quota_reached')) ?>"
-     data-err-coord="<?= e(__('screening.coord_no_screen')) ?>">
+     data-err-coord="<?= e(__('screening.coord_no_screen')) ?>"
+     data-err-nav="<?= e(__('screening.nav_error')) ?>">
     <div class="page__head">
         <div class="screen-head-row">
             <h1 class="page__title">
@@ -85,7 +92,14 @@ $pctOf = static function (int $n) use ($denom): int {
 
     <div class="screen-progress">
         <div class="progress"><div class="progress__bar" id="screenProgressBar" style="width: <?= $pct ?>%"></div></div>
-        <span class="muted" id="screenProgressText"><?= e(__('screening.pending_you', $pending)) ?> · <?= e(__('screening.done_you', $completed)) ?></span>
+        <div class="screen-nav">
+            <button type="button" class="btn btn--ghost btn--sm" id="screenPrevBtn"
+                    title="<?= e(__('screening.nav_prev')) ?>" aria-label="<?= e(__('screening.nav_prev')) ?>"
+                    <?= $hasPrev ? '' : 'disabled' ?>>&larr; <?= e(__('screening.nav_prev')) ?></button>
+            <button type="button" class="btn btn--ghost btn--sm" id="screenNextBtn"
+                    title="<?= e(__('screening.nav_next')) ?>" aria-label="<?= e(__('screening.nav_next')) ?>"
+                    <?= $hasNext ? '' : 'disabled' ?>><?= e(__('screening.nav_next')) ?> &rarr;</button>
+        </div>
     </div>
 
     <div class="empty-state" id="screenEmptyState" <?= $reference !== null ? 'hidden' : '' ?>>
@@ -178,20 +192,23 @@ $pctOf = static function (int $n) use ($denom): int {
         <aside class="screen-3col__assessment section-card">
             <h3 class="section__subtitle"><?= e(__('screening.assessment_title')) ?></h3>
 
-            <!-- Reopened from the "referències revisades" history — shows
-                 what was decided before and lets the reviewer change it;
-                 the reason/notes fields below are pre-filled from this
-                 same row. Hidden by JS after any AJAX-driven decision,
-                 since that always lands on a normal next-in-queue
-                 reference, never a reopened one. -->
+            <!-- Reopened from the "referències revisades" history, or via
+                 the prev/next nav arrows onto an already-decided
+                 reference — shows what was decided and lets the reviewer
+                 change it; the reason/notes fields are pre-filled from
+                 this same row. Text and visibility both update via JS on
+                 every AJAX-driven nav/decide, since which reference is
+                 "own" can change with each one. -->
             <div class="alert alert--warn history-edit-banner" id="screenEditBanner" data-no-toast
                  <?= $ownDecision !== null ? '' : 'hidden' ?>>
-                <?php if ($ownDecision !== null): ?>
-                    <?= e(sprintf(
-                        __('screening.editing_previous'),
-                        __('screening.' . $ownDecision['decision'])
-                    )) ?>
-                <?php endif; ?>
+                <span id="screenEditBannerText">
+                    <?php if ($ownDecision !== null): ?>
+                        <?= e(sprintf(
+                            __('screening.editing_previous'),
+                            __('screening.' . $ownDecision['decision'])
+                        )) ?>
+                    <?php endif; ?>
+                </span>
                 <a href="/reviews/<?= $id ?>/screen/history"><?= e(__('screening.history_back')) ?></a>
             </div>
 
@@ -271,13 +288,22 @@ window.SysRevAICopilotContext = {
 
     var screenUrl   = page.getAttribute('data-screen-url');
     var canCoord    = page.getAttribute('data-screen-can-coordinate') === '1';
-    var tplPending  = page.getAttribute('data-tpl-pending');
-    var tplDone     = page.getAttribute('data-tpl-done');
     var tplConflict = page.getAttribute('data-tpl-conflicts');
+    var tplEditing  = page.getAttribute('data-tpl-editing');
     var noAbstract  = page.getAttribute('data-no-abstract');
+    var navNoneMsg  = {
+        prev: page.getAttribute('data-nav-prev-none'),
+        next: page.getAttribute('data-nav-next-none')
+    };
+    var decisionLabels = {
+        include: page.getAttribute('data-dec-include'),
+        maybe:   page.getAttribute('data-dec-maybe'),
+        exclude: page.getAttribute('data-dec-exclude')
+    };
     var errByKey    = {
         quota_reached:    page.getAttribute('data-err-quota'),
-        coord_no_screen:  page.getAttribute('data-err-coord')
+        coord_no_screen:  page.getAttribute('data-err-coord'),
+        network:          page.getAttribute('data-err-nav')
     };
 
     var form        = document.getElementById('screenForm');
@@ -305,7 +331,7 @@ window.SysRevAICopilotContext = {
     })();
 
     function fillTemplate(tpl, n) {
-        return (tpl || '').replace('%d', String(n));
+        return (tpl || '').replace('%d', String(n)).replace('%s', String(n));
     }
 
     function pctOf(n, total) {
@@ -347,15 +373,14 @@ window.SysRevAICopilotContext = {
         window.SysRevAI && window.SysRevAI.toast && window.SysRevAI.toast(msg, 'error');
     }
 
-    /** Apply the JSON state returned by screen()/decide() in place — no navigation. */
+    /** Apply the JSON state returned by screen()/decide()/nav() in place — no navigation. */
     function applyState(state) {
         var total = state.totalReferences || 0;
 
-        // Any AJAX-driven state change always lands on the normal
-        // next-in-queue reference, never a history reopen — hide the
-        // "editing a past decision" banner if it was showing.
-        var editBanner = document.getElementById('screenEditBanner');
-        if (editBanner) editBanner.hidden = true;
+        var prevBtn = document.getElementById('screenPrevBtn');
+        var nextBtn = document.getElementById('screenNextBtn');
+        if (prevBtn) prevBtn.disabled = !state.hasPrev;
+        if (nextBtn) nextBtn.disabled = !state.hasNext;
 
         var pendingEl = document.getElementById('screenStatPendingValue');
         var pendingPctEl = document.getElementById('screenStatPendingPct');
@@ -373,13 +398,9 @@ window.SysRevAICopilotContext = {
         if (totalEl) totalEl.textContent = total;
 
         var bar = document.getElementById('screenProgressBar');
-        var progressText = document.getElementById('screenProgressText');
         var doneTotal = state.completed + state.pending;
         var pct = doneTotal > 0 ? Math.round((state.completed / doneTotal) * 100) : 100;
         if (bar) bar.style.width = pct + '%';
-        if (progressText) {
-            progressText.textContent = fillTemplate(tplPending, state.pending) + ' · ' + fillTemplate(tplDone, state.completed);
-        }
 
         var conflictsLink = document.getElementById('screenConflictsLink');
         if (conflictsLink) {
@@ -416,8 +437,20 @@ window.SysRevAICopilotContext = {
         document.getElementById('screenReferenceId').value = ref.id;
         document.getElementById('timeSpent').value = 0;
         document.getElementById('aiSuggestionJson').value = '';
-        document.getElementById('reason').value = '';
-        document.getElementById('notes').value = '';
+
+        // Reopening (via nav or history) a reference this reviewer already
+        // decided pre-fills the form with that decision instead of a blank
+        // one, and shows the same banner the server renders on first load.
+        var own = state.ownDecision || null;
+        document.getElementById('reason').value = own ? (own.reason || '') : '';
+        document.getElementById('notes').value = own ? (own.notes || '') : '';
+        var editBanner = document.getElementById('screenEditBanner');
+        var editBannerText = document.getElementById('screenEditBannerText');
+        if (own && editBannerText) {
+            editBannerText.textContent = (tplEditing || '').replace('%s', decisionLabels[own.decision] || own.decision);
+        }
+        if (editBanner) editBanner.hidden = !own;
+
         start = Date.now();
 
         var sBtn = document.getElementById('suggestBtn');
@@ -483,6 +516,32 @@ window.SysRevAICopilotContext = {
                 });
         });
     }
+
+    // Prev/next nav arrows — previous steps back through anything already
+    // screened (regardless of status), next skips ahead to whatever is
+    // still pending, both without leaving the page.
+    function navigate(direction) {
+        var currentId = document.getElementById('screenReferenceId').value;
+        if (!currentId) return;
+        fetch(screenUrl + '/nav?direction=' + direction + '&reference_id=' + currentId, {
+            headers: { 'X-Requested-With': 'fetch' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.ok) {
+                    if (d.reference) d.reference.authors = authorsToString(d.reference.authors_json);
+                    applyState(d);
+                } else {
+                    var msg = navNoneMsg[direction];
+                    if (msg) window.SysRevAI && window.SysRevAI.toast && window.SysRevAI.toast(msg, 'warn');
+                }
+            })
+            .catch(function () { showError('network'); });
+    }
+    var prevBtn = document.getElementById('screenPrevBtn');
+    var nextBtn = document.getElementById('screenNextBtn');
+    if (prevBtn) prevBtn.addEventListener('click', function () { navigate('prev'); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { navigate('next'); });
 
     document.addEventListener('keydown', function (e) {
         if (e.target.matches('input,select,textarea')) return;

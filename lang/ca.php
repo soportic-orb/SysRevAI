@@ -983,6 +983,11 @@ return [
         'history_none'     => 'Encara no has cribat cap referència.',
         'editing_previous' => 'Estàs revisant una decisió anterior: %s. Pots canviar-la i tornar a desar.',
         'history_back'     => '← Tornar a l\'historial',
+        'nav_prev'         => 'Anterior',
+        'nav_next'         => 'Següent',
+        'nav_prev_none'    => 'No hi ha cap referència anterior.',
+        'nav_next_none'    => 'No hi ha cap altra referència pendent de cribar.',
+        'nav_error'        => 'No s\'ha pogut canviar de referència. Torna-ho a provar.',
     ],
 
     'import' => [
