@@ -865,6 +865,7 @@ return [
         'title'           => 'Cribratge a text complet',
         'start'           => 'Iniciar cribratge a text complet',
         'all_done'        => 'No tens articles pendents de cribar a text complet.',
+        'ta_not_finished' => 'Encara queden referències pendents del cribratge T/R. No es pot iniciar el cribratge a text complet fins que totes s\'hagin cribat.',
         'no_pdf'          => 'Encara no s\'ha pujat cap PDF per a aquest article. Puja\'l per continuar.',
         'upload_label'    => 'Fitxer PDF',
         'upload_help'     => 'Màxim segons la configuració d\'arxius (per defecte 50 MB).',

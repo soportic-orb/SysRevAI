@@ -862,6 +862,7 @@ return [
         'title'           => 'Cribado a texto completo',
         'start'           => 'Iniciar cribado a texto completo',
         'all_done'        => 'No tienes artículos pendientes de cribar a texto completo.',
+        'ta_not_finished' => 'Todavía quedan referencias pendientes del cribado T/R. No se puede iniciar el cribado a texto completo hasta que todas se hayan cribado.',
         'no_pdf'          => 'Todavía no se ha subido ningún PDF para este artículo. Súbelo para continuar.',
         'upload_label'    => 'Archivo PDF',
         'upload_help'     => 'Máximo según la configuración de archivos (por defecto 50 MB).',

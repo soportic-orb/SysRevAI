@@ -862,6 +862,7 @@ return [
         'title'           => 'Full-text screening',
         'start'           => 'Start full-text screening',
         'all_done'        => 'You have no full-text articles left to screen.',
+        'ta_not_finished' => 'There are still references pending T/A screening. Full-text screening can\'t start until all of them have been screened.',
         'no_pdf'          => 'No PDF has been uploaded for this article yet. Upload one to continue.',
         'upload_label'    => 'PDF file',
         'upload_help'     => 'Up to the limit configured in the files settings (default 50 MB).',
