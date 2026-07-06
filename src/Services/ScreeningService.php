@@ -313,6 +313,50 @@ final class ScreeningService
     }
 
     /** References that reached the required decisions but were not unanimous. */
+    /**
+     * References relevant to the stage's coordinator view — anything that
+     * has entered this stage's pipeline (still screening or already
+     * finalized) — paginated, and optionally filtered.
+     *
+     * @param string $reviewerFilter '' = no filter, 'none' = only
+     *        references with zero decisions from anyone yet, otherwise a
+     *        numeric reviewer id — only references that reviewer has
+     *        decided.
+     * @return array{rows:array,total:int}
+     */
+    public static function coordinatorRows(int $reviewId, string $stage, string $reviewerFilter, int $page, int $perPage): array
+    {
+        $refs = Database::table('references');
+        $dec = Database::table('screening_decisions');
+        $statuses = self::stageStatuses($stage);
+
+        $where = 'r.review_id = ? AND r.status IN (?, ?, ?)';
+        $params = array_merge([$reviewId], $statuses);
+
+        if ($reviewerFilter === 'none') {
+            $where .= " AND NOT EXISTS (SELECT 1 FROM `{$dec}` d
+                            WHERE d.reference_id = r.id AND d.stage = ? AND d.is_resolution = 0)";
+            $params[] = $stage;
+        } elseif (ctype_digit($reviewerFilter)) {
+            $where .= " AND EXISTS (SELECT 1 FROM `{$dec}` d
+                            WHERE d.reference_id = r.id AND d.stage = ? AND d.is_resolution = 0 AND d.reviewer_id = ?)";
+            $params[] = $stage;
+            $params[] = (int) $reviewerFilter;
+        }
+
+        $countRow = Database::selectOne("SELECT COUNT(*) AS c FROM `{$refs}` r WHERE {$where}", $params);
+        $total = (int) ($countRow['c'] ?? 0);
+
+        $perPage = max(1, min($perPage, 1000));
+        $offset = max(0, ($page - 1) * $perPage);
+        $rows = Database::select(
+            "SELECT r.* FROM `{$refs}` r WHERE {$where} ORDER BY r.id ASC LIMIT {$perPage} OFFSET {$offset}",
+            $params
+        );
+
+        return ['rows' => $rows, 'total' => $total];
+    }
+
     public static function conflicts(int $reviewId, array $review, string $stage = 'ta'): array
     {
         $refs = Database::table('references');

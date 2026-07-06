@@ -256,10 +256,18 @@ final class ReferencesController
         $rid = (int) $id;
         $uid = (int) Auth::id();
 
+        // Whatever filter/search/page the reviewer had open when they hit
+        // "Fer el Cribatge" — sent back so the list doesn't reset to the
+        // unfiltered default after the action completes.
+        $back = (string) ($_POST['back'] ?? '/reviews/' . $rid . '/references');
+        if (!str_starts_with($back, '/')) {
+            $back = '/reviews/' . $rid . '/references';
+        }
+
         $decision = (string) ($_POST['decision'] ?? '');
         if (!in_array($decision, ['include', 'exclude', 'maybe'], true)) {
             Session::flash('error', __('references.screen_bulk_none'));
-            redirect('/reviews/' . $rid . '/references');
+            redirect($back);
         }
 
         $reason = $decision === 'exclude' ? (trim((string) ($_POST['reason'] ?? '')) ?: null) : null;
@@ -271,7 +279,7 @@ final class ReferencesController
 
         if ($ids === []) {
             Session::flash('error', __('references.screen_bulk_none'));
-            redirect('/reviews/' . $rid . '/references');
+            redirect($back);
         }
 
         @set_time_limit(180);
@@ -316,7 +324,7 @@ final class ReferencesController
         } else {
             Session::flash('success', __('references.screen_bulk_ok', $decided, $decisionLabel));
         }
-        redirect('/reviews/' . $rid . '/references');
+        redirect($back);
     }
 
     /**

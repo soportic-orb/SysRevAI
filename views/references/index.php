@@ -138,6 +138,9 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
         <?php endif; ?>
         <input class="input" name="q" value="<?= e($search) ?>" placeholder="<?= e(__('references.search')) ?>">
         <button class="btn btn--ghost btn--sm"><?= e(__('references.search')) ?></button>
+        <?php if ($status !== '' || $search !== '' || $abstract !== '' || $source !== ''): ?>
+            <a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references"><?= e(__('references.clear_filters')) ?></a>
+        <?php endif; ?>
         <!-- Per-page selector. Submitting from the change handler resets
              to page 1 so the user never lands on a page beyond the new
              total. The hidden input rather than the select itself
@@ -246,6 +249,7 @@ $qs = static function (array $extra) use ($status, $search, $abstract, $source, 
             <input type="hidden" name="decision" id="screenBulkDecision" value="">
             <input type="hidden" name="reason" id="screenBulkReasonInput" value="">
             <input type="hidden" name="notes" id="screenBulkNotesInput" value="">
+            <input type="hidden" name="back" value="/reviews/<?= $id ?>/references?<?= e($qs([])) ?>">
         </form>
 
         <?php if ($canDelete): ?>

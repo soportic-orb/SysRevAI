@@ -378,18 +378,54 @@ class ScreeningController
     private function renderCoordinator(array $review): void
     {
         $rid = (int) $review['id'];
-        $status = $this->stage === 'ft' ? 'ft_screening' : 'ta_screening';
-        $refs = Reference::forReview($rid, $status, '', 1, 100);
+
+        $perPageOptions = [50, 100, 200, 500, 1000];
+        $perPage = (int) ($_GET['per_page'] ?? 100);
+        if (!in_array($perPage, $perPageOptions, true)) {
+            $perPage = 100;
+        }
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+
+        // '' = no filter, 'none' = only references nobody has decided yet,
+        // otherwise a reviewer id — show only that reviewer's own decisions.
+        $reviewerFilter = (string) ($_GET['reviewer'] ?? '');
+
+        $result = ScreeningService::coordinatorRows($rid, $this->stage, $reviewerFilter, $page, $perPage);
         $rows = [];
-        foreach ($refs['rows'] as $r) {
+        foreach ($result['rows'] as $r) {
             $r['decisions'] = ScreeningDecision::forReference((int) $r['id'], $this->stage);
             $rows[] = $r;
         }
+
         echo View::render('screening/coordinator', [
-            'review'   => $review,
-            'rows'     => $rows,
-            'basePath' => $this->basePath($rid),
+            'review'         => $review,
+            'rows'           => $rows,
+            'basePath'       => $this->basePath($rid),
+            'total'          => $result['total'],
+            'page'           => $page,
+            'perPage'        => $perPage,
+            'perPageOptions' => $perPageOptions,
+            'reviewerFilter' => $reviewerFilter,
+            'reviewers'      => $this->reviewersForFilter($review),
         ]);
+    }
+
+    /** [user_id => name] for every reviewer this review has ever had (owner included). */
+    private function reviewersForFilter(array $review): array
+    {
+        $byId = [];
+        foreach (ReviewUser::forReview((int) $review['id']) as $m) {
+            $byId[(int) $m['id']] = (string) $m['name'];
+        }
+        $ownerId = (int) $review['owner_id'];
+        if (!isset($byId[$ownerId])) {
+            $owner = \SysRevAI\Models\User::find($ownerId);
+            if ($owner !== null) {
+                $byId[$ownerId] = (string) $owner['name'];
+            }
+        }
+        asort($byId, SORT_STRING | SORT_FLAG_CASE);
+        return $byId;
     }
 
     private function notifyResolvers(array $review, int $reviewId, int $exceptUserId): void
