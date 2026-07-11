@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Three new Copilot/Article chat modes**: alongside the existing **Devil's
+  Advocate** mode, the Copilot widget and the Articles chat panel now offer
+  **Socratic** (guides the user to the answer through pointed questions
+  instead of answering directly), **Fact-check** (labels claims in the
+  user's message as confirmed/contradicted/unverifiable against the
+  supplied context) and **Lit-review / synthesis** (structures answers as a
+  narrative synthesis across sources, surfacing agreements, contradictions
+  and gaps). All four modes are mutually-exclusive toggle buttons persisted
+  per-device via `localStorage`. `ClaudeService::CHAT_MODES` is now the
+  single source of truth for valid mode values, shared by the new
+  `modeOverlay()` dispatcher and by the three controllers that sanitise the
+  client-supplied mode.
 - **Platform improvements — OTA updates, branding & UX polish:**
   - **Over-the-air updates**: new "Platform updates" card in **Admin →
     Maintenance** with **Check for updates** (queries the GitHub commits API
