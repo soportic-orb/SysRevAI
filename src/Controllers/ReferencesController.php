@@ -40,6 +40,24 @@ final class ReferencesController
         if ($source !== '' && !in_array($source, $sourceOptions, true)) {
             $source = '';
         }
+        // Publication-type filter — same validate-against-what-actually-
+        // exists-in-this-review pattern as the source filter above.
+        $publicationTypeOptions = Reference::distinctPublicationTypes($rid);
+        $publicationType = (string) ($_GET['publication_type'] ?? '');
+        if ($publicationType !== '' && !in_array($publicationType, $publicationTypeOptions, true)) {
+            $publicationType = '';
+        }
+        // Publication-date range filter — plain 'YYYY-MM-DD' values from
+        // the two <input type="date"> filter fields; anything malformed
+        // is dropped rather than passed through to the query.
+        $dateFrom = (string) ($_GET['pub_date_from'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom)) {
+            $dateFrom = '';
+        }
+        $dateTo = (string) ($_GET['pub_date_to'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) {
+            $dateTo = '';
+        }
         // Per-page selector with a whitelisted set so a forged query
         // string can't ask for an unbounded LIMIT. 100 is the default
         // — fits most screens without paging through five tabs to
@@ -61,10 +79,13 @@ final class ReferencesController
                 $abstract,
                 $source,
                 $page,
-                $perPage
+                $perPage,
+                $publicationType,
+                $dateFrom,
+                $dateTo
             );
         } else {
-            $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract, $source);
+            $result = Reference::forReview($rid, $status, $search, $page, $perPage, $abstract, $source, $publicationType, $dateFrom, $dateTo);
         }
 
         echo View::render('references/index', [
@@ -79,6 +100,10 @@ final class ReferencesController
             'abstract'      => $abstract,
             'source'        => $source,
             'sourceOptions' => $sourceOptions,
+            'publicationType' => $publicationType,
+            'publicationTypeOptions' => $publicationTypeOptions,
+            'dateFrom'      => $dateFrom,
+            'dateTo'        => $dateTo,
             'statuses'      => Reference::STATUSES,
             'metrics'       => Review::metrics($rid),
             'pendingDups'   => Duplicate::pendingCount($rid),
@@ -197,10 +222,15 @@ final class ReferencesController
                 ? (string) $_POST['abstract']
                 : '';
             $source   = trim((string) ($_POST['source'] ?? ''));
+            $publicationType = trim((string) ($_POST['publication_type'] ?? ''));
+            $dateFrom = (string) ($_POST['pub_date_from'] ?? '');
+            $dateFrom = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom) ? $dateFrom : '';
+            $dateTo   = (string) ($_POST['pub_date_to'] ?? '');
+            $dateTo   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo) ? $dateTo : '';
             $pendingStage = $this->pendingStageFor($status);
             $ids = $pendingStage !== null
-                ? ScreeningService::pendingReferenceIds($rid, (int) Auth::id(), $review, $pendingStage, $search, $abstract, $source)
-                : Reference::idsForReview($rid, $status, $search, $abstract, $source);
+                ? ScreeningService::pendingReferenceIds($rid, (int) Auth::id(), $review, $pendingStage, $search, $abstract, $source, $publicationType, $dateFrom, $dateTo)
+                : Reference::idsForReview($rid, $status, $search, $abstract, $source, $publicationType, $dateFrom, $dateTo);
         } else {
             $raw = (array) ($_POST['reference_ids'] ?? []);
             $ids = array_values(array_unique(array_map('intval', $raw)));

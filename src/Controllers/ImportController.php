@@ -294,6 +294,10 @@ final class ImportController
             } elseif (!is_int($year)) {
                 $year = null;
             }
+            $pubDate = $r['publication_date'] ?? null;
+            if (!is_string($pubDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $pubDate)) {
+                $pubDate = null;
+            }
             $out[] = [
                 'title'    => $title,
                 'authors'  => $authors,
@@ -304,6 +308,8 @@ final class ImportController
                 'pmid'     => trim((string) ($r['pmid']     ?? '')),
                 'url'      => trim((string) ($r['url']      ?? '')),
                 'keywords' => $keywords,
+                'publication_type' => trim((string) ($r['publication_type'] ?? '')),
+                'publication_date' => $pubDate,
             ];
             if (count($out) >= 5000) {
                 break;

@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Publication type & date filters on the References list**: references now
+  show a "publication type" pill (Journal Article, Conference Paper, Book
+  Chapter, Thesis, Report…) next to the source pill, populated at import
+  time from the RIS `TY`/`DA` tags, BibTeX entry type, PubMed XML
+  `PublicationType`/`PubDate`, EndNote `ref-type` attribute or a CSV
+  type/date column. New "Publication type" filter dropdown and a
+  publication-date range filter (from/to) — legacy references that only
+  carry a plain `year` still match the date range by year. New columns
+  `publication_type`/`publication_date` on `references` (migration 041).
 - **Three new Copilot/Article chat modes**: alongside the existing **Devil's
   Advocate** mode, the Copilot widget and the Articles chat panel now offer
   **Socratic** (guides the user to the answer through pointed questions

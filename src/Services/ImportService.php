@@ -8,7 +8,15 @@ namespace SysRevAI\Services;
  * Reference import parsers: RIS, BibTeX, CSV, PubMed XML and EndNote XML.
  *
  * Each parser returns a list of normalized reference arrays with the keys:
- *   title, authors[], year|null, journal, abstract, doi, pmid, url, keywords[]
+ *   title, authors[], year|null, journal, abstract, doi, pmid, url, keywords[],
+ *   publication_type, publication_date|null
+ *
+ * publication_type is a short canonical label (see risType()/bibtexType())
+ * derived from the source format's own record-type tag/attribute; it's
+ * left '' when the format doesn't carry one or the code isn't recognised.
+ * publication_date is a day-precision 'YYYY-MM-DD' string when the source
+ * gave enough precision (RIS `DA`, PubMed XML day/month), otherwise null —
+ * callers fall back to the plain `year` field for year-only records.
  */
 final class ImportService
 {
@@ -68,7 +76,8 @@ final class ImportService
     private static function blank(): array
     {
         return ['title' => '', 'authors' => [], 'year' => null, 'journal' => '',
-                'abstract' => '', 'doi' => '', 'pmid' => '', 'url' => '', 'keywords' => []];
+                'abstract' => '', 'doi' => '', 'pmid' => '', 'url' => '', 'keywords' => [],
+                'publication_type' => '', 'publication_date' => null];
     }
 
     private static function clean(string $s): string
@@ -79,6 +88,82 @@ final class ImportService
     private static function year(string $s): ?int
     {
         return preg_match('/\b(1[5-9]\d{2}|20\d{2}|21\d{2})\b/', $s, $m) ? (int) $m[1] : null;
+    }
+
+    /** RIS `TY` reference-type code → canonical publication-type label. */
+    private static function risType(string $code): string
+    {
+        return match (strtoupper(trim($code))) {
+            'JOUR', 'JFULL' => 'Journal Article',
+            'CONF', 'CPAPER' => 'Conference Paper',
+            'CHAP' => 'Book Chapter',
+            'BOOK' => 'Book',
+            'THES' => 'Thesis',
+            'RPRT' => 'Report',
+            'NEWS' => 'Newspaper Article',
+            'MGZN' => 'Magazine Article',
+            'ABST' => 'Abstract',
+            'STAND' => 'Standard',
+            'UNPB' => 'Unpublished Work',
+            'ELEC' => 'Electronic Source',
+            'COMP' => 'Computer Program',
+            'DATA' => 'Dataset',
+            'CASE' => 'Case Report',
+            'PAT' => 'Patent',
+            default => '',
+        };
+    }
+
+    /**
+     * RIS `DA` (or `Y1`/`PY` when they carry the full "YYYY/MM/DD/" form)
+     * date field → 'YYYY-MM-DD', defaulting missing month/day to '01' so
+     * a year+month-only record still sorts/filters correctly by day.
+     * Null when the value doesn't start with a 4-digit year.
+     */
+    private static function risDate(string $val): ?string
+    {
+        if (!preg_match('#^(\d{4})/(\d{1,2})?/?(\d{1,2})?#', trim($val), $m)) {
+            return null;
+        }
+        $month = (int) ($m[2] ?? 0);
+        $day = (int) ($m[3] ?? 0);
+        $month = ($month >= 1 && $month <= 12) ? $month : 1;
+        $day = ($day >= 1 && $day <= 31) ? $day : 1;
+        return sprintf('%04d-%02d-%02d', (int) $m[1], $month, $day);
+    }
+
+    /** BibTeX entry type (the word right after `@`) → canonical publication-type label. */
+    private static function bibtexType(string $type): string
+    {
+        return match (strtolower(trim($type))) {
+            'article' => 'Journal Article',
+            'inproceedings', 'conference' => 'Conference Paper',
+            'proceedings' => 'Conference Proceedings',
+            'incollection', 'inbook' => 'Book Chapter',
+            'book' => 'Book',
+            'phdthesis', 'mastersthesis' => 'Thesis',
+            'techreport' => 'Report',
+            'unpublished' => 'Unpublished Work',
+            'manual' => 'Manual',
+            'misc' => 'Other',
+            default => '',
+        };
+    }
+
+    /** Three-letter (or full) English month name/number → 1-12, or null if unrecognised. */
+    private static function monthNumber(string $m): ?int
+    {
+        $m = trim($m);
+        if ($m === '') {
+            return null;
+        }
+        if (ctype_digit($m)) {
+            $n = (int) $m;
+            return ($n >= 1 && $n <= 12) ? $n : null;
+        }
+        $months = ['jan' => 1, 'feb' => 2, 'mar' => 3, 'apr' => 4, 'may' => 5, 'jun' => 6,
+                   'jul' => 7, 'aug' => 8, 'sep' => 9, 'oct' => 10, 'nov' => 11, 'dec' => 12];
+        return $months[strtolower(substr($m, 0, 3))] ?? null;
     }
 
     /* ── RIS / NBIB ────────────────────────────────────────────────────── */
@@ -98,9 +183,11 @@ final class ImportService
                 $lastTag = $tag;
                 $open = true;
                 switch ($tag) {
+                    case 'TY': $cur['publication_type'] = self::risType($val); break;
                     case 'TI': case 'T1': $cur['title'] = $cur['title'] ?: $val; break;
                     case 'AU': case 'A1': if ($val !== '') $cur['authors'][] = $val; break;
-                    case 'PY': case 'Y1': $cur['year'] = self::year($val); break;
+                    case 'PY': case 'Y1': $cur['year'] = self::year($val); $cur['publication_date'] = $cur['publication_date'] ?? self::risDate($val); break;
+                    case 'DA': $cur['publication_date'] = self::risDate($val) ?? $cur['publication_date']; break;
                     case 'JO': case 'JF': case 'JA': case 'T2': $cur['journal'] = $cur['journal'] ?: $val; break;
                     case 'AB': case 'N2': $cur['abstract'] = trim($cur['abstract'] . ' ' . $val); break;
                     case 'DO': $cur['doi'] = $val; break;
@@ -150,9 +237,14 @@ final class ImportService
                 elseif ($content[$j] === '}') { $depth--; if ($depth === 0) { $end = $j; break; } }
             }
             $body = substr($content, $brace + 1, $end - $brace - 1);
+            $entryType = trim(substr($content, $at + 1, $brace - $at - 1));
             $i = $end + 1;
+            if (in_array(strtolower($entryType), ['comment', 'string', 'preamble'], true)) {
+                continue;
+            }
 
             $ref = self::blank();
+            $ref['publication_type'] = self::bibtexType($entryType);
             foreach (self::bibtexFields($body) as $key => $val) {
                 $val = self::clean(str_replace(['{', '}'], '', $val));
                 switch ($key) {
@@ -245,6 +337,8 @@ final class ImportService
             'pmid'     => $find(['pmid', 'pubmed']),
             'url'      => $find(['url', 'link']),
             'keywords' => $find(['keywords', 'keyword']),
+            'pub_type' => $find(['publication type', 'document type', 'article type', 'pub type', 'reference type', 'type']),
+            'pub_date' => $find(['publication date', 'pub date', 'date published', 'date']),
         ];
         for ($r = 1; $r < count($rows); $r++) {
             $row = $rows[$r];
@@ -260,6 +354,9 @@ final class ImportService
             $ref['pmid']     = $get($cols['pmid']);
             $ref['url']      = $get($cols['url']);
             $ref['keywords'] = $get($cols['keywords']) !== '' ? array_map('trim', preg_split('/[;,]/', $get($cols['keywords'])) ?: []) : [];
+            $ref['publication_type'] = $get($cols['pub_type']);
+            $pubDateRaw = $get($cols['pub_date']);
+            $ref['publication_date'] = $pubDateRaw !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $pubDateRaw) ? $pubDateRaw : null;
             if ($ref['title'] !== '' || $ref['authors'] !== []) {
                 $refs[] = $ref;
             }
@@ -286,6 +383,14 @@ final class ImportService
             $ref['journal'] = self::clean(self::xpText($xp, './/Journal/Title', $node));
             $ref['year']    = self::year(self::xpText($xp, './/JournalIssue/PubDate/Year', $node)
                               ?: self::xpText($xp, './/JournalIssue/PubDate/MedlineDate', $node));
+            $ref['publication_type'] = self::clean(self::xpText($xp, './/PublicationTypeList/PublicationType', $node));
+            $pubYear = self::xpText($xp, './/JournalIssue/PubDate/Year', $node);
+            $pubMonth = self::monthNumber(self::xpText($xp, './/JournalIssue/PubDate/Month', $node));
+            $pubDay = self::xpText($xp, './/JournalIssue/PubDate/Day', $node);
+            if ($pubYear !== '' && $pubMonth !== null) {
+                $day = ($pubDay !== '' && ctype_digit($pubDay)) ? (int) $pubDay : 1;
+                $ref['publication_date'] = sprintf('%04d-%02d-%02d', (int) $pubYear, $pubMonth, $day);
+            }
             $abs = [];
             foreach ($xp->query('.//Abstract/AbstractText', $node) as $a) {
                 $abs[] = $a->textContent;
@@ -522,6 +627,7 @@ final class ImportService
             $ref['title']    = self::clean(self::xpText($xp, './/titles/title', $node));
             $ref['journal']  = self::clean(self::xpText($xp, './/periodical/full-title', $node) ?: self::xpText($xp, './/titles/secondary-title', $node));
             $ref['year']     = self::year(self::xpText($xp, './/dates/year', $node));
+            $ref['publication_type'] = self::clean(self::xpAttr($xp, './/ref-type/@name', $node));
             $ref['abstract'] = self::clean(self::xpText($xp, './/abstract', $node));
             $ref['doi']      = self::clean(self::xpText($xp, './/electronic-resource-num', $node));
             $ref['url']      = self::clean(self::xpText($xp, './/urls//url', $node));
@@ -555,6 +661,13 @@ final class ImportService
         return ($n !== false && $n->length > 0) ? trim($n->item(0)->textContent) : '';
     }
 
+    /** Like xpText() but for an attribute query (e.g. './/ref-type/@name'). */
+    private static function xpAttr(\DOMXPath $xp, string $query, \DOMNode $ctx): string
+    {
+        $n = $xp->query($query, $ctx);
+        return ($n !== false && $n->length > 0) ? trim((string) $n->item(0)->nodeValue) : '';
+    }
+
     /** Final tidy-up applied to every parsed reference. */
     private static function normalize(array $ref): array
     {
@@ -565,6 +678,9 @@ final class ImportService
         $ref['pmid']     = preg_replace('/\D/', '', (string) $ref['pmid']) ?? '';
         $ref['authors']  = array_values(array_filter(array_map('trim', $ref['authors'])));
         $ref['keywords'] = array_values(array_filter(array_map('trim', $ref['keywords'])));
+        $ref['publication_type'] = self::clean((string) ($ref['publication_type'] ?? ''));
+        $ref['publication_date'] = (isset($ref['publication_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $ref['publication_date']))
+            ? $ref['publication_date'] : null;
         return $ref;
     }
 }
