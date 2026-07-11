@@ -36,7 +36,7 @@ final class CopilotController
             echo json_encode(['ok' => false, 'error' => 'empty_message']);
             return;
         }
-        $mode = ($payload['mode'] ?? '') === 'devil_advocate' ? 'devil_advocate' : 'default';
+        $mode = in_array(($payload['mode'] ?? ''), ClaudeService::CHAT_MODES, true) ? (string) $payload['mode'] : 'default';
 
         // Page context lets the global Copilot answer questions about the
         // work the user is doing right now. Today only the collaborative

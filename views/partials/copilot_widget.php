@@ -60,14 +60,16 @@ $copilotGreeting = $copilotIsGlobal
                 <p class="copilot__subtitle"><?= e($copilotSubtitle) ?></p>
             </div>
             <div class="copilot__head-actions">
+                <!-- Conversational mode strip — exactly one (or none) of
+                     these four is active at a time, toggled client-side and
+                     sent to the server as `mode`. See
+                     ClaudeService::modeOverlay() for what each one does. -->
                 <button type="button" class="copilot__icon-btn copilot__icon-btn--toggle" id="copilotDevilAdvocate"
                         title="<?= e(__('copilot.devil_advocate_title')) ?>"
                         aria-label="<?= e(__('copilot.devil_advocate_aria')) ?>"
                         aria-pressed="false">
-                    <!-- Pitchfork — the Devil's Advocate toggle that flips
-                         the system prompt from "helpful affirmation" to
-                         "stress-test the reasoning". Active state surfaces
-                         via aria-pressed + the .is-active class. -->
+                    <!-- Pitchfork — Devil's Advocate: stress-test the
+                         reasoning instead of affirming it. -->
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
                          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 22V11"></path>
@@ -75,6 +77,44 @@ $copilotGreeting = $copilotIsGlobal
                         <path d="M12 7V3"></path>
                         <path d="M18 7V3"></path>
                         <path d="M5 7h14a1 1 0 0 1 1 1v2a4 4 0 0 1-8 0 4 4 0 0 1-8 0V8a1 1 0 0 1 1-1z"></path>
+                    </svg>
+                </button>
+                <button type="button" class="copilot__icon-btn copilot__icon-btn--toggle" id="copilotSocratic"
+                        title="<?= e(__('copilot.socratic_title')) ?>"
+                        aria-label="<?= e(__('copilot.socratic_aria')) ?>"
+                        aria-pressed="false">
+                    <!-- Question mark — Socratic: guide with questions
+                         instead of answering directly. -->
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 1.5-2 3.5"></path>
+                        <path d="M12 17.5v.01"></path>
+                    </svg>
+                </button>
+                <button type="button" class="copilot__icon-btn copilot__icon-btn--toggle" id="copilotFactCheck"
+                        title="<?= e(__('copilot.fact_check_title')) ?>"
+                        aria-label="<?= e(__('copilot.fact_check_aria')) ?>"
+                        aria-pressed="false">
+                    <!-- Shield-check — Fact-check: verify claims against
+                         the supplied context before answering. -->
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"></path>
+                        <path d="M9.5 12l1.8 1.8L15 10"></path>
+                    </svg>
+                </button>
+                <button type="button" class="copilot__icon-btn copilot__icon-btn--toggle" id="copilotLitReview"
+                        title="<?= e(__('copilot.lit_review_title')) ?>"
+                        aria-label="<?= e(__('copilot.lit_review_aria')) ?>"
+                        aria-pressed="false">
+                    <!-- Stacked layers — literature synthesis: structure
+                         answers like a narrative lit-review paragraph. -->
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polygon points="12 3 21 8 12 13 3 8 12 3"></polygon>
+                        <polyline points="3 12 12 17 21 12"></polyline>
+                        <polyline points="3 16 12 21 21 16"></polyline>
                     </svg>
                 </button>
                 <button type="button" class="copilot__icon-btn" id="copilotClear"
@@ -145,31 +185,44 @@ $copilotGreeting = $copilotIsGlobal
     var closeBtn = document.getElementById('copilotClose');
     var clearBtn = document.getElementById('copilotClear');
     var expand   = document.getElementById('copilotExpand');
-    var devil    = document.getElementById('copilotDevilAdvocate');
     var msgs     = document.getElementById('copilotMessages');
     var form     = document.getElementById('copilotForm');
     var input    = document.getElementById('copilotInput');
     var greeting = document.getElementById('copilotGreeting');
 
-    /* Devil's-Advocate toggle. State is per-user / per-device so a
-       researcher can flip it once and keep that mode across navigations.
-       Sent to the server as `mode: 'devil_advocate'` on each turn. */
-    var devilKey = 'sysrevai.copilot.devil_advocate';
-    var devilOn  = false;
-    try { devilOn = localStorage.getItem(devilKey) === '1'; } catch (e) {}
-    function applyDevilState() {
-        if (!devil) return;
-        devil.setAttribute('aria-pressed', devilOn ? 'true' : 'false');
-        devil.classList.toggle('is-active', devilOn);
-    }
-    applyDevilState();
-    if (devil) {
-        devil.addEventListener('click', function () {
-            devilOn = !devilOn;
-            try { localStorage.setItem(devilKey, devilOn ? '1' : '0'); } catch (e) {}
-            applyDevilState();
+    /* Conversational mode strip — Devil's Advocate / Socratic / Fact-check /
+       Lit-review synthesis. Exactly one (or none — 'default') is active at
+       a time; state is per-user/per-device so a researcher can flip it once
+       and keep it across navigations. Sent to the server as `mode` on each
+       turn; see ClaudeService::modeOverlay(). */
+    var modeButtons = {
+        devil_advocate: document.getElementById('copilotDevilAdvocate'),
+        socratic:       document.getElementById('copilotSocratic'),
+        fact_check:     document.getElementById('copilotFactCheck'),
+        lit_review:     document.getElementById('copilotLitReview')
+    };
+    var modeKey = 'sysrevai.copilot.mode';
+    var activeMode = 'default';
+    try { activeMode = localStorage.getItem(modeKey) || 'default'; } catch (e) {}
+    function applyModeState() {
+        Object.keys(modeButtons).forEach(function (m) {
+            var btn = modeButtons[m];
+            if (!btn) return;
+            var on = activeMode === m;
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.classList.toggle('is-active', on);
         });
     }
+    applyModeState();
+    Object.keys(modeButtons).forEach(function (m) {
+        var btn = modeButtons[m];
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            activeMode = (activeMode === m) ? 'default' : m;
+            try { localStorage.setItem(modeKey, activeMode); } catch (e) {}
+            applyModeState();
+        });
+    });
 
     var labels = {
         error:    <?= json_encode(__('copilot.error')) ?>,
@@ -263,7 +316,7 @@ $copilotGreeting = $copilotIsGlobal
                 _csrf: csrfToken,
                 message: text,
                 page_context: pageContext,
-                mode: devilOn ? 'devil_advocate' : 'default'
+                mode: activeMode
             })
         })
         .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })

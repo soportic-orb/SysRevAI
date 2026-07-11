@@ -21,6 +21,14 @@ final class ClaudeService
     private const API_VERSION = '2023-06-01';
     private const MAX_RETRIES = 3;
 
+    /**
+     * Valid values for the chat `mode` parameter accepted by copilotChat(),
+     * assistantChat() and articleChat() — single source of truth for the
+     * controllers that sanitise the client-supplied mode before it reaches
+     * modeOverlay(). 'default' is always allowed and isn't listed here.
+     */
+    public const CHAT_MODES = ['devil_advocate', 'socratic', 'fact_check', 'lit_review'];
+
     /** Estimated USD price per 1M tokens [input, output]. */
     private const PRICES = [
         'claude-opus-4-7'           => [15.0, 75.0],
@@ -614,7 +622,7 @@ final class ClaudeService
                 . json_encode($pageContext, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
 
-        $system .= self::devilAdvocateOverlay($mode);
+        $system .= self::modeOverlay($mode);
 
         // Agentic-actions catalogue — the model can now PROPOSE
         // concrete write-actions the user approves with one click.
@@ -698,7 +706,7 @@ final class ClaudeService
         // Copilot can hold a grounded conversation about the work the
         // user is actually doing.
         $system .= $this->pageContextOverlay($pageContext);
-        $system .= self::devilAdvocateOverlay($mode);
+        $system .= self::modeOverlay($mode);
 
         $messages = [];
         $tail = array_slice($history, -16);
@@ -787,7 +795,7 @@ final class ClaudeService
                 . $this->truncate(self::summariseReportForPrompt($report), 12000);
         }
 
-        $system .= self::devilAdvocateOverlay($mode);
+        $system .= self::modeOverlay($mode);
 
         $messages = [];
         $tail = array_slice($history, -16);
@@ -886,24 +894,6 @@ final class ClaudeService
         return implode("\n", $lines);
     }
 
-    /**
-     * Structured critical report for an uploaded article. Beyond the
-     * five 0-100 axis scores, the model returns a multi-paragraph
-     * analysis per axis, a 3-5-sentence executive summary, a mandatory
-     * devil's-advocate counter-argument, an overall verdict, ordered
-     * lists of strengths / weaknesses / statistical / ethical /
-     * reproducibility concerns, prose on literature positioning and
-     * publication outlook, and section-by-section recommendations with
-     * a per-item priority flag.
-     *
-     * The model is asked to ground every claim in the supplied text
-     * (no inventing methodology details) and to write all prose in the
-     * user's locale so the report reads naturally in the platform
-     * language. Inspired by the multi-perspective critical-review
-     * prompt pattern from imbad0202/academic-research-skills (CC-BY-NC 4.0).
-     *
-     * @param array<string,mixed> $article Article row (title, extracted_text).
-     */
     /**
      * Fill the PROSPERO or OSF registration field map from the existing
      * review protocol (PICO/PCC, question, criteria, search context).
@@ -1186,6 +1176,24 @@ final class ClaudeService
         return ['ok' => true, 'text' => trim((string) $res['text']), 'error' => null];
     }
 
+    /**
+     * Structured critical report for an uploaded article. Beyond the
+     * five 0-100 axis scores, the model returns a multi-paragraph
+     * analysis per axis, a 3-5-sentence executive summary, a mandatory
+     * devil's-advocate counter-argument, an overall verdict, ordered
+     * lists of strengths / weaknesses / statistical / ethical /
+     * reproducibility concerns, prose on literature positioning and
+     * publication outlook, and section-by-section recommendations with
+     * a per-item priority flag.
+     *
+     * The model is asked to ground every claim in the supplied text
+     * (no inventing methodology details) and to write all prose in the
+     * user's locale so the report reads naturally in the platform
+     * language. Inspired by the multi-perspective critical-review
+     * prompt pattern from imbad0202/academic-research-skills (CC-BY-NC 4.0).
+     *
+     * @param array<string,mixed> $article Article row (title, extracted_text).
+     */
     public function articleCriticalReport(array $article, string $targetLanguage = 'en'): array
     {
         if ($e = $this->guard('peer_review')) {
@@ -1382,15 +1390,6 @@ final class ClaudeService
     }
 
     /**
-     * System-prompt suffix that flips the Copilot from a warm helper to
-     * a critical interlocutor — the "Devil's Advocate" pattern from
-     * imbad0202/academic-research-skills (CC-BY-NC 4.0). Inserts as an
-     * overlay on whatever base prompt the calling method already wrote;
-     * empty string when the mode isn't devil_advocate so default
-     * behaviour is unchanged.
-     */
-
-    /**
      * Format a context payload from a host page into a prompt overlay
      * so the platform-wide Copilot can hold a grounded conversation
      * about the work the user is doing right now.
@@ -1451,11 +1450,31 @@ final class ClaudeService
         return $overlay;
     }
 
-    private static function devilAdvocateOverlay(string $mode): string
+    /**
+     * Conversational mode overlays — small prompt patterns adapted from
+     * imbad0202/academic-research-skills (CC-BY-NC 4.0), where they exist
+     * as standalone review/research-dialogue skills. SysRevAI's Copilot is
+     * a single Messages-API call per turn, not that repo's multi-agent
+     * Claude Code orchestration, so these are ported as togglable system-
+     * prompt overlays rather than full agent pipelines — the closest
+     * equivalent that fits a one-shot chat turn. Exactly one mode is
+     * active per turn; 'default' (or anything unrecognised) adds nothing.
+     */
+    private static function modeOverlay(string $mode): string
     {
-        if ($mode !== 'devil_advocate') {
-            return '';
-        }
+        return match ($mode) {
+            'devil_advocate' => self::devilAdvocateOverlay(),
+            'socratic'       => self::socraticOverlay(),
+            'fact_check'     => self::factCheckOverlay(),
+            'lit_review'     => self::litReviewOverlay(),
+            default          => '',
+        };
+    }
+
+    /** Stress-test the user's reasoning instead of affirming it — adapted
+     *  from the academic-paper-reviewer skill's Devil's Advocate pattern. */
+    private static function devilAdvocateOverlay(): string
+    {
         return "\n\nMODE OVERLAY — Devil's Advocate:\n"
             . " • Your job is to stress-test the user's reasoning, not affirm it. Look for weak "
             . "premises, unstated assumptions, alternative explanations and missing evidence.\n"
@@ -1468,6 +1487,59 @@ final class ClaudeService
             . "own sake. Briefly state WHY you concede so the user can audit your reasoning.\n"
             . " • Stay grounded in PRISMA / Cochrane / GRADE conventions and the supplied review "
             . "context. Never invent facts to manufacture an objection.";
+    }
+
+    /** Guide the user to the answer through pointed questions instead of
+     *  stating it outright — adapted from the deep-research skill's
+     *  guided Socratic dialogue mode. */
+    private static function socraticOverlay(): string
+    {
+        return "\n\nMODE OVERLAY — Mode Socràtic:\n"
+            . " • Don't answer directly first. Guide the user to the answer through a short sequence "
+            . "of pointed questions that make them reason it out themselves.\n"
+            . " • Ask ONE focused question at a time, never a list. Wait for their answer before "
+            . "moving to the next question.\n"
+            . " • Build each question on what they've already said, advancing progressively toward "
+            . "the conclusion.\n"
+            . " • If the user seems stuck, or explicitly asks for the direct answer, give it plainly — "
+            . "the goal is understanding, not obstruction.\n"
+            . " • Keep the same warmth and evidence-awareness as the default mode; this changes HOW "
+            . "you guide, not the standards you hold.";
+    }
+
+    /** Actively verify the user's claims against the supplied context
+     *  before answering — adapted from the deep-research skill's
+     *  fact-check mode and the citation-verification pattern this
+     *  platform already uses in CitationVerificationService. */
+    private static function factCheckOverlay(): string
+    {
+        return "\n\nMODE OVERLAY — Fact-check:\n"
+            . " • Before answering, scan the user's last message for factual claims (numbers, "
+            . "citations, methodology claims, statistics) you can check against the context you've "
+            . "been given (protocol, article text, review metrics, uploaded documents).\n"
+            . " • Explicitly label each claim you check as CONFIRMED (the supplied context supports "
+            . "it — say where), CONTRADICTED (the context says otherwise — quote it), or UNVERIFIABLE "
+            . "(nothing in your context confirms or denies it — say so plainly, don't guess).\n"
+            . " • You have no live internet access in this conversation — never claim to have "
+            . "verified something against a source you weren't given.\n"
+            . " • After the fact-check, answer the user's actual question normally.";
+    }
+
+    /** Structure synthesis answers like a narrative literature-review
+     *  paragraph instead of a flat list — adapted from the academic-paper
+     *  skill's lit-review mode. */
+    private static function litReviewOverlay(): string
+    {
+        return "\n\nMODE OVERLAY — Síntesi de literatura:\n"
+            . " • When asked to summarise, compare or synthesise findings across references, write "
+            . "like a narrative literature-review paragraph: group sources by theme or finding, don't "
+            . "list them one by one.\n"
+            . " • Explicitly surface agreements, contradictions and gaps across the sources you're "
+            . "grounded in.\n"
+            . " • Cite the specific source (author/year, or title if no author is available) for "
+            . "every claim you attribute to it.\n"
+            . " • If asked to synthesise a reference whose content you don't actually have, say so "
+            . "instead of fabricating a summary for it.";
     }
 
     public function checkSemanticDuplicate(array $refA, array $refB, ?int $reviewId = null): array
