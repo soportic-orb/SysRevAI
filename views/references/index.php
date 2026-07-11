@@ -15,6 +15,10 @@ use SysRevAI\Core\Session;
 /** @var string $abstract  '' | 'with' | 'without' */
 /** @var string $source */
 /** @var string[] $sourceOptions */
+/** @var string $publicationType */
+/** @var string[] $publicationTypeOptions */
+/** @var string $dateFrom  'YYYY-MM-DD' or '' */
+/** @var string $dateTo    'YYYY-MM-DD' or '' */
 /** @var string[] $statuses */
 /** @var array $metrics */
 /** @var int $pendingDups */
@@ -41,9 +45,13 @@ $ftIcon = static function (?array $row, bool $queued): array {
     }
     return ['class' => 'ft-dot ft-dot--none', 'label' => __('fulltext.dot_none')];
 };
-$qs = static function (array $extra) use ($status, $search, $abstract, $source, $perPage): string {
+$qs = static function (array $extra) use ($status, $search, $abstract, $source, $publicationType, $dateFrom, $dateTo, $perPage): string {
     return http_build_query(array_merge(
-        ['status' => $status, 'q' => $search, 'abstract' => $abstract, 'source' => $source, 'per_page' => $perPage],
+        [
+            'status' => $status, 'q' => $search, 'abstract' => $abstract, 'source' => $source,
+            'publication_type' => $publicationType, 'pub_date_from' => $dateFrom, 'pub_date_to' => $dateTo,
+            'per_page' => $perPage,
+        ],
         $extra
     ));
 };
@@ -144,9 +152,28 @@ $listUrl = '/reviews/' . $id . '/references?' . $qs(['page' => $page]);
                 <?php endforeach; ?>
             </select>
         <?php endif; ?>
+        <?php if ($publicationTypeOptions !== []): ?>
+            <select class="select select--sm" name="publication_type" onchange="this.form.submit()"
+                    aria-label="<?= e(__('references.pubtype_filter_label')) ?>">
+                <option value=""><?= e(__('references.pubtype_any')) ?></option>
+                <?php foreach ($publicationTypeOptions as $pt): ?>
+                    <option value="<?= e($pt) ?>" <?= $publicationType === $pt ? 'selected' : '' ?>><?= e($pt) ?></option>
+                <?php endforeach; ?>
+            </select>
+        <?php endif; ?>
+        <label class="muted toolbar__daterange">
+            <?= e(__('references.date_from_label')) ?>
+            <input class="input select--sm" type="date" name="pub_date_from" value="<?= e($dateFrom) ?>"
+                   aria-label="<?= e(__('references.date_from_label')) ?>" onchange="this.form.submit()">
+        </label>
+        <label class="muted toolbar__daterange">
+            <?= e(__('references.date_to_label')) ?>
+            <input class="input select--sm" type="date" name="pub_date_to" value="<?= e($dateTo) ?>"
+                   aria-label="<?= e(__('references.date_to_label')) ?>" onchange="this.form.submit()">
+        </label>
         <input class="input" name="q" value="<?= e($search) ?>" placeholder="<?= e(__('references.search')) ?>">
         <button class="btn btn--ghost btn--sm"><?= e(__('references.search')) ?></button>
-        <?php if ($status !== '' || $search !== '' || $abstract !== '' || $source !== ''): ?>
+        <?php if ($status !== '' || $search !== '' || $abstract !== '' || $source !== '' || $publicationType !== '' || $dateFrom !== '' || $dateTo !== ''): ?>
             <a class="btn btn--ghost btn--sm" href="/reviews/<?= $id ?>/references"><?= e(__('references.clear_filters')) ?></a>
         <?php endif; ?>
         <!-- Per-page selector. Submitting from the change handler resets
@@ -276,6 +303,9 @@ $listUrl = '/reviews/' . $id . '/references?' . $qs(['page' => $page]);
                 <input type="hidden" name="q" value="<?= e($search) ?>">
                 <input type="hidden" name="abstract" value="<?= e($abstract) ?>">
                 <input type="hidden" name="source" value="<?= e($source) ?>">
+                <input type="hidden" name="publication_type" value="<?= e($publicationType) ?>">
+                <input type="hidden" name="pub_date_from" value="<?= e($dateFrom) ?>">
+                <input type="hidden" name="pub_date_to" value="<?= e($dateTo) ?>">
                 <input type="hidden" name="back" value="/reviews/<?= $id ?>/references?<?= e($qs([])) ?>">
             </form>
         <?php endif; ?>
@@ -319,6 +349,7 @@ $listUrl = '/reviews/' . $id . '/references?' . $qs(['page' => $page]);
                                     $doi  = trim((string) ($r['doi']  ?? ''));
                                     $pmid = trim((string) ($r['pmid'] ?? ''));
                                     $src  = trim((string) ($r['source_file'] ?? ''));
+                                    $pubType = trim((string) ($r['publication_type'] ?? ''));
                                     ?>
                                     <strong class="refs-study-cell__title"><?= e((string) ($r['title'] ?: '—')) ?></strong>
                                     <div class="muted refs-study-cell__authors">
@@ -326,7 +357,7 @@ $listUrl = '/reviews/' . $id . '/references?' . $qs(['page' => $page]);
                                         <?php if (!empty($r['year'])): ?> · <?= (int) $r['year'] ?><?php endif; ?>
                                         <?php if (!empty($r['journal'])): ?> · <?= e((string) $r['journal']) ?><?php endif; ?>
                                     </div>
-                                    <?php if ($doi !== '' || $pmid !== '' || $src !== ''): ?>
+                                    <?php if ($doi !== '' || $pmid !== '' || $src !== '' || $pubType !== ''): ?>
                                         <div class="refs-study-cell__meta muted">
                                             <?php if ($doi !== ''): ?>
                                                 <span class="refs-study-cell__id">
@@ -347,6 +378,11 @@ $listUrl = '/reviews/' . $id . '/references?' . $qs(['page' => $page]);
                                             <?php if ($src !== ''): ?>
                                                 <span class="refs-study-cell__source" title="<?= e(__('references.col_source')) ?>">
                                                     <?= e($src) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($pubType !== ''): ?>
+                                                <span class="refs-study-cell__source" title="<?= e(__('references.col_pubtype')) ?>">
+                                                    <?= e($pubType) ?>
                                                 </span>
                                             <?php endif; ?>
                                             <?php if ((int) ($r['has_abstract'] ?? 0) === 1): ?>

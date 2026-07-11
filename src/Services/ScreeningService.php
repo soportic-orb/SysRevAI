@@ -207,7 +207,10 @@ final class ScreeningService
         string $stage,
         string $search,
         string $abstract,
-        string $source
+        string $source,
+        string $publicationType = '',
+        string $dateFrom = '',
+        string $dateTo = ''
     ): array {
         $dec = Database::table('screening_decisions');
         $required = self::requiredReviewers($review);
@@ -234,6 +237,38 @@ final class ScreeningService
             $where .= ' AND r.source_file = ?';
             $params[] = $source;
         }
+        if ($publicationType !== '') {
+            $where .= ' AND r.publication_type = ?';
+            $params[] = $publicationType;
+        }
+        $dateFrom = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFrom)) ? $dateFrom : '';
+        $dateTo   = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateTo)) ? $dateTo : '';
+        if ($dateFrom !== '' || $dateTo !== '') {
+            $dateParams = [];
+            $dateSql = 'r.publication_date IS NOT NULL';
+            if ($dateFrom !== '') {
+                $dateSql .= ' AND r.publication_date >= ?';
+                $dateParams[] = $dateFrom;
+            }
+            if ($dateTo !== '') {
+                $dateSql .= ' AND r.publication_date <= ?';
+                $dateParams[] = $dateTo;
+            }
+
+            $yearParams = [];
+            $yearSql = 'r.publication_date IS NULL AND r.year IS NOT NULL';
+            if ($dateFrom !== '') {
+                $yearSql .= ' AND r.year >= ?';
+                $yearParams[] = (int) substr($dateFrom, 0, 4);
+            }
+            if ($dateTo !== '') {
+                $yearSql .= ' AND r.year <= ?';
+                $yearParams[] = (int) substr($dateTo, 0, 4);
+            }
+
+            $where .= " AND (({$dateSql}) OR ({$yearSql}))";
+            $params = array_merge($params, $dateParams, $yearParams);
+        }
 
         return [$where, $params];
     }
@@ -255,10 +290,13 @@ final class ScreeningService
         string $abstract,
         string $source,
         int $page,
-        int $perPage
+        int $perPage,
+        string $publicationType = '',
+        string $dateFrom = '',
+        string $dateTo = ''
     ): array {
         $refs = Database::table('references');
-        [$where, $params] = self::pendingFilter($reviewId, $reviewerId, $review, $stage, $search, $abstract, $source);
+        [$where, $params] = self::pendingFilter($reviewId, $reviewerId, $review, $stage, $search, $abstract, $source, $publicationType, $dateFrom, $dateTo);
 
         $countRow = Database::selectOne("SELECT COUNT(*) AS c FROM `{$refs}` r WHERE {$where}", $params);
         $total = (int) ($countRow['c'] ?? 0);
@@ -266,7 +304,7 @@ final class ScreeningService
         $perPage = max(1, min($perPage, 1000));
         $offset = max(0, ($page - 1) * $perPage);
         $rows = Database::select(
-            "SELECT r.id, r.title, r.authors_json, r.year, r.journal, r.doi, r.pmid, r.status, r.source_file,
+            "SELECT r.id, r.title, r.authors_json, r.year, r.publication_type, r.publication_date, r.journal, r.doi, r.pmid, r.status, r.source_file,
                     (r.abstract IS NOT NULL AND CHAR_LENGTH(r.abstract) > 0) AS has_abstract
              FROM `{$refs}` r WHERE {$where} ORDER BY r.id DESC LIMIT {$perPage} OFFSET {$offset}",
             $params
@@ -285,10 +323,13 @@ final class ScreeningService
         string $stage,
         string $search,
         string $abstract,
-        string $source
+        string $source,
+        string $publicationType = '',
+        string $dateFrom = '',
+        string $dateTo = ''
     ): array {
         $refs = Database::table('references');
-        [$where, $params] = self::pendingFilter($reviewId, $reviewerId, $review, $stage, $search, $abstract, $source);
+        [$where, $params] = self::pendingFilter($reviewId, $reviewerId, $review, $stage, $search, $abstract, $source, $publicationType, $dateFrom, $dateTo);
         $rows = Database::select("SELECT r.id FROM `{$refs}` r WHERE {$where}", $params);
         return array_map(static fn (array $r): int => (int) $r['id'], $rows);
     }
