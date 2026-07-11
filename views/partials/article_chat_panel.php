@@ -31,6 +31,8 @@ foreach ($articleHistory as $m) {
             <p class="muted article-chat__subtitle"><?= e(__('articles.chat_subtitle')) ?></p>
         </div>
         <div class="article-chat__head-actions">
+            <!-- Conversational mode strip — exactly one (or none) of these
+                 four is active at a time. See ClaudeService::modeOverlay(). -->
             <button type="button" class="article-chat__icon-btn article-chat__icon-btn--toggle"
                     id="articleDevilAdvocate"
                     title="<?= e(__('copilot.devil_advocate_title')) ?>"
@@ -43,6 +45,41 @@ foreach ($articleHistory as $m) {
                     <path d="M12 7V3"></path>
                     <path d="M18 7V3"></path>
                     <path d="M5 7h14a1 1 0 0 1 1 1v2a4 4 0 0 1-8 0 4 4 0 0 1-8 0V8a1 1 0 0 1 1-1z"></path>
+                </svg>
+            </button>
+            <button type="button" class="article-chat__icon-btn article-chat__icon-btn--toggle"
+                    id="articleSocratic"
+                    title="<?= e(__('copilot.socratic_title')) ?>"
+                    aria-label="<?= e(__('copilot.socratic_aria')) ?>"
+                    aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 1.5-2 3.5"></path>
+                    <path d="M12 17.5v.01"></path>
+                </svg>
+            </button>
+            <button type="button" class="article-chat__icon-btn article-chat__icon-btn--toggle"
+                    id="articleFactCheck"
+                    title="<?= e(__('copilot.fact_check_title')) ?>"
+                    aria-label="<?= e(__('copilot.fact_check_aria')) ?>"
+                    aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"></path>
+                    <path d="M9.5 12l1.8 1.8L15 10"></path>
+                </svg>
+            </button>
+            <button type="button" class="article-chat__icon-btn article-chat__icon-btn--toggle"
+                    id="articleLitReview"
+                    title="<?= e(__('copilot.lit_review_title')) ?>"
+                    aria-label="<?= e(__('copilot.lit_review_aria')) ?>"
+                    aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="12 3 21 8 12 13 3 8 12 3"></polygon>
+                    <polyline points="3 12 12 17 21 12"></polyline>
+                    <polyline points="3 16 12 21 21 16"></polyline>
                 </svg>
             </button>
             <button type="button" class="article-chat__icon-btn" id="articleChatClear"
@@ -85,7 +122,6 @@ foreach ($articleHistory as $m) {
     var form     = document.getElementById('articleChatForm');
     var input    = document.getElementById('articleChatInput');
     var clearBtn = document.getElementById('articleChatClear');
-    var devil    = document.getElementById('articleDevilAdvocate');
     var greeting = document.getElementById('articleChatGreeting');
 
     var labels = {
@@ -98,20 +134,36 @@ foreach ($articleHistory as $m) {
         copied:   <?= json_encode(__('articles.copy_done')) ?>
     };
 
-    /* Devil's-Advocate toggle — persisted per device. */
-    var devilKey = 'sysrevai.articles.devil_advocate.' + <?= json_encode($articleChatId) ?>;
-    var devilOn  = false;
-    try { devilOn = localStorage.getItem(devilKey) === '1'; } catch (e) {}
-    function applyDevilState() {
-        if (!devil) return;
-        devil.setAttribute('aria-pressed', devilOn ? 'true' : 'false');
-        devil.classList.toggle('is-active', devilOn);
+    /* Conversational mode strip — persisted per device/article. Exactly
+       one (or none — 'default') is active at a time; sent to the server
+       as `mode` on each turn. See ClaudeService::modeOverlay(). */
+    var modeButtons = {
+        devil_advocate: document.getElementById('articleDevilAdvocate'),
+        socratic:       document.getElementById('articleSocratic'),
+        fact_check:     document.getElementById('articleFactCheck'),
+        lit_review:     document.getElementById('articleLitReview')
+    };
+    var modeKey = 'sysrevai.articles.mode.' + <?= json_encode($articleChatId) ?>;
+    var activeMode = 'default';
+    try { activeMode = localStorage.getItem(modeKey) || 'default'; } catch (e) {}
+    function applyModeState() {
+        Object.keys(modeButtons).forEach(function (m) {
+            var btn = modeButtons[m];
+            if (!btn) return;
+            var on = activeMode === m;
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.classList.toggle('is-active', on);
+        });
     }
-    applyDevilState();
-    devil.addEventListener('click', function () {
-        devilOn = !devilOn;
-        try { localStorage.setItem(devilKey, devilOn ? '1' : '0'); } catch (e) {}
-        applyDevilState();
+    applyModeState();
+    Object.keys(modeButtons).forEach(function (m) {
+        var btn = modeButtons[m];
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            activeMode = (activeMode === m) ? 'default' : m;
+            try { localStorage.setItem(modeKey, activeMode); } catch (e) {}
+            applyModeState();
+        });
     });
 
     /* Cmd/Ctrl+Enter sends. */
@@ -140,7 +192,7 @@ foreach ($articleHistory as $m) {
             body: JSON.stringify({
                 _csrf: csrfToken,
                 message: text,
-                mode: devilOn ? 'devil_advocate' : 'default'
+                mode: activeMode
             })
         })
         .then(function (r) { return r.json().then(function (b) { return { status: r.status, body: b }; }); })

@@ -40,7 +40,7 @@ final class ArticleChatController
             echo json_encode(['ok' => false, 'error' => 'empty_message']);
             return;
         }
-        $mode = ($payload['mode'] ?? '') === 'devil_advocate' ? 'devil_advocate' : 'default';
+        $mode = in_array(($payload['mode'] ?? ''), ClaudeService::CHAT_MODES, true) ? (string) $payload['mode'] : 'default';
 
         $history = CopilotMessage::history(null, $uid, 200, $articleId);
         CopilotMessage::add(null, $uid, 'user', $message, $articleId);
