@@ -99,14 +99,6 @@ $pctOf = static function (int $n) use ($denom): int {
 
     <div class="screen-progress">
         <div class="progress"><div class="progress__bar" id="screenProgressBar" style="width: <?= $pct ?>%"></div></div>
-        <div class="screen-nav">
-            <button type="button" class="btn btn--ghost btn--sm" id="screenPrevBtn"
-                    title="<?= e(__('screening.nav_prev')) ?>" aria-label="<?= e(__('screening.nav_prev')) ?>"
-                    <?= $hasPrev ? '' : 'disabled' ?>>&larr; <?= e(__('screening.nav_prev')) ?></button>
-            <button type="button" class="btn btn--ghost btn--sm" id="screenNextBtn"
-                    title="<?= e(__('screening.nav_next')) ?>" aria-label="<?= e(__('screening.nav_next')) ?>"
-                    <?= $hasNext ? '' : 'disabled' ?>><?= e(__('screening.nav_next')) ?> &rarr;</button>
-        </div>
     </div>
 
     <div class="empty-state" id="screenEmptyState" <?= $reference !== null ? 'hidden' : '' ?>>
@@ -196,6 +188,7 @@ $pctOf = static function (int $n) use ($denom): int {
         </section>
 
         <!-- ── 1/4 — Assessment (AI + decision) ─────────────────── -->
+        <div class="screen-3col__assessment-col">
         <aside class="screen-3col__assessment section-card">
             <h3 class="section__subtitle"><?= e(__('screening.assessment_title')) ?></h3>
 
@@ -270,6 +263,19 @@ $pctOf = static function (int $n) use ($denom): int {
                 <p class="muted screen-legend"><?= e(__('screening.shortcuts')) ?></p>
             </form>
         </aside>
+
+        <!-- Prev/next nav — moved below the Valoració card so it sits next
+             to the decision the reviewer just made, instead of at the very
+             top of the page where it was easy to miss. -->
+        <div class="screen-nav">
+            <button type="button" class="btn btn--ghost btn--sm" id="screenPrevBtn"
+                    title="<?= e(__('screening.nav_prev')) ?>" aria-label="<?= e(__('screening.nav_prev')) ?>"
+                    <?= $hasPrev ? '' : 'disabled' ?>>&larr; <?= e(__('screening.nav_prev')) ?></button>
+            <button type="button" class="btn btn--ghost btn--sm" id="screenNextBtn"
+                    title="<?= e(__('screening.nav_next')) ?>" aria-label="<?= e(__('screening.nav_next')) ?>"
+                    <?= $hasNext ? '' : 'disabled' ?>><?= e(__('screening.nav_next')) ?> &rarr;</button>
+        </div>
+        </div>
     </div>
 </div>
 

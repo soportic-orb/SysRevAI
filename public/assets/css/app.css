@@ -1375,6 +1375,10 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .screen-progress { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
 .screen-progress .progress { flex: 1; }
 .screen-nav { display: flex; gap: 8px; flex: 0 0 auto; }
+/* Prev/next nav now sits below the Valoració card instead of at the top
+   of the page — stacks in the same grid column as the assessment card. */
+.screen-3col__assessment-col { display: flex; flex-direction: column; gap: 14px; }
+.screen-3col__assessment-col .screen-nav { justify-content: center; }
 
 /* Top stats strip on the screening page — four cards: pending for me,
    done by me, total still open across the team, total references in the
@@ -1455,7 +1459,10 @@ a.tools-card:hover { border-color: var(--c-primary); transform: translateY(-1px)
 .screen-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px; }
 .screen-card__title { margin: 0 0 8px; font-size: 21px; line-height: 1.3; }
 .screen-card__meta { margin: 0 0 18px; }
-.screen-card__abstract { font-size: 15px; line-height: 1.65; max-height: 60vh; overflow-y: auto; }
+/* ~10 fewer visible lines than the previous plain 60vh (line-height 1.65
+   @ 15px ≈ 25px/line, so 250px ≈ 10 lines). The max(200px, …) floor keeps
+   the box from collapsing to near-nothing on short viewports. */
+.screen-card__abstract { font-size: 15px; line-height: 1.65; max-height: max(200px, calc(60vh - 250px)); overflow-y: auto; }
 .screen-actions { margin-top: 4px; display: flex; flex-direction: column; gap: 12px; }
 .screen-reason { display: flex; flex-direction: column; }
 .decision-buttons { display: flex; gap: 10px; }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **T/A screening — layout tweaks**: the prev/next nav arrows moved from the
+  top of the page (next to the progress bar) to right below the Valoració
+  card, so they sit next to the decision the reviewer just made. The
+  scrollable abstract box is now about 10 lines shorter (still capped
+  relative to viewport height, with a floor so it doesn't collapse on
+  short screens).
+
 ### Added
 - **Publication type & date filters on the References list**: references now
   show a "publication type" pill (Journal Article, Conference Paper, Book
