@@ -359,6 +359,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   About / License settings.
 
 ### Fixed
+- **AI-based reference extraction was dropping publication type**: the
+  freetext/AI import path and the citations-normaliser import (both backed
+  by `ClaudeService::extractReferencesFromText()`) already asked Claude for
+  a `publication_type` field in its JSON schema, but the PHP response
+  parser never read it back out — so references imported through either
+  path never got the new "publication type" pill/filter populated even
+  though the model was already returning the data. Claude's kebab-case
+  enum (`journal-article`, `conference`, `book`, …) is now mapped to the
+  same Title Case label set the RIS/BibTeX/PubMed/EndNote/CSV parsers use,
+  so the pill and filter dropdown read consistently regardless of import
+  path. (Pre-existing references imported before the publication-type
+  feature shipped still won't retroactively show one — the platform never
+  stored the original source file to re-parse — but any new import now
+  will.)
 - **T/A and full-text screening — decide-and-continue navigation**: after
   recording a decision (Incloure/Potser/Excloure), the screening page used
   to jump back to the earliest still-pending reference instead of

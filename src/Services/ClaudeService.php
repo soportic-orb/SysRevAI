@@ -548,21 +548,44 @@ final class ClaudeService
             }
 
             $refs[] = [
-                'title'     => $title,
-                'authors'   => $authors,
-                'year'      => $year,
-                'journal'   => trim((string) ($r['journal'] ?? '')),
-                'volume'    => trim((string) ($r['volume'] ?? '')),
-                'issue'     => trim((string) ($r['issue'] ?? '')),
-                'pages'     => trim((string) ($r['pages'] ?? '')),
-                'doi'       => $doi,
-                'pmid'      => trim((string) ($r['pmid'] ?? '')),
-                'url'       => trim((string) ($r['url'] ?? '')),
-                'abstract'  => trim((string) ($r['abstract'] ?? '')),
-                'keywords'  => $keywords,
+                'title'            => $title,
+                'authors'          => $authors,
+                'year'             => $year,
+                'journal'          => trim((string) ($r['journal'] ?? '')),
+                'volume'           => trim((string) ($r['volume'] ?? '')),
+                'issue'            => trim((string) ($r['issue'] ?? '')),
+                'pages'            => trim((string) ($r['pages'] ?? '')),
+                'doi'              => $doi,
+                'pmid'             => trim((string) ($r['pmid'] ?? '')),
+                'url'              => trim((string) ($r['url'] ?? '')),
+                'abstract'         => trim((string) ($r['abstract'] ?? '')),
+                'keywords'         => $keywords,
+                'publication_type' => self::normalizeAiPublicationType((string) ($r['publication_type'] ?? '')),
             ];
         }
         return ['ok' => true, 'refs' => $refs];
+    }
+
+    /**
+     * The extraction prompt asks Claude for a kebab-case enum
+     * ("journal-article|book|preprint|report|conference|webpage|other") —
+     * mapped here to the same Title Case label set ImportService's
+     * RIS/BibTeX parsers use, so the references-list "publication type"
+     * pill/filter reads consistently regardless of which import path a
+     * reference came through.
+     */
+    private static function normalizeAiPublicationType(string $type): string
+    {
+        return match (strtolower(trim($type))) {
+            'journal-article' => 'Journal Article',
+            'conference' => 'Conference Paper',
+            'book' => 'Book',
+            'preprint' => 'Preprint',
+            'report' => 'Report',
+            'webpage' => 'Web Page',
+            'other' => 'Other',
+            default => '',
+        };
     }
 
     /**
