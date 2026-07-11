@@ -359,6 +359,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   About / License settings.
 
 ### Fixed
+- **T/A and full-text screening — decide-and-continue navigation**: after
+  recording a decision (Incloure/Potser/Excloure), the screening page used
+  to jump back to the earliest still-pending reference instead of
+  continuing from wherever the reviewer had navigated to with the prev/next
+  arrows — effectively undoing an intentional skip-ahead every time a
+  decision was recorded. `ScreeningController::decide()` now resumes right
+  after the reference just decided (falling back to the earliest pending
+  one only once nothing remains after it), matching how the nav arrows
+  already behave.
 - **Claude API**: removed the deprecated `temperature` request parameter so
   Claude 4.x models stop returning *"temperature is deprecated for this
   model"*. The temperature input is also gone from the admin Claude form.

@@ -143,8 +143,16 @@ class ScreeningController
      *        to this review), shows that specific reference instead of the
      *        next pending one — used to reopen an already-decided
      *        reference from the history list.
+     * @param ?int $continueAfterId When set (and $overrideReferenceId isn't),
+     *        resumes screening from just after this reference's position
+     *        instead of jumping back to the earliest pending one — used
+     *        right after recording a decision so a reviewer who navigated
+     *        ahead with the arrows keeps moving forward from where they
+     *        were, instead of being sent back to a reference they
+     *        deliberately skipped over. Falls back to the earliest
+     *        pending reference once nothing pending remains after it.
      */
-    private function buildScreenState(array $review, int $rid, ?int $overrideReferenceId = null): array
+    private function buildScreenState(array $review, int $rid, ?int $overrideReferenceId = null, ?int $continueAfterId = null): array
     {
         $uid = (int) Auth::id();
         $reference = null;
@@ -153,6 +161,9 @@ class ScreeningController
             if ($candidate !== null && (int) $candidate['review_id'] === $rid) {
                 $reference = $candidate;
             }
+        }
+        if ($reference === null && $continueAfterId !== null) {
+            $reference = ScreeningService::nextReferenceAfter($rid, $continueAfterId, $uid, $review, $this->stage);
         }
         if ($reference === null) {
             $reference = ScreeningService::nextReference($rid, $uid, $review, $this->stage);
@@ -314,9 +325,13 @@ class ScreeningController
         if ($ajax) {
             // Hand back the next reference in place instead of redirecting,
             // so the page never unloads — that's what kept exiting the
-            // browser's Fullscreen API mode after every decision.
+            // browser's Fullscreen API mode after every decision. Resume
+            // right after the reference just decided (not the earliest
+            // pending one overall) so a reviewer who used the nav arrows to
+            // skip ahead keeps moving forward instead of being bounced back
+            // to a reference they deliberately skipped.
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['ok' => true] + $this->buildScreenState($review, $rid), JSON_UNESCAPED_UNICODE);
+            echo json_encode(['ok' => true] + $this->buildScreenState($review, $rid, null, $referenceId), JSON_UNESCAPED_UNICODE);
             return;
         }
 
