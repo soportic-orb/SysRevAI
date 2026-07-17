@@ -19,6 +19,9 @@ use SysRevAI\Services\ClaudeService;
  */
 final class ArticleCriticalReportController
 {
+    /** Languages the user can have the report written in. 'ca' is the default. */
+    public const REPORT_LANGUAGES = ['ca', 'es', 'en', 'fr'];
+
     public function show(string $id): void
     {
         $article = $this->loadOrDeny((int) $id);
@@ -33,6 +36,7 @@ final class ArticleCriticalReportController
             'reportRow' => $row,
             'hasText'   => $hasText,
             'axes'      => ArticleCriticalReport::AXES,
+            'languages' => self::REPORT_LANGUAGES,
         ]);
     }
 
@@ -47,13 +51,21 @@ final class ArticleCriticalReportController
             redirect($back);
         }
 
+        // Report language, chosen by the user in the generate/re-run form.
+        // Whitelisted so a forged POST can't inject an arbitrary string
+        // into the prompt; Catalan is the product default.
+        $language = (string) ($_POST['report_language'] ?? '');
+        if (!in_array($language, self::REPORT_LANGUAGES, true)) {
+            $language = 'ca';
+        }
+
         // Opus emitting a deep multi-section JSON can take several minutes
         // end-to-end; the inner cURL call is allowed up to 300 s and we
         // want a small margin on top for sanitisation, persistence and the
         // redirect so PHP never kills the worker mid-request.
         @set_time_limit(360);
         @ini_set('max_execution_time', '360');
-        $result = ClaudeService::fromSettings()->articleCriticalReport($article, current_locale());
+        $result = ClaudeService::fromSettings()->articleCriticalReport($article, $language);
 
         if (!($result['ok'] ?? false) || !is_array($result['data'] ?? null)) {
             $err = (string) ($result['error'] ?? 'failed');
@@ -63,6 +75,10 @@ final class ArticleCriticalReportController
         }
 
         $data = $this->sanitise($result['data']);
+        // Persisted alongside the content so the web view and the Word/PDF
+        // exports can render section headings in the report's own language
+        // rather than whatever the UI locale happens to be at export time.
+        $data['language'] = $language;
         ArticleCriticalReport::save(
             $aid,
             $data,

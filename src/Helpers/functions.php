@@ -85,6 +85,18 @@ if (!function_exists('__')) {
     }
 }
 
+if (!function_exists('__in')) {
+    /**
+     * Translate a key in a specific locale instead of the session's
+     * current one — for exports whose content language was fixed at
+     * generation time. Empty/unknown locale falls back to __().
+     */
+    function __in(string $locale, string $key, mixed ...$args): string
+    {
+        return \SysRevAI\Core\I18n::getIn($locale, $key, $args);
+    }
+}
+
 if (!function_exists('csrf_field')) {
     function csrf_field(): string
     {

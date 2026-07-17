@@ -153,6 +153,11 @@ final class ArticleExportService
     {
         $report  = (array) ($data['report'] ?? []);
         $article = (array) ($data['article'] ?? []);
+        // Language the report was generated in — section headings resolve
+        // through __in() so a French report keeps French headings even
+        // when the exporting user's UI runs in Catalan. Empty ('' — reports
+        // generated before the language selector) falls back to the UI locale.
+        $lang = (string) ($report['language'] ?? '');
         $esc = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $prose = static function (string $text) use ($esc): string {
             $out = '';
@@ -168,7 +173,7 @@ final class ArticleExportService
         $title = (string) ($article['title'] ?: '—');
         $generatedAt = '';
         if (($data['reportRow'] ?? null) !== null && !empty($data['reportRow']['updated_at'])) {
-            $generatedAt = (string) __('articles.critical.generated_at', (string) $data['reportRow']['updated_at']);
+            $generatedAt = (string) __in($lang, 'articles.critical.generated_at', (string) $data['reportRow']['updated_at']);
         }
         $overall = (string) ($report['overall'] ?? '');
 
@@ -176,7 +181,7 @@ final class ArticleExportService
         foreach (ArticleCriticalReport::AXES as $axis) {
             $score = max(0, min(100, (int) ($report[$axis] ?? 0)));
             $note  = (string) ($report[$axis . '_note'] ?? '');
-            $label = (string) __('articles.critical.axis_' . $axis);
+            $label = (string) __in($lang, 'articles.critical.axis_' . $axis);
             $tone  = $score >= 80 ? '#0a7d4d' : ($score >= 50 ? '#a16207' : '#b91c1c');
             $axesHtml .= '<tr class="score-row">'
                 . '<td class="score-label">' . $esc($label) . '</td>'
@@ -205,17 +210,17 @@ final class ArticleExportService
                 }
                 return $out . '</ul>';
             };
-            $swHtml .= '<h2>' . $esc((string) __('articles.critical.h_key_strengths')) . ' / '
-                . $esc((string) __('articles.critical.h_key_weaknesses')) . '</h2>'
+            $swHtml .= '<h2>' . $esc((string) __in($lang, 'articles.critical.h_key_strengths')) . ' / '
+                . $esc((string) __in($lang, 'articles.critical.h_key_weaknesses')) . '</h2>'
                 . '<table class="sw"><tr>';
             if ($strengths !== []) {
                 $swHtml .= '<td class="sw-col sw-good">'
-                    . '<div class="sw-title">' . $esc((string) __('articles.critical.h_key_strengths')) . '</div>'
+                    . '<div class="sw-title">' . $esc((string) __in($lang, 'articles.critical.h_key_strengths')) . '</div>'
                     . $bullets($strengths) . '</td>';
             }
             if ($weaknesses !== []) {
                 $swHtml .= '<td class="sw-col sw-bad">'
-                    . '<div class="sw-title">' . $esc((string) __('articles.critical.h_key_weaknesses')) . '</div>'
+                    . '<div class="sw-title">' . $esc((string) __in($lang, 'articles.critical.h_key_weaknesses')) . '</div>'
                     . $bullets($weaknesses) . '</td>';
             }
             $swHtml .= '</tr></table>';
@@ -230,7 +235,7 @@ final class ArticleExportService
             if ($items === []) {
                 continue;
             }
-            $concernsHtml .= '<h2>' . $esc((string) __('articles.critical.' . $key)) . '</h2><ul>';
+            $concernsHtml .= '<h2>' . $esc((string) __in($lang, 'articles.critical.' . $key)) . '</h2><ul>';
             foreach ($items as $it) {
                 $s = trim((string) $it);
                 if ($s !== '') {
@@ -243,7 +248,7 @@ final class ArticleExportService
         $recsHtml = '';
         $recs = (array) ($report['recommendations'] ?? []);
         if ($recs !== []) {
-            $recsHtml .= '<h2>' . $esc((string) __('articles.critical.h_recommendations')) . '</h2>';
+            $recsHtml .= '<h2>' . $esc((string) __in($lang, 'articles.critical.h_recommendations')) . '</h2>';
             foreach ($recs as $rec) {
                 $sec = trim((string) ($rec['section'] ?? ''));
                 if ($sec !== '') {
@@ -265,7 +270,7 @@ final class ArticleExportService
                         }
                         $recsHtml .= '<tr>'
                             . '<td class="prio prio-' . $esc($priority) . '">'
-                            . $esc((string) __('articles.critical.priority_' . $priority))
+                            . $esc((string) __in($lang, 'articles.critical.priority_' . $priority))
                             . '</td>'
                             . '<td class="rec-text">' . $esc($text) . '</td>'
                             . '</tr>';
@@ -278,12 +283,12 @@ final class ArticleExportService
         $chatHtml = '';
         if ($data['include_chat'] && $data['chat'] !== []) {
             $chatHtml .= '<div class="page-break"></div>'
-                . '<h2>' . $esc((string) __('articles.export.h_chat')) . '</h2>'
-                . '<p class="muted">' . $esc((string) __('articles.export.chat_subtitle')) . '</p>';
+                . '<h2>' . $esc((string) __in($lang, 'articles.export.h_chat')) . '</h2>'
+                . '<p class="muted">' . $esc((string) __in($lang, 'articles.export.chat_subtitle')) . '</p>';
             foreach ($data['chat'] as $m) {
                 $who = $m['role'] === 'assistant'
-                    ? (string) __('articles.export.who_assistant')
-                    : (string) __('articles.export.who_user');
+                    ? (string) __in($lang, 'articles.export.who_assistant')
+                    : (string) __in($lang, 'articles.export.who_user');
                 $cls = $m['role'] === 'assistant' ? 'msg msg-assistant' : 'msg msg-user';
                 $stamp = $m['created_at'] !== '' ? ' · ' . $m['created_at'] : '';
                 $chatHtml .= '<div class="' . $cls . '">'
@@ -340,18 +345,18 @@ final class ArticleExportService
             . '.page-break { page-break-before:always; }'
             . '</style></head><body>'
             . '<h1>' . $esc($title) . '</h1>'
-            . '<p class="subtitle">' . $esc((string) __('articles.export.doc_subtitle')) . '</p>'
+            . '<p class="subtitle">' . $esc((string) __in($lang, 'articles.export.doc_subtitle')) . '</p>'
             . ($generatedAt !== '' ? '<p class="meta">' . $esc($generatedAt) . '</p>' : '')
             . ($overall !== '' ? '<p class="overall">' . $esc($overall) . '</p>' : '')
-            . '<h2>' . $esc((string) __('articles.export.h_scores')) . '</h2>'
+            . '<h2>' . $esc((string) __in($lang, 'articles.export.h_scores')) . '</h2>'
             . $axesHtml
-            . (!empty($report['summary']) ? '<h2>' . $esc((string) __('articles.critical.h_summary')) . '</h2>' . $prose((string) $report['summary']) : '')
+            . (!empty($report['summary']) ? '<h2>' . $esc((string) __in($lang, 'articles.critical.h_summary')) . '</h2>' . $prose((string) $report['summary']) : '')
             . $swHtml
-            . (!empty($report['methodology_critique']) ? '<h2>' . $esc((string) __('articles.critical.h_methodology_critique')) . '</h2>' . $prose((string) $report['methodology_critique']) : '')
+            . (!empty($report['methodology_critique']) ? '<h2>' . $esc((string) __in($lang, 'articles.critical.h_methodology_critique')) . '</h2>' . $prose((string) $report['methodology_critique']) : '')
             . $concernsHtml
-            . (!empty($report['literature_positioning']) ? '<h2>' . $esc((string) __('articles.critical.h_literature_positioning')) . '</h2>' . $prose((string) $report['literature_positioning']) : '')
-            . (!empty($report['publication_outlook']) ? '<h2>' . $esc((string) __('articles.critical.h_publication_outlook')) . '</h2>' . $prose((string) $report['publication_outlook']) : '')
-            . (!empty($report['devils_advocate']) ? '<h2 class="devil">' . $esc((string) __('articles.critical.h_devils_advocate')) . '</h2><div class="devil-callout">' . $prose((string) $report['devils_advocate']) . '</div>' : '')
+            . (!empty($report['literature_positioning']) ? '<h2>' . $esc((string) __in($lang, 'articles.critical.h_literature_positioning')) . '</h2>' . $prose((string) $report['literature_positioning']) : '')
+            . (!empty($report['publication_outlook']) ? '<h2>' . $esc((string) __in($lang, 'articles.critical.h_publication_outlook')) . '</h2>' . $prose((string) $report['publication_outlook']) : '')
+            . (!empty($report['devils_advocate']) ? '<h2 class="devil">' . $esc((string) __in($lang, 'articles.critical.h_devils_advocate')) . '</h2><div class="devil-callout">' . $prose((string) $report['devils_advocate']) . '</div>' : '')
             . $recsHtml
             . $chatHtml
             . '</body></html>';

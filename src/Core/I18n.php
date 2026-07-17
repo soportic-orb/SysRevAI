@@ -66,6 +66,29 @@ final class I18n
     }
 
     /**
+     * Translate in a SPECIFIC locale, regardless of the session's current
+     * one — used by document exports whose content language was chosen at
+     * generation time (e.g. a critical report written in French must keep
+     * French section headings even when the UI runs in Catalan). The
+     * locale doesn't have to be in allowedLocales(): partial lang files
+     * (like fr.php, which only ships export-related namespaces) resolve
+     * what they have and fall through to the current locale, then the
+     * fallback, for everything else.
+     */
+    public static function getIn(string $locale, string $key, array $args = []): string
+    {
+        $locale = strtolower(trim($locale));
+        if ($locale === '' || $locale === self::$locale) {
+            return self::get($key, $args);
+        }
+        $value = self::lookup($locale, $key);
+        if ($value === null) {
+            return self::get($key, $args);
+        }
+        return $args === [] ? $value : vsprintf($value, $args);
+    }
+
+    /**
      * Flatten a nested locale array into a dot-notation map. Used by the
      * Languages editor so the admin sees every key the file ships with.
      *
