@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   short screens).
 
 ### Added
+- **Critical report — language selector**: when generating (or
+  re-generating) an article's critical report, the user now picks the
+  language the report should be written in — Català (default), Castellano,
+  English or Français. The AI writes every prose field in the chosen
+  language, the language is stored with the report, and both the web view
+  and the Word/PDF exports render the section headings in that same
+  language (new partial `lang/fr.php` covers the French heading set;
+  `I18n::getIn()` / `__in()` resolve labels in a pinned locale with
+  fallback to the UI locale). Reports generated before this feature keep
+  their current behaviour.
 - **Publication type & date filters on the References list**: references now
   show a "publication type" pill (Journal Article, Conference Paper, Book
   Chapter, Thesis, Report…) next to the source pill, populated at import

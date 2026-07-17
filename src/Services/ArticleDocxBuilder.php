@@ -37,6 +37,11 @@ final class ArticleDocxBuilder
     /** Accumulator of `<w:body>` paragraph XML strings. */
     private string $body = '';
 
+    /** Language the report was generated in ('' = current UI locale) —
+     *  every __in() label lookup below pins to it so the document's
+     *  headings match its prose. */
+    private string $lang = '';
+
     /**
      * @param array{
      *   article: array<string,mixed>,
@@ -56,6 +61,7 @@ final class ArticleDocxBuilder
     {
         $article = (array) $data['article'];
         $report  = (array) ($data['report'] ?? []);
+        $this->lang = (string) ($report['language'] ?? '');
 
         // Header block.
         $this->addParagraph(
@@ -64,13 +70,13 @@ final class ArticleDocxBuilder
             pPr: ['spacing' => ['after' => 60]],
         );
         $this->addParagraph(
-            self::escape((string) __('articles.export.doc_subtitle')),
+            self::escape((string) __in($this->lang, 'articles.export.doc_subtitle')),
             rPr: ['rFonts' => 'Calibri', 'i' => true, 'color' => self::C_MUTED, 'sz' => 22],
             pPr: ['spacing' => ['after' => 80]],
         );
         if (($data['reportRow'] ?? null) !== null && !empty($data['reportRow']['updated_at'])) {
             $this->addParagraph(
-                self::escape((string) __('articles.critical.generated_at', (string) $data['reportRow']['updated_at'])),
+                self::escape((string) __in($this->lang, 'articles.critical.generated_at', (string) $data['reportRow']['updated_at'])),
                 rPr: ['rFonts' => 'Calibri', 'color' => self::C_MUTED, 'sz' => 20],
                 pPr: ['spacing' => ['after' => 200]],
             );
@@ -82,27 +88,27 @@ final class ArticleDocxBuilder
         }
 
         // Scores.
-        $this->addHeading2((string) __('articles.export.h_scores'));
+        $this->addHeading2((string) __in($this->lang, 'articles.export.h_scores'));
         $this->addScores($report);
 
         if (!empty($report['summary'])) {
-            $this->addHeading2((string) __('articles.critical.h_summary'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_summary'));
             $this->addProse((string) $report['summary']);
         }
 
         $strengths  = (array) ($report['key_strengths']  ?? []);
         $weaknesses = (array) ($report['key_weaknesses'] ?? []);
         if ($strengths !== []) {
-            $this->addHeading2((string) __('articles.critical.h_key_strengths'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_key_strengths'));
             $this->addBullets($strengths, self::C_OK);
         }
         if ($weaknesses !== []) {
-            $this->addHeading2((string) __('articles.critical.h_key_weaknesses'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_key_weaknesses'));
             $this->addBullets($weaknesses, self::C_FAIL);
         }
 
         if (!empty($report['methodology_critique'])) {
-            $this->addHeading2((string) __('articles.critical.h_methodology_critique'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_methodology_critique'));
             $this->addProse((string) $report['methodology_critique']);
         }
 
@@ -114,28 +120,28 @@ final class ArticleDocxBuilder
             if ($items === []) {
                 continue;
             }
-            $this->addHeading2((string) __('articles.critical.' . $key));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.' . $key));
             $this->addBullets($items, self::C_TEXT);
         }
 
         if (!empty($report['literature_positioning'])) {
-            $this->addHeading2((string) __('articles.critical.h_literature_positioning'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_literature_positioning'));
             $this->addProse((string) $report['literature_positioning']);
         }
         if (!empty($report['publication_outlook'])) {
-            $this->addHeading2((string) __('articles.critical.h_publication_outlook'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_publication_outlook'));
             $this->addProse((string) $report['publication_outlook']);
         }
 
         if (!empty($report['devils_advocate'])) {
-            $this->addHeading2((string) __('articles.critical.h_devils_advocate'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_devils_advocate'));
             $this->addCallout((string) $report['devils_advocate'], self::C_BG_DEVIL, self::C_DEVIL, bold: false);
         }
 
         // Recommendations — one per row with coloured priority prefix.
         $recs = (array) ($report['recommendations'] ?? []);
         if ($recs !== []) {
-            $this->addHeading2((string) __('articles.critical.h_recommendations'));
+            $this->addHeading2((string) __in($this->lang, 'articles.critical.h_recommendations'));
             foreach ($recs as $rec) {
                 $sec = trim((string) ($rec['section'] ?? ''));
                 if ($sec !== '') {
@@ -150,16 +156,16 @@ final class ArticleDocxBuilder
         // Chat appendix.
         if (($data['include_chat'] ?? false) && ($data['chat'] ?? []) !== []) {
             $this->body .= '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
-            $this->addHeading2((string) __('articles.export.h_chat'));
+            $this->addHeading2((string) __in($this->lang, 'articles.export.h_chat'));
             $this->addParagraph(
-                self::escape((string) __('articles.export.chat_subtitle')),
+                self::escape((string) __in($this->lang, 'articles.export.chat_subtitle')),
                 rPr: ['rFonts' => 'Calibri', 'i' => true, 'color' => self::C_MUTED, 'sz' => 20],
                 pPr: ['spacing' => ['after' => 160]],
             );
             foreach ($data['chat'] as $m) {
                 $who = $m['role'] === 'assistant'
-                    ? (string) __('articles.export.who_assistant')
-                    : (string) __('articles.export.who_user');
+                    ? (string) __in($this->lang, 'articles.export.who_assistant')
+                    : (string) __in($this->lang, 'articles.export.who_user');
                 $stamp = $m['created_at'] !== '' ? ' · ' . $m['created_at'] : '';
                 $this->addParagraph(
                     self::escape($who . $stamp),
@@ -297,7 +303,7 @@ final class ArticleDocxBuilder
             $score = max(0, min(100, (int) ($report[$axis] ?? 0)));
             $note  = (string) ($report[$axis . '_note'] ?? '');
             $tone  = $score >= 80 ? self::C_OK : ($score >= 50 ? self::C_WARN : self::C_FAIL);
-            $label = (string) __('articles.critical.axis_' . $axis);
+            $label = (string) __in($this->lang, 'articles.critical.axis_' . $axis);
 
             $filled = (int) round($score / 10);
             $filled = max(0, min(10, $filled));
@@ -357,7 +363,7 @@ final class ArticleDocxBuilder
             'low'    => '3730A3',
             default  => self::C_WARN,
         };
-        $label = mb_strtoupper((string) __('articles.critical.priority_' . $priority));
+        $label = mb_strtoupper((string) __in($this->lang, 'articles.critical.priority_' . $priority));
 
         $this->body .= '<w:p>'
             . $this->renderPPr([
